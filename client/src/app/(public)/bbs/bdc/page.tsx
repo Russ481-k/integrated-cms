@@ -12,7 +12,7 @@ function BdcPage() {
         alignItems="center"
       >
         <Image
-          src="/images/contents/image.png"
+          src="/images/contents/comming_soon.png"
           alt="준비중입니다."
           width={800}
           height={800}

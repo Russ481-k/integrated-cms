@@ -267,7 +267,6 @@ export const Header = memo(function Header({
         opacity={isNavHovered ? 1 : 0}
         visibility={isNavHovered ? "visible" : "hidden"}
         bg={isDark ? "rgba(26, 32, 44, 0.95)" : "rgba(255, 255, 255, 0.95)"}
-        bgImage="url('/images/header/header_bg.png')"
         bgSize="cover"
         bgRepeat="no-repeat"
         backgroundPosition="center"
