@@ -147,36 +147,225 @@ CREATE TABLE services (
     updated_by BIGINT
 );
 
--- 관리자 테이블
+-- 관리자 사용자 테이블
 CREATE TABLE admin_users (
     admin_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(100),
     full_name VARCHAR(100),
-    role ENUM('SUPER_ADMIN', 'SERVICE_ADMIN', 'OPERATOR') DEFAULT 'OPERATOR',
-    status ENUM('ACTIVE', 'INACTIVE', 'LOCKED') DEFAULT 'ACTIVE',
+    phone VARCHAR(20),
+    department VARCHAR(100),
+    position VARCHAR(100),
+    status ENUM('ACTIVE', 'INACTIVE', 'LOCKED', 'PENDING_APPROVAL') DEFAULT 'PENDING_APPROVAL',
     last_login_at TIMESTAMP NULL,
     password_changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     failed_login_attempts INT DEFAULT 0,
     locked_until TIMESTAMP NULL,
+    profile_image_url VARCHAR(255),
+    timezone VARCHAR(50) DEFAULT 'Asia/Seoul',
+    language VARCHAR(10) DEFAULT 'ko',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+    deleted_at TIMESTAMP NULL,
+
+    INDEX idx_username (username),
+    INDEX idx_email (email),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at)
 );
 
--- 관리자-서비스 권한 매핑
-CREATE TABLE admin_service_permissions (
-    permission_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+-- 관리자 그룹 테이블
+CREATE TABLE admin_groups (
+    group_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    group_name VARCHAR(100) NOT NULL,
+    group_code VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    group_type ENUM('SYSTEM', 'DEPARTMENT', 'PROJECT', 'CUSTOM') DEFAULT 'CUSTOM',
+    parent_group_id BIGINT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+
+    FOREIGN KEY (parent_group_id) REFERENCES admin_groups(group_id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES admin_users(admin_id),
+    FOREIGN KEY (updated_by) REFERENCES admin_users(admin_id),
+    INDEX idx_group_code (group_code),
+    INDEX idx_parent_group (parent_group_id)
+);
+
+-- 관리자 그룹 멤버십 테이블
+CREATE TABLE admin_group_members (
+    member_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    group_id BIGINT NOT NULL,
     admin_id BIGINT NOT NULL,
-    service_id BIGINT NOT NULL,
-    permissions JSON NOT NULL, -- {"board": ["read", "write"], "content": ["read"]}
+    member_type ENUM('OWNER', 'ADMIN', 'MEMBER') DEFAULT 'MEMBER',
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by BIGINT,
+
+    FOREIGN KEY (group_id) REFERENCES admin_groups(group_id) ON DELETE CASCADE,
+    FOREIGN KEY (admin_id) REFERENCES admin_users(admin_id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES admin_users(admin_id),
+    UNIQUE KEY unique_group_admin (group_id, admin_id),
+    INDEX idx_group_id (group_id),
+    INDEX idx_admin_id (admin_id)
+);
+
+-- 역할 정의 테이블
+CREATE TABLE roles (
+    role_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    role_name VARCHAR(100) NOT NULL,
+    role_code VARCHAR(50) UNIQUE NOT NULL,
+    description TEXT,
+    role_type ENUM('SYSTEM', 'SERVICE', 'CUSTOM') DEFAULT 'CUSTOM',
+    is_system_role BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+
+    FOREIGN KEY (created_by) REFERENCES admin_users(admin_id),
+    FOREIGN KEY (updated_by) REFERENCES admin_users(admin_id),
+    INDEX idx_role_code (role_code),
+    INDEX idx_role_type (role_type)
+);
+
+-- 권한 정의 테이블
+CREATE TABLE permissions (
+    permission_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    permission_name VARCHAR(100) NOT NULL,
+    permission_code VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT,
+    permission_category VARCHAR(50), -- 'MENU', 'FUNCTION', 'DATA', 'SYSTEM'
+    resource_type VARCHAR(50), -- 'board', 'content', 'menu', 'user' 등
+    action_type VARCHAR(50), -- 'create', 'read', 'update', 'delete', 'publish' 등
+    is_system_permission BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+
+    FOREIGN KEY (created_by) REFERENCES admin_users(admin_id),
+    FOREIGN KEY (updated_by) REFERENCES admin_users(admin_id),
+    INDEX idx_permission_code (permission_code),
+    INDEX idx_category_resource (permission_category, resource_type),
+    INDEX idx_resource_action (resource_type, action_type)
+);
+
+-- 역할-권한 매핑 테이블
+CREATE TABLE role_permissions (
+    role_permission_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    role_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+    is_granted BOOLEAN DEFAULT TRUE,
     granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     granted_by BIGINT,
-    expires_at TIMESTAMP NULL,
-    FOREIGN KEY (admin_id) REFERENCES admin_users(admin_id) ON DELETE CASCADE,
-    FOREIGN KEY (service_id) REFERENCES services(service_id) ON DELETE CASCADE,
+
+    FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE,
+    FOREIGN KEY (permission_id) REFERENCES permissions(permission_id) ON DELETE CASCADE,
     FOREIGN KEY (granted_by) REFERENCES admin_users(admin_id),
-    UNIQUE KEY unique_admin_service (admin_id, service_id)
+    UNIQUE KEY unique_role_permission (role_id, permission_id),
+    INDEX idx_role_id (role_id),
+    INDEX idx_permission_id (permission_id)
+);
+
+-- 메뉴 정의 테이블 (서비스별 메뉴 구조 정의)
+CREATE TABLE menus (
+    menu_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    service_id BIGINT NULL, -- NULL이면 통합 관리용 메뉴
+    menu_code VARCHAR(50) NOT NULL,
+    menu_name VARCHAR(100) NOT NULL,
+    menu_path VARCHAR(255),
+    parent_menu_id BIGINT NULL,
+    menu_level INT DEFAULT 1,
+    menu_order INT DEFAULT 0,
+    menu_icon VARCHAR(100),
+    menu_type ENUM('MENU', 'PAGE', 'FUNCTION', 'BUTTON') DEFAULT 'MENU',
+    is_visible BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    required_permissions JSON, -- ["permission_code1", "permission_code2"]
+    menu_metadata JSON, -- 추가 메뉴 속성
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    updated_by BIGINT,
+
+    FOREIGN KEY (service_id) REFERENCES services(service_id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_menu_id) REFERENCES menus(menu_id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES admin_users(admin_id),
+    FOREIGN KEY (updated_by) REFERENCES admin_users(admin_id),
+    UNIQUE KEY unique_service_menu_code (service_id, menu_code),
+    INDEX idx_service_id (service_id),
+    INDEX idx_parent_menu (parent_menu_id),
+    INDEX idx_menu_level_order (menu_level, menu_order)
+);
+
+-- 사용자-서비스-역할 매핑 테이블
+CREATE TABLE admin_service_roles (
+    assignment_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    admin_id BIGINT NULL,
+    group_id BIGINT NULL,
+    service_id BIGINT NULL, -- NULL이면 통합 관리 시스템
+    role_id BIGINT NOT NULL,
+    assignment_type ENUM('USER', 'GROUP') NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NULL,
+    granted_by BIGINT,
+    revoked_at TIMESTAMP NULL,
+    revoked_by BIGINT,
+    revoke_reason TEXT,
+
+    FOREIGN KEY (admin_id) REFERENCES admin_users(admin_id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES admin_groups(group_id) ON DELETE CASCADE,
+    FOREIGN KEY (service_id) REFERENCES services(service_id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE,
+    FOREIGN KEY (granted_by) REFERENCES admin_users(admin_id),
+    FOREIGN KEY (revoked_by) REFERENCES admin_users(admin_id),
+    CHECK (
+        (assignment_type = 'USER' AND admin_id IS NOT NULL AND group_id IS NULL) OR
+        (assignment_type = 'GROUP' AND admin_id IS NULL AND group_id IS NOT NULL)
+    ),
+    UNIQUE KEY unique_user_service_role (admin_id, service_id, role_id),
+    UNIQUE KEY unique_group_service_role (group_id, service_id, role_id),
+    INDEX idx_admin_service (admin_id, service_id),
+    INDEX idx_group_service (group_id, service_id),
+    INDEX idx_service_role (service_id, role_id)
+);
+
+-- 사용자별 메뉴 권한 오버라이드 테이블
+CREATE TABLE admin_menu_permissions (
+    menu_permission_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    admin_id BIGINT NULL,
+    group_id BIGINT NULL,
+    menu_id BIGINT NOT NULL,
+    permission_type ENUM('ALLOW', 'DENY') NOT NULL,
+    assignment_type ENUM('USER', 'GROUP') NOT NULL,
+    specific_permissions JSON, -- 메뉴 내 세부 기능별 권한 ["create", "update", "delete"]
+    is_active BOOLEAN DEFAULT TRUE,
+    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NULL,
+    granted_by BIGINT,
+
+    FOREIGN KEY (admin_id) REFERENCES admin_users(admin_id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES admin_groups(group_id) ON DELETE CASCADE,
+    FOREIGN KEY (menu_id) REFERENCES menus(menu_id) ON DELETE CASCADE,
+    FOREIGN KEY (granted_by) REFERENCES admin_users(admin_id),
+    CHECK (
+        (assignment_type = 'USER' AND admin_id IS NOT NULL AND group_id IS NULL) OR
+        (assignment_type = 'GROUP' AND admin_id IS NULL AND group_id IS NOT NULL)
+    ),
+    INDEX idx_admin_menu (admin_id, menu_id),
+    INDEX idx_group_menu (group_id, menu_id),
+    INDEX idx_menu_permission (menu_id, permission_type)
 );
 
 -- 활동 로그 테이블
@@ -201,13 +390,143 @@ CREATE TABLE unified_activity_logs (
 );
 
 -- 초기 데이터 삽입
-INSERT INTO admin_users (username, password, email, full_name, role) VALUES
-('superadmin', '$2a$10$encrypted_password', 'admin@company.com', 'Super Administrator', 'SUPER_ADMIN');
 
--- 기존 서비스 등록 (예시)
+-- 1. 시스템 관리자 생성
+INSERT INTO admin_users (username, password, email, full_name, department, position, status) VALUES
+('superadmin', '$2a$10$encrypted_password', 'admin@company.com', 'Super Administrator', 'IT', 'System Administrator', 'ACTIVE');
+
+-- 2. 기본 그룹 생성
+INSERT INTO admin_groups (group_name, group_code, description, group_type) VALUES
+('시스템 관리자', 'SYSTEM_ADMIN', '시스템 전체 관리자 그룹', 'SYSTEM'),
+('서비스 관리자', 'SERVICE_ADMIN', '개별 서비스 관리자 그룹', 'SYSTEM'),
+('운영자', 'OPERATOR', '일반 운영자 그룹', 'SYSTEM'),
+('개발팀', 'DEVELOPMENT', '개발팀 그룹', 'DEPARTMENT'),
+('운영팀', 'OPERATION', '운영팀 그룹', 'DEPARTMENT');
+
+-- 3. 기본 역할 생성
+INSERT INTO roles (role_name, role_code, description, role_type, is_system_role) VALUES
+('슈퍼 관리자', 'SUPER_ADMIN', '시스템 전체에 대한 모든 권한', 'SYSTEM', TRUE),
+('통합 관리자', 'UNIFIED_ADMIN', '통합 관리 시스템의 모든 권한', 'SYSTEM', TRUE),
+('서비스 관리자', 'SERVICE_ADMIN', '개별 서비스의 관리 권한', 'SERVICE', TRUE),
+('컨텐츠 관리자', 'CONTENT_ADMIN', '컨텐츠 관리 권한', 'SERVICE', TRUE),
+('게시판 관리자', 'BOARD_ADMIN', '게시판 관리 권한', 'SERVICE', TRUE),
+('메뉴 관리자', 'MENU_ADMIN', '메뉴 관리 권한', 'SERVICE', TRUE),
+('사용자 관리자', 'USER_ADMIN', '사용자 관리 권한', 'SERVICE', TRUE),
+('운영자', 'OPERATOR', '기본 운영 권한', 'SERVICE', TRUE),
+('뷰어', 'VIEWER', '조회 전용 권한', 'SERVICE', TRUE);
+
+-- 4. 기본 권한 생성
+INSERT INTO permissions (permission_name, permission_code, description, permission_category, resource_type, action_type, is_system_permission) VALUES
+-- 시스템 권한
+('시스템 관리', 'SYSTEM_MANAGE', '시스템 전체 관리 권한', 'SYSTEM', 'system', 'manage', TRUE),
+('서비스 관리', 'SERVICE_MANAGE', '서비스 등록/수정/삭제 권한', 'SYSTEM', 'service', 'manage', TRUE),
+('관리자 관리', 'ADMIN_MANAGE', '관리자 계정 관리 권한', 'SYSTEM', 'admin', 'manage', TRUE),
+('그룹 관리', 'GROUP_MANAGE', '그룹 관리 권한', 'SYSTEM', 'group', 'manage', TRUE),
+('역할 관리', 'ROLE_MANAGE', '역할 관리 권한', 'SYSTEM', 'role', 'manage', TRUE),
+('권한 관리', 'PERMISSION_MANAGE', '권한 관리 권한', 'SYSTEM', 'permission', 'manage', TRUE),
+('시스템 설정', 'SYSTEM_CONFIG', '시스템 설정 관리 권한', 'SYSTEM', 'config', 'manage', TRUE),
+
+-- 메뉴 접근 권한
+('통합 대시보드 접근', 'MENU_UNIFIED_DASHBOARD', '통합 대시보드 메뉴 접근', 'MENU', 'dashboard', 'access', FALSE),
+('서비스 관리 메뉴', 'MENU_SERVICE_MANAGE', '서비스 관리 메뉴 접근', 'MENU', 'service', 'access', FALSE),
+('관리자 관리 메뉴', 'MENU_ADMIN_MANAGE', '관리자 관리 메뉴 접근', 'MENU', 'admin', 'access', FALSE),
+('컨텐츠 관리 메뉴', 'MENU_CONTENT_MANAGE', '컨텐츠 관리 메뉴 접근', 'MENU', 'content', 'access', FALSE),
+('게시판 관리 메뉴', 'MENU_BOARD_MANAGE', '게시판 관리 메뉴 접근', 'MENU', 'board', 'access', FALSE),
+('메뉴 관리 메뉴', 'MENU_MENU_MANAGE', '메뉴 관리 메뉴 접근', 'MENU', 'menu', 'access', FALSE),
+('사용자 관리 메뉴', 'MENU_USER_MANAGE', '사용자 관리 메뉴 접근', 'MENU', 'user', 'access', FALSE),
+
+-- 기능 권한
+('컨텐츠 생성', 'CONTENT_CREATE', '컨텐츠 생성 권한', 'FUNCTION', 'content', 'create', FALSE),
+('컨텐츠 조회', 'CONTENT_READ', '컨텐츠 조회 권한', 'FUNCTION', 'content', 'read', FALSE),
+('컨텐츠 수정', 'CONTENT_UPDATE', '컨텐츠 수정 권한', 'FUNCTION', 'content', 'update', FALSE),
+('컨텐츠 삭제', 'CONTENT_DELETE', '컨텐츠 삭제 권한', 'FUNCTION', 'content', 'delete', FALSE),
+('컨텐츠 발행', 'CONTENT_PUBLISH', '컨텐츠 발행 권한', 'FUNCTION', 'content', 'publish', FALSE),
+
+('게시글 생성', 'BOARD_CREATE', '게시글 생성 권한', 'FUNCTION', 'board', 'create', FALSE),
+('게시글 조회', 'BOARD_READ', '게시글 조회 권한', 'FUNCTION', 'board', 'read', FALSE),
+('게시글 수정', 'BOARD_UPDATE', '게시글 수정 권한', 'FUNCTION', 'board', 'update', FALSE),
+('게시글 삭제', 'BOARD_DELETE', '게시글 삭제 권한', 'FUNCTION', 'board', 'delete', FALSE),
+('게시글 승인', 'BOARD_APPROVE', '게시글 승인 권한', 'FUNCTION', 'board', 'approve', FALSE),
+
+('메뉴 생성', 'MENU_CREATE', '메뉴 생성 권한', 'FUNCTION', 'menu', 'create', FALSE),
+('메뉴 조회', 'MENU_READ', '메뉴 조회 권한', 'FUNCTION', 'menu', 'read', FALSE),
+('메뉴 수정', 'MENU_UPDATE', '메뉴 수정 권한', 'FUNCTION', 'menu', 'update', FALSE),
+('메뉴 삭제', 'MENU_DELETE', '메뉴 삭제 권한', 'FUNCTION', 'menu', 'delete', FALSE),
+
+('사용자 생성', 'USER_CREATE', '사용자 생성 권한', 'FUNCTION', 'user', 'create', FALSE),
+('사용자 조회', 'USER_READ', '사용자 조회 권한', 'FUNCTION', 'user', 'read', FALSE),
+('사용자 수정', 'USER_UPDATE', '사용자 수정 권한', 'FUNCTION', 'user', 'update', FALSE),
+('사용자 삭제', 'USER_DELETE', '사용자 삭제 권한', 'FUNCTION', 'user', 'delete', FALSE),
+
+('파일 업로드', 'FILE_UPLOAD', '파일 업로드 권한', 'FUNCTION', 'file', 'upload', FALSE),
+('파일 삭제', 'FILE_DELETE', '파일 삭제 권한', 'FUNCTION', 'file', 'delete', FALSE);
+
+-- 5. 역할-권한 매핑 (슈퍼 관리자)
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r, permissions p
+WHERE r.role_code = 'SUPER_ADMIN';
+
+-- 6. 역할-권한 매핑 (통합 관리자)
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r, permissions p
+WHERE r.role_code = 'UNIFIED_ADMIN'
+AND p.permission_code NOT IN ('SYSTEM_MANAGE', 'SERVICE_MANAGE', 'ADMIN_MANAGE');
+
+-- 7. 역할-권한 매핑 (서비스 관리자)
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r, permissions p
+WHERE r.role_code = 'SERVICE_ADMIN'
+AND p.permission_category IN ('MENU', 'FUNCTION')
+AND p.resource_type != 'system';
+
+-- 8. 기본 메뉴 구조 생성 (통합 관리용 - service_id = NULL)
+INSERT INTO menus (service_id, menu_code, menu_name, menu_path, parent_menu_id, menu_level, menu_order, menu_icon, menu_type, required_permissions) VALUES
+(NULL, 'UNIFIED_DASHBOARD', '통합 대시보드', '/unified/dashboard', NULL, 1, 1, 'dashboard', 'MENU', '["MENU_UNIFIED_DASHBOARD"]'),
+(NULL, 'SYSTEM_MANAGE', '시스템 관리', '/unified/system', NULL, 1, 2, 'settings', 'MENU', '["SYSTEM_MANAGE"]'),
+(NULL, 'SERVICE_MANAGE', '서비스 관리', '/unified/services', NULL, 1, 3, 'server', 'MENU', '["MENU_SERVICE_MANAGE"]'),
+(NULL, 'ADMIN_MANAGE', '관리자 관리', '/unified/admin', NULL, 1, 4, 'users', 'MENU', '["MENU_ADMIN_MANAGE"]'),
+(NULL, 'CONTENT_MANAGE', '통합 컨텐츠', '/unified/content', NULL, 1, 5, 'file-text', 'MENU', '["MENU_CONTENT_MANAGE"]'),
+(NULL, 'MONITORING', '모니터링', '/unified/monitoring', NULL, 1, 6, 'activity', 'MENU', '["SYSTEM_MANAGE"]');
+
+-- 서브메뉴 추가
+INSERT INTO menus (service_id, menu_code, menu_name, menu_path, parent_menu_id, menu_level, menu_order, menu_icon, menu_type, required_permissions) VALUES
+(NULL, 'ADMIN_USER_MANAGE', '사용자 관리', '/unified/admin/users', (SELECT menu_id FROM menus WHERE menu_code = 'ADMIN_MANAGE' AND service_id IS NULL), 2, 1, 'user', 'PAGE', '["USER_READ"]'),
+(NULL, 'ADMIN_GROUP_MANAGE', '그룹 관리', '/unified/admin/groups', (SELECT menu_id FROM menus WHERE menu_code = 'ADMIN_MANAGE' AND service_id IS NULL), 2, 2, 'users', 'PAGE', '["GROUP_MANAGE"]'),
+(NULL, 'ADMIN_ROLE_MANAGE', '역할 관리', '/unified/admin/roles', (SELECT menu_id FROM menus WHERE menu_code = 'ADMIN_MANAGE' AND service_id IS NULL), 2, 3, 'shield', 'PAGE', '["ROLE_MANAGE"]'),
+(NULL, 'ADMIN_PERMISSION_MANAGE', '권한 관리', '/unified/admin/permissions', (SELECT menu_id FROM menus WHERE menu_code = 'ADMIN_MANAGE' AND service_id IS NULL), 2, 4, 'lock', 'PAGE', '["PERMISSION_MANAGE"]');
+
+-- 9. 시스템 관리자 그룹에 슈퍼 관리자 추가
+INSERT INTO admin_group_members (group_id, admin_id, member_type, created_by) VALUES
+((SELECT group_id FROM admin_groups WHERE group_code = 'SYSTEM_ADMIN'),
+ (SELECT admin_id FROM admin_users WHERE username = 'superadmin'),
+ 'OWNER',
+ (SELECT admin_id FROM admin_users WHERE username = 'superadmin'));
+
+-- 10. 슈퍼 관리자에게 SUPER_ADMIN 역할 부여 (통합 시스템)
+INSERT INTO admin_service_roles (admin_id, service_id, role_id, assignment_type, granted_by) VALUES
+((SELECT admin_id FROM admin_users WHERE username = 'superadmin'),
+ NULL, -- 통합 시스템
+ (SELECT role_id FROM roles WHERE role_code = 'SUPER_ADMIN'),
+ 'USER',
+ (SELECT admin_id FROM admin_users WHERE username = 'superadmin'));
+
+-- 11. 기존 서비스 등록 (예시)
 INSERT INTO services (service_code, service_name, service_domain, api_base_url, db_connection_info) VALUES
 ('cms1', 'Main CMS', 'cms1.company.com', 'http://localhost:8081',
- AES_ENCRYPT('{"host":"localhost","port":"3307","database":"service1_cms","username":"cms1_user","password":"secure_pass"}', 'encryption_key'));
+ AES_ENCRYPT('{"host":"localhost","port":"3307","database":"service1_cms","username":"cms1_user","password":"secure_pass"}', 'encryption_key')),
+('cms2', 'Secondary CMS', 'cms2.company.com', 'http://localhost:8082',
+ AES_ENCRYPT('{"host":"localhost","port":"3308","database":"service2_cms","username":"cms2_user","password":"secure_pass"}', 'encryption_key'));
+
+-- 12. 개별 서비스 메뉴 구조 생성 (예: cms1)
+INSERT INTO menus (service_id, menu_code, menu_name, menu_path, parent_menu_id, menu_level, menu_order, menu_icon, menu_type, required_permissions) VALUES
+((SELECT service_id FROM services WHERE service_code = 'cms1'), 'DASHBOARD', '대시보드', '/dashboard', NULL, 1, 1, 'home', 'MENU', '["MENU_UNIFIED_DASHBOARD"]'),
+((SELECT service_id FROM services WHERE service_code = 'cms1'), 'BOARD', '게시판 관리', '/board', NULL, 1, 2, 'message-square', 'MENU', '["MENU_BOARD_MANAGE"]'),
+((SELECT service_id FROM services WHERE service_code = 'cms1'), 'CONTENT', '컨텐츠 관리', '/content', NULL, 1, 3, 'file-text', 'MENU', '["MENU_CONTENT_MANAGE"]'),
+((SELECT service_id FROM services WHERE service_code = 'cms1'), 'MENU', '메뉴 관리', '/menu', NULL, 1, 4, 'menu', 'MENU', '["MENU_MENU_MANAGE"]'),
+((SELECT service_id FROM services WHERE service_code = 'cms1'), 'USER', '사용자 관리', '/user', NULL, 1, 5, 'users', 'MENU', '["MENU_USER_MANAGE"]');
 ```
 
 #### 2.1.2 암호화 서비스 구현
