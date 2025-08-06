@@ -1,0 +1,79 @@
+---
+globs: *.java,*.kt,*.sql,*.yml,*.yaml,*.xml
+description: 백엔드 개발 가이드라인 및 기술 스택
+---
+
+# 백엔드 개발 가이드라인
+
+## 🛠️ 기술 스택
+
+### Core Framework
+- **Spring Boot 3.x** + Spring Security 6.x
+- **JPA/Hibernate** + HikariCP
+- **Spring Cloud Gateway** (API Gateway)
+- **MySQL 8.x** / MariaDB
+
+### 인증 및 보안
+- **JWT 기반 인증**: Access Token (15분) + Refresh Token (7일)
+- **AES-256 암호화**: DB 연결 정보 등 민감 데이터
+- **동적 데이터소스**: 서비스별 DB 연결 관리
+
+## 📁 패키지 구조
+
+```
+src/main/java/cms/
+├── auth/              # 인증/인가 관련
+├── common/            # 공통 유틸리티
+├── config/            # 설정 클래스
+├── admin/             # 관리자 관리
+├── service/           # 서비스 관리
+├── content/           # 통합 콘텐츠 관리
+├── permission/        # 권한 시스템
+└── websocket/         # 실시간 통신
+```
+
+## 🗄️ 데이터베이스 설계 원칙
+
+### 테이블 생성 순서
+1. **기본 테이블**: ADMIN_USER, SERVICE
+2. **참조 테이블**: ADMIN_GROUP, ROLE, PERMISSION, MENU
+3. **매핑 테이블**: ADMIN_GROUP_MEMBER, ADMIN_SERVICE_ROLE
+4. **통합 관리**: UNIFIED_CONTENT, UNIFIED_ACTIVITY_LOG
+
+### 필수 감사 필드
+모든 주요 테이블에 포함:
+```sql
+CREATED_BY VARCHAR(36) NULL,
+CREATED_IP VARCHAR(45) NULL,
+CREATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+UPDATED_BY VARCHAR(36) NULL,
+UPDATED_IP VARCHAR(45) NULL,
+UPDATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+```
+
+### 외래키 제약조건
+- `ON DELETE CASCADE`: 상위 삭제 시 하위 자동 삭제
+- `ON DELETE SET NULL`: 상위 삭제 시 하위 NULL 처리
+- `ON UPDATE CASCADE`: 상위 변경 시 하위 자동 변경
+
+## 🔐 권한 검증 구현
+
+### API 권한 검증 패턴
+```java
+@PreAuthorize("hasPermission(#serviceId, 'SERVICE', 'MANAGE')")
+@PostMapping("/api/unified/services/{serviceId}")
+public ResponseEntity<?> updateService(@PathVariable Long serviceId, ...) {
+    // 구현 로직
+}
+```
+
+### 동적 데이터소스 사용
+```java
+@Transactional
+@DataSource("service1") // 동적 데이터소스 지정
+public List<Article> getServiceArticles(Long serviceId) {
+    // 서비스별 DB 접근
+}
+```
+
+자세한 구현 가이드는 [07-unified-cms-implementation-guide.md](mdc:.cursor/docs/v2/07-unified-cms-implementation-guide.md)를 참조하세요.
