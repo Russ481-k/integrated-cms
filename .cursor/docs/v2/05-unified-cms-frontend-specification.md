@@ -57,24 +57,242 @@
 
 ---
 
-## 2. 애플리케이션 구조
+## 2. 통합 관리 페이지 공통 구조
+
+### 2.1 서비스 선택 및 데이터 표시 구조
+
+#### 2.1.1 메인 페이지 구성
+- 전체 서비스 목록 카드 형태로 표시
+  ```typescript
+  interface ServiceSummary {
+    serviceId: number;
+    serviceName: string;
+    serviceCode: string;
+    domain: string;
+    status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
+    description: string;
+    lastHealthCheck: {
+      timestamp: string;
+      status: 'HEALTHY' | 'WARNING' | 'ERROR';
+    };
+    quickActions: {
+      canManageBoard: boolean;
+      canManageContent: boolean;
+      canManageUsers: boolean;
+      canManageMenu: boolean;
+    };
+  }
+  ```
+- 서비스별 상태 및 설명 표시
+- 권한 기반 빠른 액세스 링크 제공
+- 서비스 검색 및 필터링 기능
+
+#### 2.1.2 메인 페이지 컴포넌트
+
+```typescript
+// components/main/ServiceOverview.tsx
+interface ServiceOverviewProps {
+  services: ServiceSummary[];
+  isLoading: boolean;
+  onServiceSelect: (serviceId: number) => void;
+}
+
+export function ServiceOverview({ services, isLoading, onServiceSelect }: ServiceOverviewProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+
+  const filteredServices = useMemo(() => {
+    return services.filter(service => {
+      const matchesSearch = service.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           service.serviceCode.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'ALL' || service.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [services, searchTerm, statusFilter]);
+
+  return (
+    <VStack spacing={6} align="stretch">
+      <HStack spacing={4}>
+        <Input
+          placeholder="서비스 검색..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="ALL">전체 상태</option>
+          <option value="ACTIVE">활성</option>
+          <option value="INACTIVE">비활성</option>
+          <option value="MAINTENANCE">점검중</option>
+        </Select>
+      </HStack>
+      
+      <Grid templateColumns="repeat(auto-fill, minmax(350px, 1fr))" gap={6}>
+        {filteredServices.map(service => (
+          <ServiceCard
+            key={service.serviceId}
+            service={service}
+            onSelect={() => onServiceSelect(service.serviceId)}
+          />
+        ))}
+      </Grid>
+    </VStack>
+  );
+}
+```
+
+#### 2.1.3 서비스 선택 컴포넌트
+```typescript
+interface ServiceSelectProps {
+  initialService?: number;
+  onServiceChange: (serviceId: number) => void;
+  showAllOption?: boolean;
+  placement?: 'header' | 'sidebar' | 'content';
+}
+
+// 서비스 선택 상태 관리 (Zustand)
+interface ServiceSelectStore {
+  selectedService: number | null;
+  servicePermissions: Record<number, string[]>;
+  setSelectedService: (serviceId: number | null) => void;
+  clearSelection: () => void;
+}
+```
+- 상단 고정 위치에 서비스 선택 드롭다운 배치
+- 권한 기반 서비스 목록 필터링
+- 서비스 검색 및 필터링 기능
+- 선택 상태 전역 관리
+
+#### 2.1.4 컨텐츠 영역 구성
+```typescript
+interface ServiceContentProps<T> {
+  serviceId: number | null; // null인 경우 전체 서비스
+  data: T[];
+  isLoading: boolean;
+  view: 'table' | 'grid' | 'list';
+  actions: {
+    onEdit?: (id: number) => void;
+    onDelete?: (id: number) => void;
+    onSync?: (id: number) => void;
+  };
+}
+```
+- 서비스별 데이터 필터링
+- 페이지네이션 및 정렬 기능
+- 일괄 작업 지원
+
+### 2.2 페이지별 구현 사항
+
+#### 2.2.1 통합 게시판 관리
+```typescript
+interface BoardManagementProps {
+  serviceId: number | null;
+  boards: {
+    boardId: number;
+    boardName: string;
+    boardType: string;
+    articleCount: number;
+    lastUpdated: string;
+  }[];
+}
+```
+- 서비스별 게시판 목록 표시
+- 게시판 설정 관리
+- 게시글 통합 관리
+
+#### 2.2.2 통합 컨텐츠 관리
+```typescript
+interface ContentManagementProps {
+  serviceId: number | null;
+  contents: {
+    contentId: number;
+    contentType: string;
+    title: string;
+    status: string;
+    publishedAt: string;
+  }[];
+}
+```
+- 서비스별 컨텐츠 목록 표시
+- 컨텐츠 상태 관리
+- 컨텐츠 동기화 관리
+
+#### 2.2.3 통합 관리자 관리
+```typescript
+interface AdminManagementProps {
+  serviceId: number | null;
+  admins: {
+    adminId: number;
+    username: string;
+    role: string;
+    groups: string[];
+    lastLogin: string;
+  }[];
+}
+```
+- 서비스별 관리자 목록 표시
+- 그룹 및 권한 관리
+- 활동 이력 관리
+
+#### 2.2.4 통합 권한 관리
+```typescript
+interface PermissionManagementProps {
+  serviceId: number | null;
+  permissions: {
+    roleId: number;
+    roleName: string;
+    permissions: string[];
+    assignedCount: number;
+  }[];
+}
+```
+- 서비스별 권한 템플릿 관리
+- 권한 매트릭스 관리
+- 권한 감사 로그
+
+### 2.3 공통 컴포넌트
+
+#### 2.3.1 서비스 선택기
+```typescript
+const ServiceSelector: React.FC<{
+  value: number | null;
+  onChange: (serviceId: number | null) => void;
+  placement?: 'header' | 'sidebar';
+}>;
+```
+
+#### 2.3.2 서비스 상태 배지
+```typescript
+const ServiceStatusBadge: React.FC<{
+  status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
+  size?: 'sm' | 'md' | 'lg';
+}>;
+```
+
+#### 2.3.3 서비스 필터 바
+```typescript
+const ServiceFilterBar: React.FC<{
+  onFilterChange: (filters: ServiceFilters) => void;
+  availableFilters: string[];
+}>;
+```
+
+## 3. 애플리케이션 구조
 
 ### 2.1 전체 UI 구조
 
 ```mermaid
 graph TD
-    A[통합 관리 UI] --> B[대시보드]
+    A[통합 관리 UI] --> B[메인 페이지]
     A --> C[서비스 관리]
     A --> D[콘텐츠 관리]
     A --> E[관리자/권한]
     A --> F[시스템 관리]
 
-    B --> B1[서비스 현황]
-    B --> B2[실시간 모니터링]
-    B --> B3[통계/리포트]
-    B --> B4[알림 센터]
+    B --> B1[서비스 목록]
+    B --> B2[서비스 상태]
+    B --> B3[빠른 액세스]
 
-    C --> C1[서비스 목록]
+    C --> C1[서비스 등록]
     C --> C2[서비스 설정]
     C --> C3[API 관리]
     C --> C4[배포 관리]
@@ -109,19 +327,13 @@ graph TD
 │   │   │       └── LoginLayout.tsx
 │   │   └── layout.tsx
 │   │
-│   ├── dashboard/                // 대시보드
+│   ├── main/                     // 메인 페이지
 │   │   ├── page.tsx
-│   │   ├── overview/
-│   │   ├── monitoring/
-│   │   ├── reports/
 │   │   └── components/
-│   │       ├── UnifiedDashboard.tsx
-│   │       ├── ServiceSummaryCard.tsx
-│   │       ├── UnifiedMetrics.tsx
-│   │       ├── ServiceHealthPanel.tsx
-│   │       ├── ContentSyncChart.tsx
-│   │       ├── RecentActivityFeed.tsx
-│   │       └── AlertCenter.tsx
+│   │       ├── ServiceOverview.tsx
+│   │       ├── ServiceCard.tsx
+│   │       ├── ServiceStatusBadge.tsx
+│   │       └── QuickAccessPanel.tsx
 │   │
 │   ├── services/                 // 서비스 관리
 │   │   ├── page.tsx
@@ -256,49 +468,223 @@ graph TD
 
 ## 3. 핵심 컴포넌트 설계
 
-### 3.1 통합 대시보드 컴포넌트
+### 3.1 메인 페이지 컴포넌트
 
-#### 📊 UnifiedDashboard
+#### 🏠 MainPage
 
 ```typescript
-// components/dashboard/UnifiedDashboard.tsx
-interface UnifiedMetrics {
-  totalServices: number;
-  totalContents: number;
-  activePopups: number;
-  todayActiveUsers: number;
-  systemHealth: "HEALTHY" | "WARNING" | "ERROR";
-  serviceStatuses: ServiceStatus[];
-  contentSyncStatus: {
-    pending: number;
-    syncing: number;
-    error: number;
-    completed: number;
-  };
-  recentActivities: Activity[];
+// components/main/MainPage.tsx
+interface MainPageProps {
+  services: ServiceSummary[];
+  userPermissions: UserPermissions;
 }
 
-interface ServiceStatus {
-  id: number;
-  name: string;
-  status: "ACTIVE" | "INACTIVE" | "MAINTENANCE";
-  health: "HEALTHY" | "WARNING" | "ERROR";
-  lastChecked: string;
-  metrics: {
-    cpu: number;
-    memory: number;
-    disk: number;
-    activeUsers: number;
+interface UserPermissions {
+  canManageServices: boolean;
+  canViewAllServices: boolean;
+  accessibleServices: number[];
+}
+
+interface ServiceSummary {
+  serviceId: number;
+  serviceName: string;
+  serviceCode: string;
+  domain: string;
+  description: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
+  lastHealthCheck: {
+    timestamp: string;
+    status: 'HEALTHY' | 'WARNING' | 'ERROR';
+  };
+  quickActions: {
+    canManageBoard: boolean;
+    canManageContent: boolean;
+    canManageUsers: boolean;
+    canManageMenu: boolean;
   };
 }
 
-export function UnifiedDashboard() {
-  const { data: metrics, isLoading, error } = useUnifiedMetrics();
-  const { data: services } = useServices();
-  const { data: activities } = useRecentActivities(10);
+export function MainPage({ services, userPermissions }: MainPageProps) {
+  const router = useRouter();
+  const { user } = useAuth();
+  
+  const accessibleServices = useMemo(() => {
+    if (userPermissions.canViewAllServices) {
+      return services;
+    }
+    return services.filter(service => 
+      userPermissions.accessibleServices.includes(service.serviceId)
+    );
+  }, [services, userPermissions]);
 
-  if (isLoading) {
-    return <DashboardSkeleton />;
+  const handleServiceSelect = (serviceId: number) => {
+    useServiceStore.getState().setCurrentService(
+      services.find(s => s.serviceId === serviceId) || null
+    );
+  };
+
+  const handleQuickAction = (serviceId: number, action: string) => {
+    handleServiceSelect(serviceId);
+    switch (action) {
+      case 'board':
+        router.push('/content/board');
+        break;
+      case 'content':
+        router.push('/content/manage');
+        break;
+      case 'users':
+        router.push('/admin/users');
+        break;
+      case 'menu':
+        router.push('/content/menu');
+        break;
+      default:
+        break;
+    }
+  };
+
+  return (
+    <Container maxW="full" p={6}>
+      <VStack spacing={8} align="stretch">
+        <PageHeader
+          title={`안녕하세요, ${user?.name}님`}
+          subtitle="관리할 서비스를 선택하세요"
+        />
+
+        <ServiceOverview
+          services={accessibleServices}
+          isLoading={false}
+          onServiceSelect={handleServiceSelect}
+          onQuickAction={handleQuickAction}
+        />
+      </VStack>
+    </Container>
+  );
+}
+```
+
+#### 🎴 ServiceCard
+
+```typescript
+// components/main/ServiceCard.tsx
+interface ServiceCardProps {
+  service: ServiceSummary;
+  onSelect: (serviceId: number) => void;
+  onQuickAction: (serviceId: number, action: string) => void;
+}
+
+export function ServiceCard({ service, onSelect, onQuickAction }: ServiceCardProps) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE': return 'green';
+      case 'INACTIVE': return 'gray';
+      case 'MAINTENANCE': return 'orange';
+      default: return 'gray';
+    }
+  };
+
+  const getHealthColor = (health: string) => {
+    switch (health) {
+      case 'HEALTHY': return 'green';
+      case 'WARNING': return 'yellow';
+      case 'ERROR': return 'red';
+      default: return 'gray';
+    }
+  };
+
+  return (
+    <Card
+      cursor="pointer"
+      transition="all 0.2s"
+      _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
+      onClick={() => onSelect(service.serviceId)}
+    >
+      <CardHeader>
+        <HStack justify="space-between">
+          <VStack align="start" spacing={1}>
+            <Heading size="md">{service.serviceName}</Heading>
+            <Text fontSize="sm" color="gray.600">{service.serviceCode}</Text>
+          </VStack>
+          <VStack spacing={2}>
+            <Badge colorScheme={getStatusColor(service.status)}>
+              {service.status}
+            </Badge>
+            <Badge colorScheme={getHealthColor(service.lastHealthCheck.status)}>
+              {service.lastHealthCheck.status}
+            </Badge>
+          </VStack>
+        </HStack>
+      </CardHeader>
+      
+      <CardBody>
+        <VStack align="stretch" spacing={4}>
+          <Text fontSize="sm" color="gray.700">{service.description}</Text>
+          
+          <Text fontSize="xs" color="gray.500">
+            마지막 확인: {new Date(service.lastHealthCheck.timestamp).toLocaleString()}
+          </Text>
+
+          <Divider />
+
+          <Text fontSize="sm" fontWeight="semibold">빠른 작업</Text>
+          <SimpleGrid columns={2} spacing={2}>
+            {service.quickActions.canManageBoard && (
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<BoardIcon />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onQuickAction(service.serviceId, 'board');
+                }}
+              >
+                게시판
+              </Button>
+            )}
+            {service.quickActions.canManageContent && (
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<ContentIcon />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onQuickAction(service.serviceId, 'content');
+                }}
+              >
+                컨텐츠
+              </Button>
+            )}
+            {service.quickActions.canManageUsers && (
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<UserIcon />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onQuickAction(service.serviceId, 'users');
+                }}
+              >
+                사용자
+              </Button>
+            )}
+            {service.quickActions.canManageMenu && (
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<MenuIcon />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onQuickAction(service.serviceId, 'menu');
+                }}
+              >
+                메뉴
+              </Button>
+            )}
+          </SimpleGrid>
+        </VStack>
+      </CardBody>
+    </Card>
+  );
   }
 
   if (error) {

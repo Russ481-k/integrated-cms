@@ -433,16 +433,15 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    A[통합 관리 UI] --> B[대시보드]
+    A[통합 관리 UI] --> B[메인 페이지]
     A --> C[서비스 관리]
     A --> D[콘텐츠 관리]
     A --> E[관리자/권한]
     A --> F[시스템 관리]
 
-    B --> B1[서비스 현황]
-    B --> B2[실시간 모니터링]
-    B --> B3[통계/리포트]
-    B --> B4[알림 센터]
+    B --> B1[서비스 목록]
+    B --> B2[서비스 상태]
+    B --> B3[빠른 액세스]
 
     C --> C1[서비스 목록]
     C --> C2[서비스 설정]
@@ -475,15 +474,12 @@ graph TD
 │   ├── login/                   // 로그인
 │   └── logout/                  // 로그아웃
 │
-├── dashboard/                   // 대시보드
-│   ├── overview/               // 전체 현황
-│   │   ├── page.tsx
-│   │   └── components/
-│   │       ├── ServiceSummaryCard.tsx
-│   │       ├── UnifiedMetrics.tsx
-│   │       └── AlertPanel.tsx
-│   ├── monitoring/             // 실시간 모니터링
-│   └── reports/                // 통계/리포트
+├── main/                        // 메인 페이지
+│   ├── page.tsx
+│   └── components/
+│       ├── ServiceOverview.tsx
+│       ├── ServiceCard.tsx
+│       └── QuickAccessPanel.tsx
 │
 ├── services/                    // 서비스 관리
 │   ├── [serviceId]/            // 서비스 상세
@@ -526,7 +522,7 @@ graph TD
 
 ### 5.3 핵심 기능 컴포넌트
 
-#### 5.3.1 통합 대시보드
+#### 5.3.1 메인 페이지
 
 ```typescript
 // components/dashboard/UnifiedDashboard.tsx
