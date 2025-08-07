@@ -280,38 +280,49 @@ CREATE TABLE PERMISSION (
 ```sql
 -- 메뉴 정의 테이블 (서비스별 메뉴 구조)
 CREATE TABLE MENU (
-    MENU_ID int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '메뉴 고유 ID',
-    SERVICE_ID int(10) unsigned NOT NULL COMMENT '서비스 ID',
-    MENU_NAME varchar(100) NOT NULL COMMENT '메뉴 이름',
-    MENU_CODE VARCHAR(50) NOT NULL COMMENT '메뉴 코드',
-    MENU_TYPE enum('LINK','FOLDER','BOARD','CONTENT','PROGRAM') NOT NULL COMMENT '메뉴 타입',
-    URL varchar(255) DEFAULT NULL COMMENT '링크 URL (LINK 타입인 경우)',
-    TARGET_ID bigint(20) unsigned DEFAULT NULL COMMENT '연결 대상 ID (BOARD/CONTENT/PROGRAM 타입일 때)',
-    DISPLAY_POSITION varchar(50) NOT NULL COMMENT '메뉴 표시 위치',
-    PARENT_MENU_ID int(10) unsigned NULL COMMENT '상위 메뉴 ID',
-    MENU_LEVEL INT DEFAULT 1 COMMENT '메뉴 레벨',
-    SORT_ORDER INT DEFAULT 0 COMMENT '메뉴 순서',
-    VISIBLE VARCHAR(20) DEFAULT 'ACTIVE' COMMENT '상태 (ACTIVE, INACTIVE, HIDDEN)',
-    MENU_ICON VARCHAR(100) NULL COMMENT '메뉴 아이콘',
-    ORGANIZATION_ID VARCHAR(36) COMMENT '소속 기관 ID',
-    REQUIRED_PERMISSIONS JSON COMMENT '메뉴 접근에 필요한 권한 목록',
-    CONFIG JSON COMMENT '메뉴 설정 정보',
-    CREATED_BY VARCHAR(36) NULL COMMENT '생성자 ID',
-    CREATED_IP VARCHAR(45) NULL COMMENT '생성자 IP',
-    CREATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
-    UPDATED_BY VARCHAR(36) NULL COMMENT '수정자 ID',
-    UPDATED_IP VARCHAR(45) NULL COMMENT '수정자 IP',
-    UPDATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
-    FOREIGN KEY (SERVICE_ID) REFERENCES SERVICE(SERVICE_ID) ON DELETE CASCADE ON UPDATE CASCADE COMMENT '서비스 참조',
-    FOREIGN KEY (PARENT_MENU_ID) REFERENCES MENU(MENU_ID) ON DELETE SET NULL ON UPDATE CASCADE COMMENT '상위 메뉴 참조',
-    FOREIGN KEY (CREATED_BY) REFERENCES ADMIN_USER(ADMIN_ID) ON DELETE SET NULL ON UPDATE CASCADE COMMENT '생성자 참조',
-    FOREIGN KEY (UPDATED_BY) REFERENCES ADMIN_USER(ADMIN_ID) ON DELETE SET NULL ON UPDATE CASCADE COMMENT '수정자 참조',
+    -- 기본 정보
+    id int(11) NOT NULL AUTO_INCREMENT COMMENT '메뉴 고유 ID',
+    name varchar(100) NOT NULL COMMENT '메뉴 이름',
+    type enum('LINK','FOLDER','BOARD','CONTENT','PROGRAM') NOT NULL COMMENT '메뉴 타입',
+    url varchar(255) DEFAULT NULL COMMENT '링크 URL',
+    target_id bigint(20) unsigned DEFAULT NULL COMMENT '연결 대상 ID',
+    display_position varchar(50) NOT NULL COMMENT '메뉴 표시 위치',
+    sort_order int(11) NOT NULL DEFAULT 0 COMMENT '메뉴 순서',
+    parent_id int(11) DEFAULT NULL COMMENT '상위 메뉴 ID',
     
-    UNIQUE KEY unique_service_menu_code (SERVICE_ID, MENU_CODE) COMMENT '서비스별 메뉴 코드 유일성 제약',
-    INDEX idx_service_status (SERVICE_ID, VISIBLE) COMMENT '서비스/상태 기반 검색용 인덱스',
-    INDEX idx_parent_level_order (PARENT_MENU_ID, MENU_LEVEL, SORT_ORDER) COMMENT '메뉴 구조 조회용 인덱스',
-    INDEX idx_organization (ORGANIZATION_ID) COMMENT '기관별 메뉴 검색용 인덱스',
-    INDEX idx_target (MENU_TYPE, TARGET_ID) COMMENT '타겟 ID 검색용 인덱스'
+    -- 통합 CMS 필드
+    service_id int(10) unsigned NULL COMMENT '서비스 ID',
+    menu_code varchar(50) NULL COMMENT '메뉴 코드',
+    menu_level int(11) DEFAULT 1 COMMENT '메뉴 레벨',
+    visible varchar(20) DEFAULT 'ACTIVE' COMMENT '상태',
+    required_permissions JSON NULL COMMENT '필요 권한',
+    config JSON NULL COMMENT '설정 정보',
+    organization_id varchar(36) NULL COMMENT '기관 ID',
+    
+    -- 동기화 필드
+    unified_menu_id int(10) unsigned NULL COMMENT '통합 메뉴 ID',
+    unified_sync_status varchar(20) DEFAULT 'PENDING' COMMENT '동기화 상태',
+    unified_sync_message TEXT NULL COMMENT '동기화 메시지',
+    unified_last_sync timestamp NULL COMMENT '동기화 시각',
+    
+    -- 감사 필드
+    created_by varchar(36) DEFAULT NULL,
+    created_at timestamp NOT NULL DEFAULT current_timestamp(),
+    updated_by varchar(36) DEFAULT NULL,
+    updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    
+    -- 제약조건
+    PRIMARY KEY (id),
+    UNIQUE KEY unique_service_menu_code (service_id, menu_code),
+    FOREIGN KEY (service_id) REFERENCES service(id),
+    FOREIGN KEY (parent_id) REFERENCES menu(id),
+    FOREIGN KEY (created_by) REFERENCES admin_user(uuid),
+    FOREIGN KEY (updated_by) REFERENCES admin_user(uuid),
+    
+    -- 주요 인덱스
+    INDEX idx_service_status (service_id, visible),
+    INDEX idx_parent_level_order (parent_id, menu_level, sort_order),
+    INDEX idx_sync_status (unified_sync_status, unified_last_sync)
 );
 ```
 
@@ -412,83 +423,114 @@ CREATE TABLE ADMIN_MENU_PERMISSION (
 #### 3.3.1 통합 콘텐츠 관리 테이블 (UNIFIED_CONTENT)
 
 ```sql
--- 통합 게시글 관리 테이블 (기존 bbs_article 구조 기반)
-CREATE TABLE UNIFIED_CONTENT (
-    CONTENT_ID int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '통합 콘텐츠 ID',
-    SERVICE_ID int(10) unsigned NOT NULL COMMENT '원본 서비스 ID',
-    ORIGINAL_CONTENT_ID int(10) unsigned NOT NULL COMMENT '원본 콘텐츠 ID (서비스 내 콘텐츠)',
-    CONTENT_TYPE VARCHAR(20) NOT NULL COMMENT '콘텐츠 유형 (BOARD, POPUP, CONTENT, MENU)',
-    
-    -- 기존 bbs_article 구조 기반 필드들
-    BBS_ID int(10) unsigned NULL COMMENT 'FK: 게시판 ID (BOARD 타입인 경우)',
-    MENU_ID int(11) NULL COMMENT 'FK: 메뉴 ID',
-    PARENT_CONTENT_ID int(10) unsigned NULL COMMENT '부모 콘텐츠 ID (답변형)',
-    THREAD_DEPTH int(10) unsigned DEFAULT 0 COMMENT '답변 깊이',
-    
-    -- 콘텐츠 기본 정보
-    WRITER VARCHAR(50) NOT NULL COMMENT '작성자',
-    TITLE VARCHAR(255) NOT NULL COMMENT '제목',
-    CONTENT TEXT COMMENT '내용',
-    
-    -- 공지사항 관리
-    NOTICE_STATE VARCHAR(1) DEFAULT 'N' COMMENT '공지 여부(Y=공지,N=미공지,P=영구공지)',
-    NOTICE_START_DT DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '공지 시작일',
-    NOTICE_END_DT DATETIME DEFAULT (CURRENT_TIMESTAMP + INTERVAL 1 DAY) COMMENT '공지 종료일',
-    
-    -- 게시 관리
-    PUBLISH_STATE VARCHAR(1) DEFAULT 'N' COMMENT '게시 여부(Y=게시,N=미게시,P=영구게시)',
-    PUBLISH_START_DT DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '게시 시작일',
-    PUBLISH_END_DT DATETIME DEFAULT (CURRENT_TIMESTAMP + INTERVAL 1 DAY) COMMENT '게시 종료일',
-    
-    -- 추가 정보
-    EXTERNAL_LINK VARCHAR(255) COMMENT '외부 링크 URL',
-    HITS INT DEFAULT 0 COMMENT '조회수',
-    POSTED_AT DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '표시용 등록일 (관리자 수정 가능)',
-    DISPLAY_WRITER VARCHAR(50) COMMENT '표시용 작성자 (관리자 수정 가능)',
-    HAS_IMAGE_IN_CONTENT TINYINT(1) DEFAULT 0 COMMENT '본문 내 이미지 포함 여부',
-    
-    -- 통합 관리용 필드
-    ORGANIZATION_ID VARCHAR(36) COMMENT '소속 기관 ID',
-    SYNC_STATUS VARCHAR(20) DEFAULT 'PENDING' COMMENT '동기화 상태 (PENDING, SUCCESS, ERROR)',
-    SYNC_MESSAGE TEXT COMMENT '동기화 실패 시 에러 메시지',
-    LAST_SYNCED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '최종 동기화 시각',
-    
-    -- 확장 필드
-    ATTRIBUTES JSON COMMENT '콘텐츠 속성 정보',
-    CONFIG JSON COMMENT '콘텐츠 설정 정보',
-    
-    -- 감사 필드
-    CREATED_BY VARCHAR(36) NULL COMMENT '생성자 ID',
-    CREATED_IP VARCHAR(45) NULL COMMENT '생성자 IP',
-    CREATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시각',
-    UPDATED_BY VARCHAR(36) NULL COMMENT '수정자 ID',
-    UPDATED_IP VARCHAR(45) NULL COMMENT '수정자 IP',
-    UPDATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시각',
-    
-    -- 외래키 제약조건
-    FOREIGN KEY (SERVICE_ID) REFERENCES SERVICE(SERVICE_ID) ON DELETE CASCADE ON UPDATE CASCADE COMMENT '서비스 참조',
-    FOREIGN KEY (PARENT_CONTENT_ID) REFERENCES UNIFIED_CONTENT(CONTENT_ID) ON DELETE SET NULL ON UPDATE CASCADE COMMENT '부모 콘텐츠 참조',
-    FOREIGN KEY (CREATED_BY) REFERENCES ADMIN_USER(ADMIN_ID) ON DELETE SET NULL ON UPDATE CASCADE COMMENT '생성자 참조',
-    FOREIGN KEY (UPDATED_BY) REFERENCES ADMIN_USER(ADMIN_ID) ON DELETE SET NULL ON UPDATE CASCADE COMMENT '수정자 참조',
-    
-    -- 인덱스
-    UNIQUE KEY unique_service_content (SERVICE_ID, CONTENT_TYPE, ORIGINAL_CONTENT_ID) COMMENT '서비스별 콘텐츠 유일성 제약',
-    INDEX idx_service_type_status (SERVICE_ID, CONTENT_TYPE, PUBLISH_STATE) COMMENT '서비스/유형/게시상태별 조회용 인덱스',
-    INDEX idx_sync_status (SYNC_STATUS, LAST_SYNCED_AT) COMMENT '동기화 상태 모니터링용 인덱스',
-    INDEX idx_title_content (TITLE, CONTENT(255)) COMMENT '제목/내용 검색용 인덱스',
-    INDEX idx_writer (WRITER) COMMENT '작성자 검색용 인덱스',
-    INDEX idx_organization (ORGANIZATION_ID) COMMENT '기관별 콘텐츠 검색용 인덱스',
-    INDEX idx_parent_depth (PARENT_CONTENT_ID, THREAD_DEPTH) COMMENT '답변형 게시글 조회용 인덱스',
-    INDEX idx_notice_period (NOTICE_STATE, NOTICE_START_DT, NOTICE_END_DT) COMMENT '공지사항 기간 조회용 인덱스',
-    INDEX idx_publish_period (PUBLISH_STATE, PUBLISH_START_DT, PUBLISH_END_DT) COMMENT '게시 기간 조회용 인덱스',
-    INDEX idx_posted_at (POSTED_AT) COMMENT '게시일 정렬용 인덱스',
-    INDEX idx_hits (HITS) COMMENT '조회수 정렬용 인덱스',
-    
-    -- 체크 제약조건
-    CHECK (SYNC_STATUS != 'ERROR' OR SYNC_MESSAGE IS NOT NULL) COMMENT '동기화 실패 시 에러 메시지 필수',
-    CHECK (NOTICE_END_DT >= NOTICE_START_DT) COMMENT '공지 종료일은 시작일보다 이후여야 함',
-    CHECK (PUBLISH_END_DT >= PUBLISH_START_DT) COMMENT '게시 종료일은 시작일보다 이후여야 함',
-    CHECK (THREAD_DEPTH >= 0) COMMENT '답변 깊이는 0 이상이어야 함'
+-- 게시판 설정 테이블
+CREATE TABLE bbs_master (
+  BBS_ID int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'PK: 게시판 ID',
+  BBS_NAME varchar(100) NOT NULL COMMENT '게시판 이름',
+  SKIN_TYPE enum('BASIC','FAQ','QNA','PRESS','FORM') NOT NULL COMMENT '게시판 스킨 유형',
+  READ_AUTH varchar(50) NOT NULL COMMENT '읽기 권한 코드',
+  WRITE_AUTH varchar(50) NOT NULL COMMENT '쓰기 권한 코드',
+  ADMIN_AUTH varchar(50) NOT NULL COMMENT '관리 권한 코드',
+  DISPLAY_YN varchar(1) DEFAULT 'Y' COMMENT '노출 여부',
+  SORT_ORDER varchar(1) DEFAULT 'D' COMMENT '게시판 정렬 순서(A=오름차순,D=내림차순)',
+  NOTICE_YN varchar(1) DEFAULT 'N' COMMENT '공지 여부(Y=공지,N=미공지)',
+  PUBLISH_YN varchar(1) DEFAULT 'N' COMMENT '게시 여부(Y=게시,N=미게시)',
+  ATTACHMENT_YN varchar(1) DEFAULT 'N' COMMENT '첨부파일 기능 사용여부',
+  ATTACHMENT_LIMIT int(11) DEFAULT 0 COMMENT '첨부파일 최대 개수',
+  ATTACHMENT_SIZE int(11) DEFAULT 0 COMMENT '첨부파일 최대 용량(MB)',
+  CREATED_BY varchar(36) DEFAULT NULL COMMENT '생성자 ID',
+  CREATED_IP varchar(45) DEFAULT NULL COMMENT '생성자 IP',
+  CREATED_AT timestamp NOT NULL DEFAULT current_timestamp() COMMENT '생성 시각',
+  UPDATED_BY varchar(36) DEFAULT NULL COMMENT '수정자 ID',
+  UPDATED_IP varchar(45) DEFAULT NULL COMMENT '수정자 IP',
+  UPDATED_AT timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정 시각',
+  PRIMARY KEY (BBS_ID)
+);
+
+-- 게시판 카테고리 테이블
+CREATE TABLE bbs_category (
+  CATEGORY_ID int(20) unsigned NOT NULL AUTO_INCREMENT,
+  BBS_ID int(20) unsigned NOT NULL COMMENT 'FK: 게시판 ID',
+  CODE varchar(50) NOT NULL COMMENT '카테고리 코드',
+  NAME varchar(100) NOT NULL COMMENT '카테고리 이름',
+  SORT_ORDER int(11) DEFAULT 0 COMMENT '카테고리 정렬 순서',
+  DISPLAY_YN varchar(1) DEFAULT 'Y' COMMENT '노출 여부(Y,N)',
+  CREATED_BY varchar(36) DEFAULT NULL COMMENT '생성자 ID',
+  CREATED_IP varchar(45) DEFAULT NULL COMMENT '생성자 IP',
+  CREATED_AT timestamp NOT NULL DEFAULT current_timestamp() COMMENT '생성 시각',
+  UPDATED_BY varchar(36) DEFAULT NULL COMMENT '수정자 ID',
+  UPDATED_IP varchar(45) DEFAULT NULL COMMENT '수정자 IP',
+  UPDATED_AT timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정 시각',
+  PRIMARY KEY (CATEGORY_ID),
+  UNIQUE KEY UK_BBS_CATEGORY_CODE (BBS_ID,CODE),
+  KEY IDX_CATEGORY_SORT (BBS_ID,SORT_ORDER,DISPLAY_YN),
+  CONSTRAINT bbs_category_ibfk_1 FOREIGN KEY (BBS_ID) REFERENCES bbs_master (BBS_ID) ON DELETE CASCADE
+);
+
+-- 게시글-카테고리 매핑 테이블
+CREATE TABLE bbs_article_category (
+  NTT_ID int(20) unsigned NOT NULL COMMENT 'FK: 게시글 ID',
+  CATEGORY_ID int(20) unsigned NOT NULL COMMENT 'FK: 카테고리 ID',
+  PRIMARY KEY (NTT_ID,CATEGORY_ID),
+  KEY IDX_ARTICLE_CATEGORY (CATEGORY_ID,NTT_ID),
+  CONSTRAINT bbs_article_category_ibfk_1 FOREIGN KEY (NTT_ID) REFERENCES bbs_article (NTT_ID) ON DELETE CASCADE,
+  CONSTRAINT bbs_article_category_ibfk_2 FOREIGN KEY (CATEGORY_ID) REFERENCES bbs_category (CATEGORY_ID) ON DELETE CASCADE
+);
+
+-- 게시판 댓글 테이블
+CREATE TABLE bbs_comment (
+  COMMENT_ID bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'PK: 댓글 ID',
+  NTT_ID int(10) unsigned NOT NULL COMMENT 'FK: 게시글 ID',
+  CONTENT text NOT NULL COMMENT '댓글 내용',
+  WRITER varchar(50) NOT NULL COMMENT '작성자 ID',
+  DISPLAY_WRITER varchar(50) DEFAULT NULL COMMENT '표시될 작성자명',
+  IS_DELETED char(1) NOT NULL DEFAULT 'N' COMMENT '삭제 여부 (Y/N)',
+  CREATED_BY varchar(36) DEFAULT NULL COMMENT '생성자 ID',
+  CREATED_IP varchar(45) DEFAULT NULL COMMENT '생성자 IP',
+  CREATED_AT timestamp NOT NULL DEFAULT current_timestamp() COMMENT '생성 시각',
+  UPDATED_BY varchar(36) DEFAULT NULL COMMENT '수정자 ID',
+  UPDATED_IP varchar(45) DEFAULT NULL COMMENT '수정자 IP',
+  UPDATED_AT timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정 시각',
+  PRIMARY KEY (COMMENT_ID),
+  KEY idx_voice_comment_ntt_id (NTT_ID),
+  CONSTRAINT fk_voice_comment_to_bbs_article FOREIGN KEY (NTT_ID) REFERENCES bbs_article (NTT_ID) ON DELETE CASCADE
+);
+
+-- 게시판 게시글 테이블
+CREATE TABLE bbs_article (
+  NTT_ID int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'PK: 게시글 ID',
+  BBS_ID int(10) unsigned NOT NULL COMMENT 'FK: 게시판 ID',
+  MENU_ID int(11) NOT NULL COMMENT 'FK: 메뉴 ID',
+  PARENT_NTT_ID int(10) unsigned DEFAULT NULL COMMENT '부모 글 ID(답변형)',
+  THREAD_DEPTH int(10) unsigned DEFAULT 0 COMMENT '답변 깊이',
+  WRITER varchar(50) NOT NULL COMMENT '작성자',
+  TITLE varchar(255) NOT NULL COMMENT '제목',
+  content text DEFAULT NULL COMMENT '내용',
+  NOTICE_STATE varchar(1) DEFAULT 'N' COMMENT '공지 여부(Y=공지,N=미공지,P=영구공지)',
+  NOTICE_START_DT datetime DEFAULT curdate() COMMENT '공지 시작일',
+  NOTICE_END_DT datetime DEFAULT (curdate() + interval 1 day) COMMENT '공지 종료일',
+  PUBLISH_STATE varchar(1) DEFAULT 'N' COMMENT '게시 여부(Y=게시,N=미게시,P=영구게시)',
+  PUBLISH_START_DT datetime DEFAULT curdate() COMMENT '게시 시작일',
+  PUBLISH_END_DT datetime DEFAULT (curdate() + interval 1 day) COMMENT '게시 종료일',
+  EXTERNAL_LINK varchar(255) DEFAULT NULL COMMENT '외부 링크 URL',
+  HITS int(11) DEFAULT 0 COMMENT '조회수',
+  POSTED_AT datetime NOT NULL DEFAULT current_timestamp() COMMENT '표시용 등록일 (관리자 수정 가능)',
+  DISPLAY_WRITER varchar(50) DEFAULT NULL COMMENT '표시용 작성자 (관리자 수정 가능)',
+  CREATED_BY varchar(36) DEFAULT NULL COMMENT '생성자 ID',
+  CREATED_IP varchar(45) DEFAULT NULL COMMENT '생성자 IP',
+  CREATED_AT timestamp NOT NULL DEFAULT current_timestamp() COMMENT '생성 시각',
+  UPDATED_BY varchar(36) DEFAULT NULL COMMENT '수정자 ID',
+  UPDATED_IP varchar(45) DEFAULT NULL COMMENT '수정자 IP',
+  UPDATED_AT timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT '수정 시각',
+  has_image_in_content tinyint(1) DEFAULT 0 COMMENT '본문 내 이미지 포함 여부',
+  PRIMARY KEY (NTT_ID),
+  KEY fk_bbs_article_master (BBS_ID),
+  KEY fk_bbs_article_parent (PARENT_NTT_ID),
+  KEY idx_article_search (TITLE,content(255)),
+  KEY fk_bbs_article_menu (MENU_ID),
+  CONSTRAINT fk_bbs_article_master FOREIGN KEY (BBS_ID) REFERENCES bbs_master (BBS_ID) ON DELETE CASCADE,
+  CONSTRAINT fk_bbs_article_menu FOREIGN KEY (MENU_ID) REFERENCES menu (id) ON DELETE CASCADE,
+  CONSTRAINT fk_bbs_article_parent FOREIGN KEY (PARENT_NTT_ID) REFERENCES bbs_article (NTT_ID) ON DELETE SET NULL
 );
 ```
 

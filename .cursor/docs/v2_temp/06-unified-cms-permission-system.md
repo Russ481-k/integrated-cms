@@ -58,7 +58,158 @@
 
 ---
 
-## 2. 권한 검증 흐름
+## 2. 메뉴 권한 관리
+
+### 2.1 메뉴 권한 시스템
+
+#### 권한 구조
+
+1. **시스템 레벨**
+   - `MENU_SYSTEM_MANAGE`: 전체 관리
+   - `MENU_SERVICE_MANAGE`: 서비스별 관리
+   - `MENU_SYNC_MANAGE`: 동기화 관리
+
+2. **관리 레벨**
+   - `MENU_MANAGE`: 전체 접근
+   - `MENU_CREATE`: 생성
+   - `MENU_READ`: 조회
+   - `MENU_UPDATE`: 수정
+   - `MENU_DELETE`: 삭제
+   - `MENU_POSITION`: 위치 변경
+
+3. **동적 권한**
+   - `MENU_{CODE}_ACCESS`: 접근
+   - `MENU_{CODE}_MANAGE`: 관리
+
+#### 권한 데이터
+
+```typescript
+interface MenuPermission {
+  // 접근 권한
+  access: {
+    type: 'ALLOW' | 'DENY';
+    level: 'READ' | 'WRITE' | 'MANAGE';
+  };
+  
+  // 기능 권한
+  features?: {
+    create?: boolean;
+    update?: boolean;
+    delete?: boolean;
+  };
+  
+  // 범위
+  scope?: {
+    includeChildren: boolean;
+    maxDepth?: number;
+  };
+}
+```
+
+#### 권한 평가 규칙
+
+1. **우선순위**
+   - 명시적 거부 (최우선)
+   - 직접 허용
+   - 그룹 허용
+   - 역할 기반 허용
+   - 기본 거부 (최후)
+
+2. **상속 규칙**
+   - 상위 메뉴 권한 상속
+   - 서비스 레벨 권한 적용
+   - 개별 메뉴 권한 적용
+
+### 2.2 메뉴 권한 평가
+
+```java
+@Component
+public class MenuPermissionEvaluator {
+    
+    public boolean hasMenuPermission(Authentication auth, Menu menu, String action) {
+        // 1. 명시적 거부 확인
+        if (hasExplicitDeny(auth, menu, action)) {
+            return false;
+        }
+
+        // 2. 사용자 직접 권한 확인
+        if (hasUserPermission(auth, menu, action)) {
+            return true;
+        }
+
+        // 3. 그룹 권한 확인
+        if (hasGroupPermission(auth, menu, action)) {
+            return true;
+        }
+
+        // 4. 역할 기반 권한 확인
+        if (hasRolePermission(auth, menu, action)) {
+            return true;
+        }
+
+        // 5. 기본 거부
+        return false;
+    }
+
+    private boolean hasExplicitDeny(Authentication auth, Menu menu, String action) {
+        AdminUser user = (AdminUser) auth.getPrincipal();
+        return user.getDeniedPermissions().stream()
+            .anyMatch(p -> p.matches(menu.getServiceId(), menu.getMenuCode(), action));
+    }
+
+    private boolean hasUserPermission(Authentication auth, Menu menu, String action) {
+        AdminUser user = (AdminUser) auth.getPrincipal();
+        return user.getPermissions().stream()
+            .anyMatch(p -> p.matches(menu.getServiceId(), menu.getMenuCode(), action));
+    }
+
+    private boolean hasGroupPermission(Authentication auth, Menu menu, String action) {
+        AdminUser user = (AdminUser) auth.getPrincipal();
+        return user.getGroups().stream()
+            .flatMap(g -> g.getPermissions().stream())
+            .anyMatch(p -> p.matches(menu.getServiceId(), menu.getMenuCode(), action));
+    }
+
+    private boolean hasRolePermission(Authentication auth, Menu menu, String action) {
+        return auth.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .anyMatch(role -> hasRoleBasedPermission(role, menu, action));
+    }
+}
+```
+
+### 2.3 메뉴 권한 설정 예시
+
+```java
+// 1. 메뉴 생성 시 권한 설정
+Menu menu = Menu.builder()
+    .serviceId(serviceId)
+    .menuCode("BOARD_NOTICE")
+    .name("공지사항")
+    .type(MenuType.BOARD)
+    .requiredPermissions(Arrays.asList(
+        "MENU_BOARD_NOTICE_ACCESS",  // 접근 권한
+        "BOARD_READ",                // 게시판 읽기 권한
+        "BOARD_WRITE"                // 게시판 쓰기 권한
+    ))
+    .build();
+
+// 2. 관리자에게 권한 할당
+AdminUser admin = adminUserRepository.findById(adminId).get();
+admin.addPermission(Permission.builder()
+    .serviceId(serviceId)
+    .permissionCode("MENU_BOARD_NOTICE_ACCESS")
+    .build());
+
+// 3. 그룹에 권한 할당
+AdminGroup group = adminGroupRepository.findById(groupId).get();
+group.addPermission(Permission.builder()
+    .serviceId(serviceId)
+    .permissionCode("MENU_BOARD_NOTICE_MANAGE")
+    .build());
+```
+
+## 3. 권한 검증 흐름
 
 ### 2.1 통합 권한 검증 플로우
 
@@ -98,6 +249,129 @@ flowchart TD
 ```
 
 ### 2.2 세부 권한 검증 알고리즘
+
+### 2.3 게시판 권한 체계
+
+#### 게시판 권한 구조
+
+1. **게시판 관리 권한**
+   - `READ_AUTH`: 게시판 읽기 권한
+   - `WRITE_AUTH`: 게시판 쓰기 권한
+   - `ADMIN_AUTH`: 게시판 관리 권한
+
+2. **게시판 유형별 권한**
+   - **BASIC**: 일반 게시판
+     - 읽기: 일반 사용자
+     - 쓰기: 로그인 사용자
+     - 관리: 관리자
+   - **FAQ**: 자주 묻는 질문
+     - 읽기: 일반 사용자
+     - 쓰기: 관리자
+     - 관리: 관리자
+   - **QNA**: 질문과 답변
+     - 읽기: 로그인 사용자
+     - 쓰기: 로그인 사용자
+     - 관리: 관리자
+   - **PRESS**: 보도자료
+     - 읽기: 일반 사용자
+     - 쓰기: 관리자
+     - 관리: 관리자
+   - **FORM**: 신청 양식
+     - 읽기: 로그인 사용자
+     - 쓰기: 로그인 사용자
+     - 관리: 관리자
+
+3. **권한 코드 체계**
+   ```
+   ROLE_ANONYMOUS  : 비로그인 사용자
+   ROLE_USER      : 로그인 사용자
+   ROLE_ADMIN     : 관리자
+   ROLE_SUPER     : 최고 관리자
+   ```
+
+4. **권한 평가 로직**
+   ```java
+   public boolean hasPermission(String authCode, String requiredAuth) {
+       // 권한 레벨 매핑
+       Map<String, Integer> authLevels = Map.of(
+           "ROLE_ANONYMOUS", 0,
+           "ROLE_USER", 1,
+           "ROLE_ADMIN", 2,
+           "ROLE_SUPER", 3
+       );
+       
+       // 현재 사용자 권한 레벨
+       int userLevel = authLevels.getOrDefault(authCode, 0);
+       // 필요 권한 레벨
+       int requiredLevel = authLevels.getOrDefault(requiredAuth, 0);
+       
+       return userLevel >= requiredLevel;
+   }
+   ```
+
+#### 권한 평가 로직
+
+```typescript
+interface MenuPermission {
+  menuCode: string;
+  permissionType: 'ACCESS' | 'MANAGE';
+  granted: boolean;
+  source: 'EXPLICIT' | 'GROUP' | 'ROLE' | 'DEFAULT';
+}
+
+function evaluateMenuPermission(
+  user: AdminUser,
+  menuCode: string,
+  requiredPermission: 'ACCESS' | 'MANAGE'
+): MenuPermission {
+  // 1. 명시적 거부 확인
+  if (hasExplicitDeny(user, menuCode, requiredPermission)) {
+    return {
+      menuCode,
+      permissionType: requiredPermission,
+      granted: false,
+      source: 'EXPLICIT'
+    };
+  }
+
+  // 2. 사용자 직접 권한 확인
+  if (hasUserPermission(user, menuCode, requiredPermission)) {
+    return {
+      menuCode,
+      permissionType: requiredPermission,
+      granted: true,
+      source: 'EXPLICIT'
+    };
+  }
+
+  // 3. 그룹 권한 확인
+  if (hasGroupPermission(user, menuCode, requiredPermission)) {
+    return {
+      menuCode,
+      permissionType: requiredPermission,
+      granted: true,
+      source: 'GROUP'
+    };
+  }
+
+  // 4. 역할 기반 권한 확인
+  if (hasRolePermission(user, menuCode, requiredPermission)) {
+    return {
+      menuCode,
+      permissionType: requiredPermission,
+      granted: true,
+      source: 'ROLE'
+    };
+  }
+
+  // 5. 기본 거부
+  return {
+    menuCode,
+    permissionType: requiredPermission,
+    granted: false,
+    source: 'DEFAULT'
+  };
+}
 
 #### 2.2.1 권한 수집 단계
 

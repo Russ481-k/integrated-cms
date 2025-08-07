@@ -65,7 +65,107 @@
 - 보안 정책 및 네트워크 설정
 - 백업/복구 프로세스 수립
 
-### 2.2 Phase 2: 첫 번째 서비스 마이그레이션 (6주)
+### 2.2 게시판 시스템 마이그레이션
+
+#### 기존 게시판 구조
+
+1. **게시판 마스터 (bbs_master)**
+   - 게시판 기본 설정
+   - 스킨 타입 (BASIC, FAQ, QNA, PRESS, FORM)
+   - 권한 설정 (읽기/쓰기/관리)
+   - 첨부파일 설정
+
+2. **게시글 (bbs_article)**
+   - 계층형 답변 구조
+   - 공지사항 관리
+   - 게시 기간 관리
+   - 작성자 표시 관리
+
+3. **카테고리 (bbs_category)**
+   - 게시판별 카테고리
+   - 코드 기반 식별
+   - 정렬 순서 관리
+
+4. **댓글 (bbs_comment)**
+   - 게시글별 댓글
+   - 논리적 삭제
+   - 작성자 표시 관리
+
+#### 마이그레이션 절차
+
+1. **데이터 준비**
+   - 기존 게시판 데이터 분석
+   - 데이터 정합성 검증
+   - 백업 테이블 생성
+
+2. **스키마 확장**
+   ```sql
+   -- 게시판 마스터 테이블 확장
+   ALTER TABLE bbs_master
+       ADD COLUMN service_id int(10) unsigned NULL COMMENT '서비스 ID',
+       ADD COLUMN unified_board_id int(10) unsigned NULL COMMENT '통합 게시판 ID',
+       ADD COLUMN unified_sync_status varchar(20) DEFAULT 'PENDING' COMMENT '동기화 상태',
+       ADD COLUMN unified_sync_message text NULL COMMENT '동기화 메시지',
+       ADD COLUMN unified_last_sync timestamp NULL COMMENT '최종 동기화 시각',
+       ADD FOREIGN KEY (service_id) REFERENCES service(id);
+
+   -- 게시글 테이블 확장
+   ALTER TABLE bbs_article
+       ADD COLUMN service_id int(10) unsigned NULL COMMENT '서비스 ID',
+       ADD COLUMN unified_content_id int(10) unsigned NULL COMMENT '통합 콘텐츠 ID',
+       ADD COLUMN unified_sync_status varchar(20) DEFAULT 'PENDING' COMMENT '동기화 상태',
+       ADD COLUMN unified_sync_message text NULL COMMENT '동기화 메시지',
+       ADD COLUMN unified_last_sync timestamp NULL COMMENT '최종 동기화 시각',
+       ADD FOREIGN KEY (service_id) REFERENCES service(id);
+   ```
+
+3. **데이터 검증**
+   ```sql
+   -- 게시판 데이터 검증
+   SELECT BBS_ID, BBS_NAME, SKIN_TYPE, READ_AUTH, WRITE_AUTH, ADMIN_AUTH
+   FROM bbs_master
+   WHERE READ_AUTH IS NULL OR WRITE_AUTH IS NULL OR ADMIN_AUTH IS NULL;
+
+   -- 게시글 데이터 검증
+   SELECT NTT_ID, BBS_ID, TITLE, WRITER, NOTICE_STATE, PUBLISH_STATE
+   FROM bbs_article
+   WHERE BBS_ID NOT IN (SELECT BBS_ID FROM bbs_master)
+   OR NOTICE_STATE NOT IN ('Y', 'N', 'P')
+   OR PUBLISH_STATE NOT IN ('Y', 'N', 'P');
+
+   -- 카테고리 데이터 검증
+   SELECT CATEGORY_ID, BBS_ID, CODE, NAME
+   FROM bbs_category
+   WHERE BBS_ID NOT IN (SELECT BBS_ID FROM bbs_master);
+   ```
+
+#### 롤백 계획
+
+1. **준비 사항**
+   - 기존 테이블 구조 백업
+   - 데이터 백업
+   - 롤백 스크립트 준비
+
+2. **롤백 절차**
+   ```sql
+   -- 확장 필드 제거
+   ALTER TABLE bbs_master
+       DROP COLUMN service_id,
+       DROP COLUMN unified_board_id,
+       DROP COLUMN unified_sync_status,
+       DROP COLUMN unified_sync_message,
+       DROP COLUMN unified_last_sync;
+
+   ALTER TABLE bbs_article
+       DROP COLUMN service_id,
+       DROP COLUMN unified_content_id,
+       DROP COLUMN unified_sync_status,
+       DROP COLUMN unified_sync_message,
+       DROP COLUMN unified_last_sync;
+   ```
+```
+
+### 2.3 Phase 2: 첫 번째 서비스 마이그레이션 (6주)
 
 #### 🎯 파일럿 서비스 선정
 

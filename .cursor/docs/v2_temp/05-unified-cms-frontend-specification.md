@@ -249,9 +249,80 @@ interface PermissionManagementProps {
 - 권한 매트릭스 관리
 - 권한 감사 로그
 
-### 2.3 공통 컴포넌트
+### 2.3 메뉴 관리 컴포넌트
 
-#### 2.3.1 서비스 선택기
+#### 2.3.1 MenuTree 컴포넌트
+
+메뉴의 계층 구조를 표시하고 관리하는 트리 뷰 컴포넌트
+
+```typescript
+interface MenuNode {
+  menuId: number;
+  menuName: string;
+  menuCode: string;
+  menuType: 'LINK' | 'FOLDER' | 'BOARD' | 'CONTENT' | 'PROGRAM';
+  url?: string;
+  targetId?: number;
+  displayPosition: string;
+  sortOrder: number;
+  visible: 'ACTIVE' | 'INACTIVE' | 'HIDDEN';
+  children: MenuNode[];
+}
+
+interface MenuTreeProps {
+  serviceId: number;
+  data: MenuNode[];
+  onNodeSelect: (node: MenuNode) => void;
+  onDragEnd: (source: MenuNode, target: MenuNode, position: 'before' | 'after' | 'inside') => void;
+  onVisibilityChange: (node: MenuNode, visible: 'ACTIVE' | 'INACTIVE' | 'HIDDEN') => void;
+}
+```
+
+#### 2.3.2 MenuForm 컴포넌트
+
+메뉴 생성 및 수정을 위한 폼 컴포넌트
+
+```typescript
+interface MenuFormProps {
+  serviceId: number;
+  menu?: MenuNode;
+  parentMenu?: MenuNode;
+  mode: 'create' | 'edit';
+  onSubmit: (data: MenuFormData) => Promise<void>;
+  onCancel: () => void;
+}
+
+interface MenuFormData {
+  menuName: string;
+  menuCode: string;
+  menuType: 'LINK' | 'FOLDER' | 'BOARD' | 'CONTENT' | 'PROGRAM';
+  url?: string;
+  targetId?: number;
+  displayPosition: string;
+  parentMenuId?: number;
+  sortOrder: number;
+  visible: 'ACTIVE' | 'INACTIVE' | 'HIDDEN';
+  requiredPermissions: string[];
+}
+```
+
+#### 2.3.3 MenuPositionDialog 컴포넌트
+
+메뉴 위치 및 순서 변경을 위한 다이얼로그 컴포넌트
+
+```typescript
+interface MenuPositionDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  menu: MenuNode;
+  allMenus: MenuNode[];
+  onPositionChange: (newParentId: number | null, newOrder: number) => Promise<void>;
+}
+```
+
+### 2.4 공통 컴포넌트
+
+#### 2.4.1 서비스 선택기
 ```typescript
 const ServiceSelector: React.FC<{
   value: number | null;
