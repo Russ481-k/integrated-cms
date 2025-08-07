@@ -17,14 +17,10 @@
    - 해당 서비스 DB 전체 접근 가능
    - 서비스 내 권한 관리 가능
 
-3. 그룹 관리자 (Group Administrator)
-   - 특정 그룹의 권한 관리자
-   - 그룹에 할당된 권한 범위 내 접근
-   - 그룹 멤버 관리 권한
-
-4. 일반 사용자 (Regular User)
-   - 할당된 권한 범위 내 접근
-   - 기본 그룹 권한 + 추가 권한
+3. 일반 관리자 (Regular Administrator)
+   - 반드시 하나의 그룹에 소속
+   - 소속 그룹의 기본 권한 보유
+   - 추가 권한 보유 가능
 
 ### 2.2 데이터베이스 접근 레벨
 
@@ -44,29 +40,25 @@
 
 ### 3.1 통합 관리 데이터베이스
 
-| 테이블 | 슈퍼 관리자 | 서비스 관리자 | 그룹 관리자 | 일반 사용자 |
-|--------|------------|--------------|------------|------------|
-| ADMIN_USER | ADMIN | READ | READ | NONE |
-| SERVICE | ADMIN | READ | READ | NONE |
-| SERVICE_GROUP | ADMIN | WRITE* | READ | NONE |
-| SERVICE_MEMBER_GROUP | ADMIN | WRITE* | WRITE** | READ |
-| SERVICE_PERMISSION | ADMIN | WRITE* | WRITE** | READ |
-| SERVICE_PERMISSION_LOG | ADMIN | READ* | READ** | NONE |
+| 테이블 | 슈퍼 관리자 | 서비스 관리자 | 일반 관리자 |
+|--------|------------|--------------|------------|
+| ADMIN_USER | ADMIN | READ | NONE |
+| SERVICE | ADMIN | READ | NONE |
+| SERVICE_GROUP | ADMIN | WRITE* | READ |
+| SERVICE_MEMBER_GROUP | ADMIN | WRITE* | READ |
+| SERVICE_PERMISSION | ADMIN | WRITE* | READ |
+| SERVICE_PERMISSION_LOG | ADMIN | READ* | NONE |
 
 \* 해당 서비스 범위 내에서만 가능
-\** 해당 그룹 범위 내에서만 가능
 
 ### 3.2 서비스 데이터베이스
 
-| 구분 | 슈퍼 관리자 | 서비스 관리자 | 그룹 관리자 | 일반 사용자 |
-|------|------------|--------------|------------|------------|
-| 시스템 설정 | ADMIN | ADMIN | NONE | NONE |
-| 사용자 관리 | ADMIN | ADMIN | WRITE* | NONE |
-| 컨텐츠 관리 | ADMIN | ADMIN | WRITE* | WRITE** |
-| 통계/로그 | ADMIN | ADMIN | READ | READ** |
-
-\* 그룹 멤버에 대해서만 가능
-\** 할당된 권한 범위 내에서만 가능
+| 구분 | 슈퍼 관리자 | 서비스 관리자 | 일반 관리자 |
+|------|------------|--------------|------------|
+| 시스템 설정 | ADMIN | ADMIN | NONE |
+| 사용자 관리 | ADMIN | ADMIN | 그룹 권한에 따름 |
+| 컨텐츠 관리 | ADMIN | ADMIN | 그룹 권한 + 추가 권한 |
+| 통계/로그 | ADMIN | ADMIN | READ |
 
 ## 4. 권한 정책
 
@@ -128,9 +120,10 @@ CREATE PROCEDURE check_service_permission(
 BEGIN
     DECLARE v_has_permission BOOLEAN;
     
-    -- 1. 기본 그룹 권한 확인
-    -- 2. 추가 권한 확인
-    -- 3. 통합 결과 반환
+    -- 1. 통합 관리자 권한 확인
+    -- 2. 그룹 기본 권한 확인
+    -- 3. 추가 권한 확인
+    -- 4. 통합 결과 반환
     
     SELECT EXISTS (
         SELECT 1 FROM SERVICE_PERMISSION
