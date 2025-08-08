@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.egovframe.template</groupId>
-	<artifactId>handy-new-cms</artifactId> 
+	<artifactId>handy-new-cms</artifactId>
 	<packaging>jar</packaging>
 	<version>1.0.0</version>
 	<name>handy-new-cms</name>
@@ -15,11 +16,11 @@
 			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
 		</license>
 	</licenses>
- 
+
 	<properties>
 		<spring.maven.artifact.version>5.3.37</spring.maven.artifact.version>
 		<org.egovframe.rte.version>4.3.0</org.egovframe.rte.version>
-        <selenium.version>4.13.0</selenium.version>
+		<selenium.version>4.13.0</selenium.version>
 	</properties>
 
 	<repositories>
@@ -97,28 +98,28 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-		    <groupId>org.apache.tomcat.embed</groupId>
-		    <artifactId>tomcat-embed-core</artifactId>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-core</artifactId>
 			<version>9.0.73</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.apache.tomcat.embed</groupId>
-		    <artifactId>tomcat-embed-el</artifactId>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-el</artifactId>
 			<version>9.0.73</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.apache.tomcat.embed</groupId>
-		    <artifactId>tomcat-embed-jasper</artifactId>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-jasper</artifactId>
 			<version>9.0.73</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.apache.tomcat.embed</groupId>
-		    <artifactId>tomcat-embed-websocket</artifactId>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-websocket</artifactId>
 			<version>9.0.73</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.apache.tomcat</groupId>
-		    <artifactId>tomcat-annotations-api</artifactId>
+			<groupId>org.apache.tomcat</groupId>
+			<artifactId>tomcat-annotations-api</artifactId>
 			<version>9.0.73</version>
 		</dependency>
 		<dependency>
@@ -139,20 +140,20 @@
 		</dependency>
 		-->
 		<!-- spring boot dependency end -->
-		
+
 		<!-- swagger -->
 		<dependency>
-    		<groupId>org.springdoc</groupId>
-    		<artifactId>springdoc-openapi-ui</artifactId>
-    		<version>1.7.0</version>
-    		<exclusions>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>1.7.0</version>
+			<exclusions>
 				<exclusion>
 					<groupId>org.apache.commons</groupId>
 					<artifactId>commons-lang3</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.egovframe.rte</groupId>
 			<artifactId>org.egovframe.rte.ptl.mvc</artifactId>
@@ -184,11 +185,11 @@
 			<version>${org.egovframe.rte.version}</version>
 		</dependency>
 		<dependency>
-    		<groupId>org.egovframe.rte</groupId>
-    		<artifactId>org.egovframe.rte.fdl.security</artifactId>
-    		<version>${org.egovframe.rte.version}</version>
+			<groupId>org.egovframe.rte</groupId>
+			<artifactId>org.egovframe.rte.fdl.security</artifactId>
+			<version>${org.egovframe.rte.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
@@ -204,14 +205,14 @@
 		</dependency>
 
 		<dependency>
-            <groupId>javax.servlet.jsp.jstl</groupId>
-            <artifactId>jstl-api</artifactId>
-            <version>1.2</version>
-        </dependency>
+			<groupId>javax.servlet.jsp.jstl</groupId>
+			<artifactId>jstl-api</artifactId>
+			<version>1.2</version>
+		</dependency>
 
 		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-dbcp2</artifactId>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-dbcp2</artifactId>
 			<version>2.9.0</version>
 		</dependency>
 		<dependency>
@@ -221,11 +222,11 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
 			<version>1.17.0</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>commons-validator</groupId>
 			<artifactId>commons-validator</artifactId>
@@ -234,8 +235,8 @@
 
 		<dependency>
 			<groupId>org.apache.taglibs</groupId>
-    		<artifactId>taglibs-standard-impl</artifactId>
-    		<version>1.2.5</version>
+			<artifactId>taglibs-standard-impl</artifactId>
+			<version>1.2.5</version>
 		</dependency>
 
 		<dependency>
@@ -263,10 +264,10 @@
 		</dependency>
 
 		<dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.14.0</version>
-        </dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.14.0</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.hsqldb</groupId>
@@ -283,7 +284,7 @@
 		</dependency>
 
 		<!-- mysql driver -->
-        <!-- <dependency>
+		<!-- <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.33</version>
@@ -346,12 +347,12 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 		</dependency>
-		
+
 		<!-- JWT -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -470,7 +471,7 @@
 			<artifactId>niceid</artifactId>
 			<version>1.2</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/libs/NiceID_v1.2.jar</systemPath>
+			<systemPath>${project.basedir}/lib/niceid-1.2.jar</systemPath>
 		</dependency>
 
 		<!-- *** 성능 최적화 및 동시성 제어 의존성 *** -->
@@ -479,19 +480,19 @@
 			<groupId>org.springframework.retry</groupId>
 			<artifactId>spring-retry</artifactId>
 		</dependency>
-		
+
 		<!-- AOP for retry functionality -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-aop</artifactId>
 		</dependency>
-		
+
 		<!-- WebSocket for real-time capacity updates -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
-		
+
 		<!-- Performance monitoring -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -551,7 +552,7 @@
 		<finalName>handy-new-cms</finalName>
 		<pluginManagement>
 			<plugins>
-                <plugin>
+				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.13.0</version>
@@ -570,11 +571,11 @@
                 	<configuration>
                 		<failOnMissingWebXml>false</failOnMissingWebXml>
                 	</configuration>
-                </plugin>-->    
-            </plugins>
-        </pluginManagement>
- 
-        <plugins>
+                </plugin>-->
+			</plugins>
+		</pluginManagement>
+
+		<plugins>
 			<plugin>
 				<groupId>com.mysema.maven</groupId>
 				<artifactId>apt-maven-plugin</artifactId>
@@ -601,22 +602,22 @@
 					</dependency>
 				</dependencies>
 			</plugin>
-		    <plugin>
-      	    	<groupId>org.springframework.boot</groupId>
-            	<artifactId>spring-boot-maven-plugin</artifactId>
-            	<configuration>
-                	<executable>true</executable>
-                	<mainClass>cms.CmsApplication</mainClass>
-                	<includeSystemScope>true</includeSystemScope>
-                	<excludes>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<executable>true</executable>
+					<mainClass>cms.CmsApplication</mainClass>
+					<includeSystemScope>true</includeSystemScope>
+					<excludes>
 						<exclude>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
-            	</configuration>
-            </plugin>
-        </plugins>
+				</configuration>
+			</plugin>
+		</plugins>
 
 		<resources>
 			<resource>
