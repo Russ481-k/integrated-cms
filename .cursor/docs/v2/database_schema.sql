@@ -1,5 +1,25 @@
 -- 통합 CMS v2 데이터베이스 스키마
 
+-- 데이터베이스 생성
+CREATE DATABASE IF NOT EXISTS integrated_cms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- 계정 생성 및 권한 설정
+-- integrated.admin: 통합 CMS DB와 모든 서비스 DB 접근 권한
+CREATE USER 'integrated.admin'@'%' IDENTIFIED BY 'your_secure_password';
+GRANT ALL PRIVILEGES ON integrated_cms.* TO 'integrated.admin'@'%';
+GRANT ALL PRIVILEGES ON douzone.* TO 'integrated.admin'@'%';
+-- 추가 서비스 DB가 생성될 때마다 GRANT 명령어 추가
+
+-- admin: 서비스 DB만 접근 권한
+CREATE USER 'admin'@'%' IDENTIFIED BY 'your_secure_password';
+GRANT ALL PRIVILEGES ON douzone.* TO 'admin'@'%';
+-- 추가 서비스 DB가 생성될 때마다 GRANT 명령어 추가
+
+FLUSH PRIVILEGES;
+
+-- 통합 CMS DB 사용
+USE integrated_cms;
+
 -- 0. 관리자 사용자 테이블 (기존 user 테이블 구조 기반)
 CREATE TABLE ADMIN_USER (
     UUID VARCHAR(36) NOT NULL COMMENT '관리자 고유 ID',
@@ -162,3 +182,65 @@ CREATE TABLE SERVICE_PERMISSION_LOG (
     KEY idx_user_time (USER_UUID, CREATED_AT),
     KEY idx_permission (PERMISSION_ID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '권한 변경 이력';
+
+-- ========================================
+-- 샘플 데이터 및 동적 DB 연결 설정 예시
+-- ========================================
+
+-- 샘플 서비스 데이터 (douzone 서비스 예시)
+INSERT INTO SERVICE (
+    SERVICE_ID, 
+    SERVICE_CODE, 
+    SERVICE_NAME, 
+    SERVICE_DOMAIN, 
+    API_BASE_URL,
+    DB_CONNECTION_INFO,
+    STATUS,
+    DESCRIPTION,
+    CONFIG,
+    CREATED_BY,
+    CREATED_AT
+) VALUES (
+    'service-001',
+    'douzone',
+    'Douzone CMS 서비스',
+    'https://douzone.example.com',
+    'https://api.douzone.example.com',
+    '{"driver":"org.mariadb.jdbc.Driver","url":"jdbc:mariadb://localhost:3306/douzone","username":"admin","password":"encrypted_password","maxPoolSize":20,"minIdle":5}',
+    'ACTIVE',
+    'Douzone 그룹 CMS 서비스',
+    '{"theme":"default","timezone":"Asia/Seoul","locale":"ko_KR"}',
+    'system',
+    NOW()
+);
+
+-- 샘플 서비스 데이터 (service1 예시)
+INSERT INTO SERVICE (
+    SERVICE_ID, 
+    SERVICE_CODE, 
+    SERVICE_NAME, 
+    SERVICE_DOMAIN, 
+    API_BASE_URL,
+    DB_CONNECTION_INFO,
+    STATUS,
+    DESCRIPTION,
+    CONFIG,
+    CREATED_BY,
+    CREATED_AT
+) VALUES (
+    'service-002',
+    'service1',
+    'Service1 CMS',
+    'https://service1.example.com',
+    'https://api.service1.example.com',
+    '{"driver":"org.mariadb.jdbc.Driver","url":"jdbc:mariadb://localhost:3306/service1_db","username":"admin","password":"encrypted_password","maxPoolSize":15,"minIdle":3}',
+    'ACTIVE',
+    'Service1 전용 CMS 서비스',
+    '{"theme":"modern","timezone":"Asia/Seoul","locale":"ko_KR"}',
+    'system',
+    NOW()
+);
+
+-- DB_CONNECTION_INFO 컬럼 설명:
+-- 동적 DataSource 생성을 위한 암호화된 JSON 형태의 DB 연결 정보
+-- 포함 정보: 드라이버, URL, 사용자명, 암호화된 비밀번호, 연결 풀 설정 등

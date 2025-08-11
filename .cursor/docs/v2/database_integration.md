@@ -6,38 +6,43 @@
 
 ```mermaid
 graph TD
-    subgraph 통합 데이터베이스
-        A[ADMIN_USER<br/>슈퍼관리자] --> B[SERVICE<br/>서비스 정보]
-        B --> C[SERVICE_GROUP<br/>권한 그룹]
-        C --> D[SERVICE_MEMBER_GROUP<br/>사용자-그룹 매핑]
-        D --> E[SERVICE_PERMISSION<br/>권한 정보]
-        E --> F[SERVICE_PERMISSION_LOG<br/>권한 변경 이력]
+    subgraph "통합 CMS 시스템"
+        CMS[통합 CMS 백엔드] --> CMSDB[통합 CMS DB<br/>integrated_cms]
+        
+        subgraph "통합 CMS DB 구조"
+            CMSDB --> A1[ADMIN_USER]
+            CMSDB --> A2[SERVICE]
+            CMSDB --> A3[SERVICE_GROUP]
+            CMSDB --> A4[SERVICE_MEMBER_GROUP]
+            CMSDB --> A5[SERVICE_PERMISSION]
+            CMSDB --> A6[SERVICE_PERMISSION_LOG]
+        end
+        
+        subgraph "서비스 A"
+            SA[서비스 A<br/>프론트엔드] --> CMS
+            CMS --> DB1[서비스 A DB<br/>douzone]
+        end
+        
+        subgraph "서비스 B"
+            SB[서비스 B<br/>프론트엔드] --> CMS
+            CMS --> DB2[서비스 B DB]
+        end
+        
+        subgraph "서비스 C"
+            SC[서비스 C<br/>프론트엔드] --> CMS
+            CMS --> DB3[서비스 C DB]
+        end
+        
+        subgraph "DB 접근 권한"
+            CMSDB --> IA[integrated.admin]
+            DB1 --> AD[admin]
+            DB2 --> AD
+            DB3 --> AD
+            IA --> DB1
+            IA --> DB2
+            IA --> DB3
+        end
     end
-
-    subgraph 서비스A
-        SA[서비스A 관리자] --> S1[사이트1]
-        SA --> S2[사이트2]
-        S1 --> G1[admin_user<br/>사이트1 관리자]
-        S2 --> G2[admin_user<br/>사이트2 관리자]
-        G1 --> H1[admin_group<br/>사이트1 그룹]
-        G2 --> H2[admin_group<br/>사이트2 그룹]
-        H1 --> I1[일반관리자]
-        H2 --> I2[일반관리자]
-    end
-
-    subgraph 서비스B
-        SB[서비스B 관리자] --> S3[사이트3]
-        SB --> S4[사이트4]
-        S3 --> G3[admin_user<br/>사이트3 관리자]
-        S4 --> G4[admin_user<br/>사이트4 관리자]
-        G3 --> H3[admin_group<br/>사이트3 그룹]
-        G4 --> H4[admin_group<br/>사이트4 그룹]
-        H3 --> I3[일반관리자]
-        H4 --> I4[일반관리자]
-    end
-
-    B --> SA
-    B --> SB
 ```
 
 ### 1.2 서비스-사이트 관계
@@ -128,12 +133,20 @@ graph TD
    - 사이트관리자: 개별 사이트 관리
    - 일반관리자: 사이트 내 그룹별 권한
 
+3. **동적 서비스 라우팅 시나리오**
+   - API 요청: `/api/v1/service1/bbs/article`
+   - Step 1: ServiceId 'service1' 추출
+   - Step 2: integrated_cms.SERVICE 테이블에서 service1 DB 연결 정보 조회
+   - Step 3: service1 DB 동적 연결 생성
+   - Step 4: service1 데이터베이스에서 실제 데이터 조회 및 응답
+
 ## 3. 주요 특징
 
 ### 3.1 명확한 권한 계층
 - integrated.admin 계정으로 통합 DB와 서비스 DB 모두 관리 가능
 - admin 계정으로 서비스 DB만 관리 가능
 - 계층적 권한 구조로 명확한 책임 구분
+- 동적 서비스 라우팅을 통한 투명한 DB 접근
 
 ### 3.2 유연한 권한 관리
 - 서비스별 독립적 관리 가능

@@ -39,15 +39,21 @@
 
 - [ ] **Day 2-3: 데이터베이스 구축**
 
-  - 통합 메타 DB 스키마 구현
+  - 통합 CMS DB (integrated_cms) 스키마 구현
+  - 서비스별 DB 스키마 설계
+  - DB 계정 생성 (integrated.admin, admin)
   - 테이블 생성 및 초기 데이터 설정
   - DB 접근 계층 구현
 
-- [ ] **Day 4-5: API Gateway 설정**
+- [ ] **Day 4-5: 통합 백엔드 라우팅 시스템**
 
-  - Spring Cloud Gateway 구성
-  - 기본 라우팅 설정
-  - 에러 처리 구현
+  - 동적 서비스 라우팅 구현 (`/api/v1/{serviceId}/**`)
+  - 서비스 메타데이터 조회 서비스 개발
+  - 동적 DataSource 팩토리 구현
+  - 2단계 DB 접근 플로우 구현:
+    1. integrated_cms DB에서 서비스 정보 조회
+    2. 해당 서비스 DB 동적 연결 및 데이터 조회
+  - 에러 처리 및 응답 표준화
 
 - [ ] **Day 6-7: 인증 시스템**
   - JWT 인증 구현
