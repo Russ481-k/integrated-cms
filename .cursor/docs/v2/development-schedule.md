@@ -47,11 +47,12 @@
 
 - [ ] **Day 4-5: 통합 백엔드 라우팅 시스템**
 
-  - URL 패턴 기반 서비스 식별 (`/cms/integrated/` vs `/cms/{serviceId}/`)
-  - 서비스 컨텍스트 관리 및 인터셉터 구현
-  - 동적 DataSource 라우팅 구현
-  - 서비스 메타데이터 조회 로직 (integrated_cms.SERVICE 테이블)
-  - 서비스별 DB 연결 및 쿼리 실행
+  - `/cms/{serviceId}/**` 패턴 라우팅 구현
+  - serviceId 기반 동적 DB 라우팅 로직
+  - integrated_cms.SERVICE 테이블 조회 기능
+  - 서비스별 DB 연결 정보 관리 시스템
+  - 통합 컨트롤러 패턴 구현
+  - 서비스 컨텍스트 관리 (ServiceContextHolder)
   - 에러 처리 및 응답 표준화
 
 - [ ] **Day 6-7: 인증 시스템**

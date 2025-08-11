@@ -109,8 +109,6 @@ graph TD
 
 ### 4.1 인증 시스템
 - JWT 기반 통합 인증
-- SSO (Single Sign-On) 지원
-- 2FA 지원
 - 통합 관리자 전용 인증
 
 ### 4.2 권한 검증
@@ -121,32 +119,38 @@ graph TD
 
 ## 5. API 설계
 
-### 5.1 API URL 구조
-- `/api/v1/cms/integrated/**` → 통합 CMS DB 직접 접근
-- `/api/v1/cms/{serviceId}/**` → 서비스별 DB 동적 접근
-  - 예: `/api/v1/cms/service1/board/articles`
-  - 예: `/api/v1/cms/douzone/users`
+### 5.1 통합 라우팅 패턴
+- **기본 패턴**: `/api/v1/cms/{serviceId}/**`
+- **serviceId 기반 동적 DB 라우팅**
+- **통합된 엔드포인트 구조**
 
-### 5.2 통합 관리 API (`/api/v1/cms/integrated/`)
-- 서비스 메타데이터 관리
-  - 서비스 등록/수정/삭제
-  - DB 연결 정보 관리
-- 통합 사용자 관리
-  - 슈퍼관리자, 서비스관리자 관리
-- 권한 관리 API
-  - 그룹 권한 관리
-  - 추가 권한 관리
-  - 권한 이력 조회
-- 전체 시스템 설정 및 모니터링
+### 5.2 API 엔드포인트 예시
+```
+통합 관리 API:
+- /api/v1/cms/integrated_cms/user/list     → 통합 CMS DB 접근
+- /api/v1/cms/integrated_cms/service/list  → 서비스 관리
+- /api/v1/cms/integrated_cms/permission/** → 권한 관리
 
-### 5.3 서비스별 API (`/api/v1/cms/{serviceId}/`)
-- 동적 서비스 DB 라우팅
-  - 서비스 메타데이터 조회
-  - 동적 DB 연결 및 쿼리
-- 서비스별 컨텐츠 관리
-  - 게시판, 메뉴, 사용자 등
-- 기존 CMS 기능 유지
-- 서비스별 권한 검증
+서비스별 API:
+- /api/v1/cms/douzone/bbs/article         → douzone 서비스 DB 접근
+- /api/v1/cms/service1/menu/list          → service1 서비스 DB 접근
+- /api/v1/cms/service2/content/**         → service2 서비스 DB 접근
+```
+
+### 5.3 서비스 라우팅 로직
+1. **통합 관리 접근** (serviceId == "integrated_cms"):
+   - integrated_cms DB 직접 접근
+   - 메타데이터 및 권한 관리 기능
+
+2. **개별 서비스 접근** (serviceId != "integrated_cms"):
+   - integrated_cms.SERVICE 테이블에서 서비스 정보 조회
+   - 해당 서비스 DB 연결 정보 획득 (DB_CONNECTION_INFO)
+   - 서비스별 DB에서 실제 데이터 처리
+
+### 5.4 권한 검증 통합
+- 모든 API 요청에 대한 통합 권한 검증
+- serviceId별 접근 권한 확인
+- 역할 기반 데이터 접근 제어
 
 ## 6. 확장성 고려사항
 

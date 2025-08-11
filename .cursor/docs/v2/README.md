@@ -29,20 +29,29 @@
 - 메뉴, 게시판, 컨텐츠, 사이트 접근 권한 제어
 - 실시간 권한 검증 및 감사 로깅
 
-## API 구조 예시
+## API 구조
 
-### 통합 관리 API
-- `GET /api/v1/cms/integrated/services` - 전체 서비스 목록 조회
-- `GET /api/v1/cms/integrated/users` - 통합 관리자 목록 조회
-- `POST /api/v1/cms/integrated/permissions` - 통합 권한 설정
-- `GET /api/v1/cms/integrated/dashboard` - 전체 시스템 대시보드
+### 라우팅 패턴
+- **통합 패턴**: `/api/v1/cms/{serviceId}/**`
+- **통합 관리**: `/api/v1/cms/integrated_cms/**` → 통합 CMS DB 접근
+- **개별 서비스**: `/api/v1/cms/{serviceId}/**` → 서비스별 DB 접근
 
-### 서비스별 API  
-- `GET /api/v1/cms/douzone/board/articles` - douzone 서비스 게시글 목록
-- `GET /api/v1/cms/service1/users` - service1 사용자 목록
-- `POST /api/v1/cms/service2/content` - service2 컨텐츠 생성
-- `PUT /api/v1/cms/douzone/menu/{id}` - douzone 메뉴 수정
+### 동적 라우팅 플로우
+1. **serviceId 추출 및 검증**: URL에서 serviceId 파라미터 추출
+2. **라우팅 분기**: 
+   - `integrated_cms`: 통합 DB 직접 접근
+   - 기타 서비스: 서비스 메타데이터 조회 후 해당 DB 접근
+3. **서비스 메타데이터 조회**: integrated_cms.SERVICE 테이블에서 DB 연결정보 획득
+4. **적절한 DB 연결**: 서비스별 DB 연결 및 데이터 처리
 
-### API 라우팅 플로우
-1. **통합 관리**: `/cms/integrated/**` → integrated_cms DB 직접 접근
-2. **서비스별**: `/cms/{serviceId}/**` → 메타데이터 조회 → 서비스 DB 동적 접근
+### API 예시
+```
+# 통합 관리 기능
+GET /api/v1/cms/integrated_cms/service/list
+GET /api/v1/cms/integrated_cms/user/permissions
+
+# 개별 서비스 기능  
+GET /api/v1/cms/douzone/bbs/article/list
+POST /api/v1/cms/service1/content/create
+PUT /api/v1/cms/service2/menu/update
+```
