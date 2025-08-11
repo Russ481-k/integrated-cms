@@ -8,6 +8,8 @@ services:
       - /app/node_modules
     ports:
       - "3000:3000"
+    env_file:
+      - ./server/.env
     environment:
       - NODE_ENV=development
 
@@ -17,24 +19,35 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - ./server:/app
-      - ~/.m2:/root/.m2  # 로컬의 Maven 캐시를 컨테이너와 공유
+      - ~/.m2:/root/.m2:delegated
     ports:
       - "8080:8080"
+    env_file:
+      - ./server/.env
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+      - MAVEN_OPTS=-XX:+TieredCompilation -XX:TieredStopAtLevel=1
     depends_on:
       - db
 
   db:
-    image: mysql:8
+    image: mariadb:${MARIADB_VERSION:-10.6}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./server/src/main/resources/db/migration:/docker-entrypoint-initdb.d
+    env_file:
+      - ./server/.env
     environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=united_cms
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-integrated_cms}
+      - MYSQL_USER=${MYSQL_USER:-admin}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-admin123}
     ports:
-      - "3306:3306"
+      - "${DB_PORT:-3306}:3306"
+    command: 
+      - --character-set-server=${MARIADB_CHARSET:-utf8mb4}
+      - --collation-server=${MARIADB_COLLATION:-utf8mb4_unicode_ci}
+      - --skip-character-set-client-handshake
 
 volumes:
   mysql_data:
