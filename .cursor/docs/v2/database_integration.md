@@ -64,7 +64,16 @@ graph TD
 
 ### 1.3 데이터베이스 구성
 
-#### 1.3.1 통합 데이터베이스
+#### 1.3.1 데이터베이스 계정
+- integrated.admin: 
+  - integrated_cms DB 전체 접근 권한
+  - douzone DB 전체 접근 권한
+  - 슈퍼관리자, 서비스관리자가 사용
+- admin:
+  - douzone DB 전체 접근 권한
+  - 사이트관리자, 일반관리자가 사용
+
+#### 1.3.2 통합 데이터베이스 (integrated_cms)
 - ADMIN_USER: 슈퍼관리자와 서비스관리자 정보
 - SERVICE: 서비스 및 사이트 정보
 - SERVICE_GROUP: 권한 그룹 정보
@@ -72,7 +81,7 @@ graph TD
 - SERVICE_PERMISSION: 권한 정보
 - SERVICE_PERMISSION_LOG: 권한 변경 이력
 
-#### 1.3.2 서비스별 데이터베이스
+#### 1.3.3 서비스 데이터베이스 (douzone)
 - admin_user: 사이트관리자 및 일반관리자 정보
 - admin_group: 그룹 정보
 - admin_additional_permission: 추가 권한 정보
@@ -120,8 +129,8 @@ graph TD
 ## 3. 주요 특징
 
 ### 3.1 명확한 권한 계층
-- 통합관리자와 서비스관리자는 통합 DB 관리
-- 사이트관리자와 일반관리자는 서비스 DB 관리
+- integrated.admin 계정으로 통합 DB와 서비스 DB 모두 관리 가능
+- admin 계정으로 서비스 DB만 관리 가능
 - 계층적 권한 구조로 명확한 책임 구분
 
 ### 3.2 유연한 권한 관리
