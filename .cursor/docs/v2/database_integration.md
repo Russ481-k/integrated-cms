@@ -67,10 +67,10 @@ graph TD
 #### 1.3.1 데이터베이스 계정
 - integrated.admin: 
   - integrated_cms DB 전체 접근 권한
-  - douzone DB 전체 접근 권한
+  - 모든 서비스 DB 전체 접근 권한 (douzone 등 추가되는 모든 서비스)
   - 슈퍼관리자, 서비스관리자가 사용
 - admin:
-  - douzone DB 전체 접근 권한
+  - 각 서비스 DB 전체 접근 권한 (douzone 등 추가되는 모든 서비스)
   - 사이트관리자, 일반관리자가 사용
 
 #### 1.3.2 통합 데이터베이스 (integrated_cms)
@@ -81,10 +81,12 @@ graph TD
 - SERVICE_PERMISSION: 권한 정보
 - SERVICE_PERMISSION_LOG: 권한 변경 이력
 
-#### 1.3.3 서비스 데이터베이스 (douzone)
+#### 1.3.3 서비스별 데이터베이스 구조 (예: douzone)
 - admin_user: 사이트관리자 및 일반관리자 정보
 - admin_group: 그룹 정보
 - admin_additional_permission: 추가 권한 정보
+
+※ 각 서비스 데이터베이스는 동일한 구조를 가지며, 서비스가 추가될 때마다 같은 구조로 새로운 데이터베이스가 생성됩니다.
 
 ## 2. 권한 검증 프로세스
 

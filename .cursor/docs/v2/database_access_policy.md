@@ -36,9 +36,9 @@
    - integrated.admin: 전체 테이블 READ/WRITE (슈퍼관리자, 서비스관리자)
    - admin: 접근 불가 (사이트관리자, 일반관리자)
 
-2. 서비스 데이터베이스 (douzone)
-   - integrated.admin: 전체 테이블 READ/WRITE (슈퍼관리자, 서비스관리자)
-   - admin: 전체 테이블 READ/WRITE (사이트관리자, 일반관리자)
+2. 서비스별 데이터베이스 (예: douzone, service2, service3, ...)
+   - integrated.admin: 각 서비스 DB 전체 테이블 READ/WRITE (슈퍼관리자, 서비스관리자)
+   - admin: 각 서비스 DB 전체 테이블 READ/WRITE (사이트관리자, 일반관리자)
 
 ## 3. 접근 권한 매트릭스
 
