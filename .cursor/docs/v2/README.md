@@ -29,10 +29,20 @@
 - 메뉴, 게시판, 컨텐츠, 사이트 접근 권한 제어
 - 실시간 권한 검증 및 감사 로깅
 
-### 동적 서비스 라우팅
-- API 경로: `/api/v1/{serviceId}/**` (예: `/api/v1/service1/bbs/article`)
-- 2단계 DB 접근:
-  1. 통합 CMS DB에서 서비스 메타데이터 조회
-  2. 해당 서비스 DB 동적 연결 및 데이터 처리
-- 서비스별 독립적인 API 엔드포인트 제공
-- 런타임 DataSource 생성 및 캐싱
+## API 구조 예시
+
+### 통합 관리 API
+- `GET /api/v1/cms/integrated/services` - 전체 서비스 목록 조회
+- `GET /api/v1/cms/integrated/users` - 통합 관리자 목록 조회
+- `POST /api/v1/cms/integrated/permissions` - 통합 권한 설정
+- `GET /api/v1/cms/integrated/dashboard` - 전체 시스템 대시보드
+
+### 서비스별 API  
+- `GET /api/v1/cms/douzone/board/articles` - douzone 서비스 게시글 목록
+- `GET /api/v1/cms/service1/users` - service1 사용자 목록
+- `POST /api/v1/cms/service2/content` - service2 컨텐츠 생성
+- `PUT /api/v1/cms/douzone/menu/{id}` - douzone 메뉴 수정
+
+### API 라우팅 플로우
+1. **통합 관리**: `/cms/integrated/**` → integrated_cms DB 직접 접근
+2. **서비스별**: `/cms/{serviceId}/**` → 메타데이터 조회 → 서비스 DB 동적 접근

@@ -65,7 +65,7 @@ CREATE TABLE SERVICE (
     SERVICE_NAME VARCHAR(100) NOT NULL COMMENT '서비스 이름',
     SERVICE_DOMAIN VARCHAR(255) COMMENT '서비스 도메인 (예: https://example.com)',
     API_BASE_URL VARCHAR(255) COMMENT 'API 기본 URL',
-    DB_CONNECTION_INFO TEXT COMMENT '암호화된 DB 접속 정보',
+    DB_CONNECTION_INFO TEXT COMMENT '암호화된 DB 접속 정보 (JSON 형태: {url, username, password, driver})',
     STATUS VARCHAR(20) DEFAULT 'ACTIVE' COMMENT '서비스 상태 (ACTIVE, INACTIVE, MAINTENANCE)',
     DESCRIPTION TEXT COMMENT '서비스 설명',
     CONFIG JSON COMMENT '서비스 설정 정보',
@@ -182,65 +182,3 @@ CREATE TABLE SERVICE_PERMISSION_LOG (
     KEY idx_user_time (USER_UUID, CREATED_AT),
     KEY idx_permission (PERMISSION_ID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT '권한 변경 이력';
-
--- ========================================
--- 샘플 데이터 및 동적 DB 연결 설정 예시
--- ========================================
-
--- 샘플 서비스 데이터 (douzone 서비스 예시)
-INSERT INTO SERVICE (
-    SERVICE_ID, 
-    SERVICE_CODE, 
-    SERVICE_NAME, 
-    SERVICE_DOMAIN, 
-    API_BASE_URL,
-    DB_CONNECTION_INFO,
-    STATUS,
-    DESCRIPTION,
-    CONFIG,
-    CREATED_BY,
-    CREATED_AT
-) VALUES (
-    'service-001',
-    'douzone',
-    'Douzone CMS 서비스',
-    'https://douzone.example.com',
-    'https://api.douzone.example.com',
-    '{"driver":"org.mariadb.jdbc.Driver","url":"jdbc:mariadb://localhost:3306/douzone","username":"admin","password":"encrypted_password","maxPoolSize":20,"minIdle":5}',
-    'ACTIVE',
-    'Douzone 그룹 CMS 서비스',
-    '{"theme":"default","timezone":"Asia/Seoul","locale":"ko_KR"}',
-    'system',
-    NOW()
-);
-
--- 샘플 서비스 데이터 (service1 예시)
-INSERT INTO SERVICE (
-    SERVICE_ID, 
-    SERVICE_CODE, 
-    SERVICE_NAME, 
-    SERVICE_DOMAIN, 
-    API_BASE_URL,
-    DB_CONNECTION_INFO,
-    STATUS,
-    DESCRIPTION,
-    CONFIG,
-    CREATED_BY,
-    CREATED_AT
-) VALUES (
-    'service-002',
-    'service1',
-    'Service1 CMS',
-    'https://service1.example.com',
-    'https://api.service1.example.com',
-    '{"driver":"org.mariadb.jdbc.Driver","url":"jdbc:mariadb://localhost:3306/service1_db","username":"admin","password":"encrypted_password","maxPoolSize":15,"minIdle":3}',
-    'ACTIVE',
-    'Service1 전용 CMS 서비스',
-    '{"theme":"modern","timezone":"Asia/Seoul","locale":"ko_KR"}',
-    'system',
-    NOW()
-);
-
--- DB_CONNECTION_INFO 컬럼 설명:
--- 동적 DataSource 생성을 위한 암호화된 JSON 형태의 DB 연결 정보
--- 포함 정보: 드라이버, URL, 사용자명, 암호화된 비밀번호, 연결 풀 설정 등

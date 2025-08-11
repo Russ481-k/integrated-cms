@@ -47,12 +47,11 @@
 
 - [ ] **Day 4-5: 통합 백엔드 라우팅 시스템**
 
-  - 동적 서비스 라우팅 구현 (`/api/v1/{serviceId}/**`)
-  - 서비스 메타데이터 조회 서비스 개발
-  - 동적 DataSource 팩토리 구현
-  - 2단계 DB 접근 플로우 구현:
-    1. integrated_cms DB에서 서비스 정보 조회
-    2. 해당 서비스 DB 동적 연결 및 데이터 조회
+  - URL 패턴 기반 서비스 식별 (`/cms/integrated/` vs `/cms/{serviceId}/`)
+  - 서비스 컨텍스트 관리 및 인터셉터 구현
+  - 동적 DataSource 라우팅 구현
+  - 서비스 메타데이터 조회 로직 (integrated_cms.SERVICE 테이블)
+  - 서비스별 DB 연결 및 쿼리 실행
   - 에러 처리 및 응답 표준화
 
 - [ ] **Day 6-7: 인증 시스템**

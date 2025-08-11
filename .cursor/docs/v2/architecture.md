@@ -101,10 +101,6 @@ graph TD
 ### 3.3 데이터베이스 관리
 - 멀티 테넌시 지원
 - 서비스별 데이터 격리
-- 동적 DataSource 관리
-  - 서비스별 연결 풀 캐싱
-  - 런타임 DB 연결 생성
-  - 연결 풀 최적화
 - 통합 백업 및 복구
 - 데이터 동기화
 - 회원 정보 통합 관리
@@ -125,38 +121,32 @@ graph TD
 
 ## 5. API 설계
 
-### 5.1 통합 관리 API (`/api/v1/cms/**`)
-- 사이트 관리 API
-- 사용자 관리 API
+### 5.1 API URL 구조
+- `/api/v1/cms/integrated/**` → 통합 CMS DB 직접 접근
+- `/api/v1/cms/{serviceId}/**` → 서비스별 DB 동적 접근
+  - 예: `/api/v1/cms/service1/board/articles`
+  - 예: `/api/v1/cms/douzone/users`
+
+### 5.2 통합 관리 API (`/api/v1/cms/integrated/`)
+- 서비스 메타데이터 관리
+  - 서비스 등록/수정/삭제
+  - DB 연결 정보 관리
+- 통합 사용자 관리
+  - 슈퍼관리자, 서비스관리자 관리
 - 권한 관리 API
   - 그룹 권한 관리
   - 추가 권한 관리
   - 권한 이력 조회
-- 설정 관리 API
-- 서비스 메타데이터 관리
+- 전체 시스템 설정 및 모니터링
 
-### 5.2 동적 서비스 API (`/api/v1/{serviceId}/**`)
-- 동적 라우팅 구조: `/api/v1/service1/bbs/article`
-- 2단계 데이터 접근 플로우:
-  1. 통합 CMS DB에서 서비스 메타데이터 조회
-  2. 해당 서비스 DB에서 실제 데이터 조회
-- 서비스별 독립적인 API 엔드포인트
-- 동적 DataSource 연결 및 관리
-
-### 5.3 API 요청 처리 플로우
-```
-클라이언트 요청: /api/v1/service1/bbs/article
-    ↓
-1. ServiceId 추출: "service1"
-    ↓
-2. 통합 CMS DB 조회: SERVICE 테이블에서 service1 연결 정보
-    ↓
-3. 동적 DataSource 생성: service1 DB 연결
-    ↓
-4. 서비스 DB 쿼리: service1.bbs_article 테이블 조회
-    ↓
-5. 응답 반환
-```
+### 5.3 서비스별 API (`/api/v1/cms/{serviceId}/`)
+- 동적 서비스 DB 라우팅
+  - 서비스 메타데이터 조회
+  - 동적 DB 연결 및 쿼리
+- 서비스별 컨텐츠 관리
+  - 게시판, 메뉴, 사용자 등
+- 기존 CMS 기능 유지
+- 서비스별 권한 검증
 
 ## 6. 확장성 고려사항
 
