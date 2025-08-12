@@ -5,6 +5,7 @@
 현재 단일 CMS 시스템을 다중 서비스 통합관리가 가능한 플랫폼으로 전환하는 프로젝트입니다.
 
 ### 1.1 주요 요구사항
+
 - 하나의 백엔드에서 서비스별 독립된 데이터베이스 관리
 - 서비스별 독립된 프론트엔드 운영
 - 기존 CMS 구조 및 기능 유지
@@ -13,25 +14,26 @@
 ## 2. 시스템 아키텍처
 
 ### 2.1 전체 시스템 구조
+
 ```mermaid
 graph TD
     subgraph "통합 CMS 시스템"
         A[통합 CMS 백엔드] --> B[통합 CMS DB]
-        
+
         subgraph "통합 관리"
             C[통합 관리자 포털<br/>프론트엔드] --> A
         end
-        
+
         subgraph "서비스 A"
             D1[서비스 A<br/>프론트엔드] --> A
             A --> E1[서비스 A DB]
         end
-        
+
         subgraph "서비스 B"
             D2[서비스 B<br/>프론트엔드] --> A
             A --> E2[서비스 B DB]
         end
-        
+
         subgraph "서비스 C"
             D3[서비스 C<br/>프론트엔드] --> A
             A --> E3[서비스 C DB]
@@ -40,6 +42,7 @@ graph TD
 ```
 
 ### 2.2 데이터베이스 구조
+
 - 통합 CMS DB (integrated_cms): 통합 관리용 메타데이터 저장
   - 통합 관리자(ADMIN_USER) 정보
   - 서비스(SERVICE) 정보
@@ -53,6 +56,7 @@ graph TD
   - 서비스별 컨텐츠 및 설정 데이터
 
 ### 2.2.1 데이터베이스 접근 권한
+
 - integrated.admin 계정:
   - 통합 CMS DB 전체 접근
   - 모든 서비스 DB 접근
@@ -62,13 +66,16 @@ graph TD
   - 사이트관리자, 일반관리자가 사용
 
 ### 2.3 권한 관리 시스템
+
 1. 계층 구조
+
    - 슈퍼 관리자: 모든 서비스와 DB에 대한 최고 권한
    - 서비스 관리자: 특정 서비스 전체에 대한 관리 권한
    - 사이트 관리자: 특정 사이트에 대한 관리 권한
    - 일반 관리자: 그룹 기반 제한된 권한
 
 2. 권한 관리 방식
+
    - 그룹 기반 기본 권한
    - 사용자별 추가 권한 지원
    - 권한 충돌 시 추가 권한 우선
@@ -83,6 +90,7 @@ graph TD
 ## 3. 주요 컴포넌트
 
 ### 3.1 통합 관리자 포털
+
 - 전체 사이트 대시보드
 - 통합 사용자 관리
 - 권한 관리
@@ -92,6 +100,7 @@ graph TD
 - 사이트별 설정 관리
 
 ### 3.2 권한 관리 시스템
+
 - 역할 기반 접근 제어 (RBAC)
 - 동적 권한 할당
 - 권한 상속 관리
@@ -99,6 +108,7 @@ graph TD
 - 실시간 권한 검증
 
 ### 3.3 데이터베이스 관리
+
 - 멀티 테넌시 지원
 - 서비스별 데이터 격리
 - 통합 백업 및 복구
@@ -108,10 +118,12 @@ graph TD
 ## 4. 보안 설계
 
 ### 4.1 인증 시스템
+
 - JWT 기반 통합 인증
 - 통합 관리자 전용 인증
 
 ### 4.2 권한 검증
+
 - API 레벨 권한 검증
 - 데이터 레벨 접근 제어
 - 권한 변경 감사 로깅
@@ -120,25 +132,29 @@ graph TD
 ## 5. API 설계
 
 ### 5.1 통합 라우팅 패턴
-- **기본 패턴**: `/api/v1/cms/{serviceId}/**`
+
+- **기본 패턴**: `/api/v2/cms/{serviceId}/**`
 - **serviceId 기반 동적 DB 라우팅**
 - **통합된 엔드포인트 구조**
 
 ### 5.2 API 엔드포인트 예시
+
 ```
 통합 관리 API:
-- /api/v1/cms/integrated_cms/user/list     → 통합 CMS DB 접근
-- /api/v1/cms/integrated_cms/service/list  → 서비스 관리
-- /api/v1/cms/integrated_cms/permission/** → 권한 관리
+- /api/v2/cms/integrated_cms/user/list     → 통합 CMS DB 접근
+- /api/v2/cms/integrated_cms/service/list  → 서비스 관리
+- /api/v2/cms/integrated_cms/permission/** → 권한 관리
 
 서비스별 API:
-- /api/v1/cms/douzone/bbs/article         → douzone 서비스 DB 접근
-- /api/v1/cms/service1/menu/list          → service1 서비스 DB 접근
-- /api/v1/cms/service2/content/**         → service2 서비스 DB 접근
+- /api/v2/cms/douzone/bbs/article         → douzone 서비스 DB 접근
+- /api/v2/cms/service1/menu/list          → service1 서비스 DB 접근
+- /api/v2/cms/service2/content/**         → service2 서비스 DB 접근
 ```
 
 ### 5.3 서비스 라우팅 로직
+
 1. **통합 관리 접근** (serviceId == "integrated_cms"):
+
    - integrated_cms DB 직접 접근
    - 메타데이터 및 권한 관리 기능
 
@@ -148,6 +164,7 @@ graph TD
    - 서비스별 DB에서 실제 데이터 처리
 
 ### 5.4 권한 검증 통합
+
 - 모든 API 요청에 대한 통합 권한 검증
 - serviceId별 접근 권한 확인
 - 역할 기반 데이터 접근 제어
@@ -155,12 +172,14 @@ graph TD
 ## 6. 확장성 고려사항
 
 ### 6.1 스케일링
+
 - 서비스별 독립 스케일링
 - 데이터베이스 샤딩 지원
 - 캐시 계층 도입
 - 권한 캐싱 전략
 
 ### 6.2 모니터링
+
 - 통합 모니터링 시스템
 - 성능 메트릭 수집
 - 에러 추적 및 알림
@@ -169,12 +188,14 @@ graph TD
 ## 7. 마이그레이션 전략
 
 ### 7.1 단계별 마이그레이션
+
 1. 통합 관리 시스템 구축
 2. 데이터베이스 분리
 3. 권한 시스템 통합
 4. 서비스별 전환
 
 ### 7.2 데이터 마이그레이션
+
 - 데이터 매핑 전략
 - 롤백 계획
 - 검증 프로세스
