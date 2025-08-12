@@ -1,0 +1,543 @@
+---
+globs: *.java,*.kt,*.sql,*.yml,*.yaml,*.xml
+description: 통합 CMS v2 백엔드 API 개발 컨벤션 및 표준
+---
+
+# 통합 CMS v2 백엔드 API 개발 컨벤션
+
+## 🛠️ 기술 스택
+
+### Core Framework
+
+- **Spring Boot 3.x** + Spring Security 6.x
+- **JPA/Hibernate** + HikariCP + AbstractRoutingDataSource
+- **통합 백엔드 라우팅**: 단일 애플리케이션 내부 서비스 컨텍스트 라우팅
+- **MySQL 8.x** / MariaDB
+
+### 인증 및 보안
+
+- **JWT 기반 인증**: Access Token (15분) + Refresh Token (7일)
+- **AES-256 암호화**: DB 연결 정보 등 민감 데이터
+- **동적 데이터소스**: ServiceContext 기반 DB 라우팅
+
+## 📁 패키지 구조
+
+```
+src/main/java/cms/
+├── config/            # 설정 클래스 (라우팅, 보안 등)
+│   ├── ServiceContextHolder.java      # 서비스 컨텍스트 관리
+│   ├── ServiceContextInterceptor.java # URL → 컨텍스트 매핑
+│   └── RoutingDataSourceConfig.java   # 동적 DB 라우팅
+├── common/            # 공통 유틸리티
+├── auth/              # 인증/인가 관련
+├── admin/             # 통합 관리자 관리
+├── content/           # 기존 콘텐츠 관리 (재사용)
+├── menu/              # 기존 메뉴 관리 (재사용)
+├── board/             # 기존 게시판 관리 (재사용)
+└── user/              # 기존 사용자 관리 (재사용)
+```
+
+## 🔗 통합 백엔드 라우팅 구현
+
+### 1. 서비스 컨텍스트 관리
+
+```java
+// ServiceContextHolder: ThreadLocal로 요청별 컨텍스트 보관
+public final class ServiceContextHolder {
+    private static final ThreadLocal<String> CONTEXT = new ThreadLocal<>();
+
+    public static void setCurrentServiceId(String serviceId) {
+        CONTEXT.set(serviceId);
+    }
+
+    public static String getCurrentServiceId() {
+        return CONTEXT.get();
+    }
+
+    public static void clear() {
+        CONTEXT.remove();
+    }
+}
+```
+
+### 2. URL 프리픽스 기반 라우팅 인터셉터
+
+```java
+@Component
+public class ServiceContextInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        String path = request.getRequestURI();
+
+        if (path.startsWith("/api/v2/integrated-cms/")) {
+            ServiceContextHolder.setCurrentServiceId("integrated_cms");
+        } else if (path.startsWith("/api/v2/cms/douzone/")) {
+            ServiceContextHolder.setCurrentServiceId("douzone");
+        } else if (path.startsWith("/api/v2/cms/service1/")) {
+            ServiceContextHolder.setCurrentServiceId("service1");
+        } else if (path.startsWith("/api/v2/cms/service2/")) {
+            ServiceContextHolder.setCurrentServiceId("service2");
+        }
+        // /api/v2/integrated-cms/** 는 "integrated_cms" DB로 라우팅
+        // /api/v2/cms/{serviceId}/** 는 각 서비스별 DB로 동적 라우팅
+        // 필요시 추가 서비스 매핑
+
+        return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        ServiceContextHolder.clear();
+    }
+}
+
+// WebConfig: 인터셉터 등록
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    private final ServiceContextInterceptor interceptor;
+
+    public WebConfig(ServiceContextInterceptor interceptor) {
+        this.interceptor = interceptor;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(interceptor).addPathPatterns("/api/v2/**");
+    }
+}
+```
+
+### 3. 동적 데이터소스 라우팅
+
+```java
+@Configuration
+public class RoutingDataSourceConfig {
+
+    @Primary
+    @Bean
+    public DataSource dataSource() {
+        ContextRoutingDataSource routingDataSource = new ContextRoutingDataSource();
+
+        Map<Object, Object> targetDataSources = new HashMap<>();
+        targetDataSources.put("integrated_cms", integratedCmsDataSource());
+        targetDataSources.put("douzone", douzoneDataSource());
+        targetDataSources.put("service1", service1DataSource());
+        targetDataSources.put("service2", service2DataSource());
+
+        routingDataSource.setTargetDataSources(targetDataSources);
+        routingDataSource.setDefaultTargetDataSource(integratedCmsDataSource());
+
+        return routingDataSource;
+    }
+
+    @Bean
+    public DataSource integratedCmsDataSource() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/integrated_cms");
+        config.setUsername("integrated.admin");
+        config.setPassword(getDecryptedPassword("integrated_cms_password"));
+        return new HikariDataSource(config);
+    }
+
+    @Bean
+    public DataSource douzoneDataSource() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/douzone");
+        config.setUsername("admin");
+        config.setPassword(getDecryptedPassword("douzone_password"));
+        return new HikariDataSource(config);
+    }
+
+    public static class ContextRoutingDataSource extends AbstractRoutingDataSource {
+        @Override
+        protected Object determineCurrentLookupKey() {
+            return ServiceContextHolder.getCurrentServiceId();
+        }
+    }
+}
+```
+
+### 4. 기존 컨트롤러 재사용 패턴
+
+```java
+// 통합 관리 API (integrated_cms DB 접근)
+@RestController
+@RequestMapping("/api/v2/integrated-cms")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN')")
+public class IntegratedCmsController {
+
+    private final AdminUserService adminUserService; // 통합 관리자 서비스
+    private final SystemService systemService; // 시스템 관리 서비스
+    private final ServiceManagementService serviceManagementService; // 서비스 관리
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @GetMapping("/admins")
+    public ResponseEntity<ApiResponseSchema<List<AdminUserDto>>> getAdminUsers() {
+        List<AdminUserDto> users = adminUserService.getAllAdminUsers();
+        return ResponseEntity.ok(ApiResponseSchema.success(users));
+    }
+
+    @GetMapping("/permissions")
+    public ResponseEntity<ApiResponseSchema<List<PermissionDto>>> getPermissions() {
+        List<PermissionDto> permissions = systemService.getAllPermissions();
+        return ResponseEntity.ok(ApiResponseSchema.success(permissions));
+    }
+
+    @GetMapping("/services")
+    public ResponseEntity<ApiResponseSchema<List<ServiceDto>>> getServices() {
+        List<ServiceDto> services = serviceManagementService.getAllServices();
+        return ResponseEntity.ok(ApiResponseSchema.success(services));
+    }
+
+    @PostMapping("/services")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponseSchema<ServiceDto>> createService(@RequestBody CreateServiceRequest request) {
+        ServiceDto service = serviceManagementService.createService(request);
+        return ResponseEntity.ok(ApiResponseSchema.success(service, "서비스가 생성되었습니다."));
+    }
+}
+
+// 서비스별 CMS API (각 서비스 DB에 동적 라우팅)
+@RestController
+@RequestMapping("/api/v2/cms/{serviceId}/content")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN', 'SITE_ADMIN', 'ADMIN')")
+public class CmsContentController {
+
+    private final ContentService contentService; // 기존 Service 재사용
+
+    @GetMapping
+    public ResponseEntity<ApiResponseSchema<Page<ContentDto>>> getContents(
+            @PathVariable String serviceId,
+            Pageable pageable) {
+        // ServiceContextHolder에 의해 자동으로 {serviceId} DB에 연결됨
+        Page<ContentDto> contents = contentService.getAllContents(pageable);
+        return ResponseEntity.ok(ApiResponseSchema.success(contents));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponseSchema<ContentDto>> createContent(
+            @PathVariable String serviceId,
+            @RequestBody ContentDto contentDto) {
+        ContentDto created = contentService.createContent(contentDto);
+        return ResponseEntity.ok(ApiResponseSchema.success(created, "콘텐츠가 생성되었습니다."));
+    }
+}
+
+// 서비스별 메뉴 관리 API
+@RestController
+@RequestMapping("/api/v2/cms/{serviceId}/menu")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN', 'SITE_ADMIN', 'ADMIN')")
+public class CmsMenuController {
+
+    private final MenuService menuService; // 기존 Service 재사용
+
+    @GetMapping
+    public ResponseEntity<ApiResponseSchema<List<MenuDto>>> getMenus(@PathVariable String serviceId) {
+        List<MenuDto> menus = menuService.getAllMenus();
+        return ResponseEntity.ok(ApiResponseSchema.success(menus));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN')")
+    public ResponseEntity<ApiResponseSchema<MenuDto>> createMenu(
+            @PathVariable String serviceId,
+            @RequestBody MenuDto menuDto) {
+        MenuDto created = menuService.createMenu(menuDto);
+        return ResponseEntity.ok(ApiResponseSchema.success(created, "메뉴가 생성되었습니다."));
+    }
+}
+```
+
+## 🗄️ 데이터베이스 설계 원칙
+
+### 계정별 접근 권한
+
+```sql
+-- integrated.admin: 통합 DB + 모든 서비스 DB 접근
+CREATE USER 'integrated.admin'@'%' IDENTIFIED BY 'secure_password';
+GRANT ALL PRIVILEGES ON integrated_cms.* TO 'integrated.admin'@'%';
+GRANT ALL PRIVILEGES ON douzone.* TO 'integrated.admin'@'%';
+GRANT ALL PRIVILEGES ON service1.* TO 'integrated.admin'@'%';
+
+-- admin: 서비스별 DB만 접근
+CREATE USER 'admin'@'%' IDENTIFIED BY 'secure_password';
+GRANT ALL PRIVILEGES ON douzone.* TO 'admin'@'%';
+GRANT ALL PRIVILEGES ON service1.* TO 'admin'@'%';
+```
+
+### 감사 필드 표준
+
+모든 주요 테이블에 포함:
+
+```sql
+CREATED_BY VARCHAR(36) NULL,
+CREATED_IP VARCHAR(45) NULL,
+CREATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+UPDATED_BY VARCHAR(36) NULL,
+UPDATED_IP VARCHAR(45) NULL,
+UPDATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+```
+
+## 📋 API 응답 표준
+
+### 표준 응답 형식
+
+모든 API 응답은 `ApiResponseSchema<T>` 사용:
+
+```java
+@RestController
+public class ExampleController {
+
+    @GetMapping("/example")
+    public ResponseEntity<ApiResponseSchema<ExampleDto>> getExample() {
+        ExampleDto data = exampleService.getExample();
+        return ResponseEntity.ok(ApiResponseSchema.success(data, "조회가 완료되었습니다."));
+    }
+
+    @PostMapping("/example")
+    public ResponseEntity<ApiResponseSchema<ExampleDto>> createExample(@RequestBody ExampleDto dto) {
+        ExampleDto created = exampleService.createExample(dto);
+        return ResponseEntity.ok(ApiResponseSchema.success(created, "생성이 완료되었습니다."));
+    }
+}
+```
+
+### API 응답 구조
+
+```json
+{
+  "success": true,
+  "message": "요청이 성공적으로 처리되었습니다.",
+  "data": {
+    /* 실제 데이터 */
+  },
+  "errorCode": null,
+  "stackTrace": null
+}
+```
+
+## 🎯 엔드포인트 네이밍 규칙
+
+### 통합 백엔드 라우팅 패턴
+
+```
+/api/v2/integrated-cms/**         # 통합 관리자, 시스템 권한 (integrated_cms DB)
+/api/v2/cms/{serviceId}/**        # 서비스별 CMS API (동적 DB 라우팅)
+/api/v2/auth/**                   # 인증 관련
+/api/v2/public/**                 # 공개 API
+```
+
+### 엔드포인트 라우팅 흐름
+
+#### 통합 관리 API 요청 예시
+
+```
+1. 요청: GET /api/v2/integrated-cms/admins
+2. ServiceContextInterceptor가 URL 분석
+3. "/api/v2/integrated-cms/" 시작 → ServiceContextHolder.setCurrentServiceId("integrated_cms")
+4. Controller의 @RequestMapping("/api/v2/integrated-cms")
+5. 실제 처리: @GetMapping("/admins")
+6. 최종 경로: /api/v2/integrated-cms + /admins = /api/v2/integrated-cms/admins
+```
+
+#### 서비스별 CMS API 요청 예시
+
+```
+1. 요청: GET /api/v2/cms/douzone/content
+2. ServiceContextInterceptor가 URL 분석
+3. "douzone" 추출 → ServiceContextHolder.setCurrentServiceId("douzone")
+4. Controller의 @RequestMapping("/api/v2/cms/{serviceId}/content")
+5. 실제 처리: @GetMapping (상대경로, 빈 문자열)
+6. 최종 경로: /api/v2/cms/douzone/content + "" = /api/v2/cms/douzone/content
+```
+
+### RESTful 설계 원칙
+
+```java
+// 컨트롤러에서는 상대 경로만 지정 (@RequestMapping 기준)
+@RestController
+@RequestMapping("/api/v2/cms/{serviceId}/content")  // 기본 경로
+public class CmsContentController {
+
+    @GetMapping          // "" (빈 문자열) → /api/v2/cms/{serviceId}/content
+    @GetMapping("/{id}") // "/{id}" → /api/v2/cms/{serviceId}/content/{id}
+    @PostMapping         // "" (빈 문자열) → /api/v2/cms/{serviceId}/content
+    @PutMapping("/{id}") // "/{id}" → /api/v2/cms/{serviceId}/content/{id}
+    @DeleteMapping("/{id}") // "/{id}" → /api/v2/cms/{serviceId}/content/{id}
+}
+```
+
+## 🔐 권한 검증 구현
+
+### 역할 기반 권한 체크
+
+```java
+@RestController
+@RequestMapping("/api/v2/cms/{serviceId}/content")
+public class CmsContentController {
+
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN', 'SITE_ADMIN', 'ADMIN')")
+    @GetMapping
+    public ResponseEntity<ApiResponseSchema<Page<ContentDto>>> getContents(
+            @PathVariable String serviceId,
+            Pageable pageable) {
+
+        Page<ContentDto> contents = contentService.getAllContents(pageable);
+        return ResponseEntity.ok(ApiResponseSchema.success(contents));
+    }
+
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN')")
+    @PostMapping
+    public ResponseEntity<ApiResponseSchema<ContentDto>> createContent(
+            @PathVariable String serviceId,
+            @RequestBody ContentDto contentDto) {
+
+        ContentDto created = contentService.createContent(contentDto);
+        return ResponseEntity.ok(ApiResponseSchema.success(created));
+    }
+}
+```
+
+### 커스텀 보안 어노테이션
+
+```java
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@PreAuthorize("@serviceAccessChecker.hasAccess(authentication, #serviceId)")
+public @interface RequireServiceAccess {}
+
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN')")
+public @interface ServiceAdminOnly {}
+```
+
+## 💾 기존 Service Layer 재사용
+
+### Repository 패턴 (기존 그대로 사용)
+
+```java
+@Repository
+public interface ContentRepository extends JpaRepository<Content, Long> {
+
+    @Query("SELECT c FROM Content c WHERE c.status = :status")
+    Page<Content> findByStatus(@Param("status") ContentStatus status, Pageable pageable);
+}
+```
+
+### Service Layer (100% 재사용)
+
+```java
+@Service
+@Transactional
+public class ContentService {
+
+    @Autowired
+    private ContentRepository contentRepository;
+
+    // 기존 메서드들 그대로 유지
+    // ServiceContextHolder에 의해 자동으로 적절한 DB에 연결됨
+    public Page<ContentDto> getAllContents(Pageable pageable) {
+        Page<Content> contents = contentRepository.findAll(pageable);
+        return contents.map(this::convertToDto);
+    }
+
+    public ContentDto createContent(ContentDto dto) {
+        Content content = convertToEntity(dto);
+        Content saved = contentRepository.save(content);
+        return convertToDto(saved);
+    }
+}
+```
+
+## 📝 Swagger/OpenAPI 문서화
+
+### 컨트롤러 문서화
+
+```java
+@RestController
+@RequestMapping("/api/v2/cms/{serviceId}/content")
+@Tag(name = "Content Management", description = "콘텐츠 관리 API")
+@RequireServiceAccess
+public class CmsContentController {
+
+    @Operation(summary = "콘텐츠 목록 조회", description = "서비스별 콘텐츠 목록을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공"),
+        @ApiResponse(responseCode = "403", description = "접근 권한 없음"),
+        @ApiResponse(responseCode = "404", description = "서비스를 찾을 수 없음")
+    })
+    @GetMapping
+    public ResponseEntity<ApiResponseSchema<Page<ContentDto>>> getContents(
+            @Parameter(description = "서비스 ID") @PathVariable String serviceId,
+            Pageable pageable) {
+        // 구현
+    }
+}
+```
+
+## 🔄 마이그레이션 전략
+
+### 단계별 전환 계획
+
+```java
+// Phase 1: ServiceContextHolder + Interceptor 도입
+// Phase 2: RoutingDataSource 설정
+// Phase 3: 기존 Controller를 경로별로 분기
+// Phase 4: 통합 관리 API 추가
+
+// 예시: PathVariable을 통한 동적 서비스 라우팅
+@RestController
+@RequestMapping("/api/v2/cms/{serviceId}/content")
+public class CmsContentController {
+    private final ContentService contentService; // 기존 Service 재사용
+
+    @GetMapping
+    public ResponseEntity<?> getContents(@PathVariable String serviceId, Pageable pageable) {
+        // serviceId 값에 따라 ServiceContextInterceptor가 적절한 DB로 라우팅
+        return ResponseEntity.ok(contentService.getAllContents(pageable));
+    }
+}
+```
+
+## 🚨 주의사항
+
+### 1. ServiceContext 필수 체크
+
+```java
+@Component
+public class ServiceContextValidator {
+
+    @EventListener
+    public void validateServiceContext(RequestHandledEvent event) {
+        String serviceId = ServiceContextHolder.getCurrentServiceId();
+        if (serviceId == null && event.getRequestUrl().startsWith("/api/v2/")) {
+            log.warn("Missing service context for request: {}", event.getRequestUrl());
+        }
+    }
+}
+```
+
+### 2. 데이터소스 연결 확인
+
+```java
+@Component
+public class DataSourceHealthCheck {
+
+    @Autowired
+    private DataSource dataSource;
+
+    public boolean isHealthy(String serviceId) {
+        ServiceContextHolder.setCurrentServiceId(serviceId);
+        try (Connection conn = dataSource.getConnection()) {
+            return conn.isValid(5);
+        } catch (SQLException e) {
+            return false;
+        } finally {
+            ServiceContextHolder.clear();
+        }
+    }
+}
+```

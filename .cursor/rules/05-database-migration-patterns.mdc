@@ -1,0 +1,468 @@
+---
+globs: *.sql,*.java,*.ts
+description: v1에서 v2로 데이터베이스 마이그레이션 및 동적 데이터소스 패턴
+---
+
+# 데이터베이스 마이그레이션 및 동적 데이터소스 패턴
+
+## 🗄️ 데이터베이스 구조 설계
+
+### 통합 메타 DB 스키마
+
+기본 스키마는 [database_schema.sql](mdc:.cursor/docs/v2/database_schema.sql)을 참조하세요.
+
+```sql
+-- 핵심 테이블 구조
+USE integrated_cms;
+
+-- 관리자 사용자 (기존 user 테이블 확장)
+CREATE TABLE ADMIN_USER (
+    UUID VARCHAR(36) PRIMARY KEY,
+    USERNAME VARCHAR(50) NOT NULL UNIQUE,
+    PASSWORD VARCHAR(255) NOT NULL,
+    ROLE VARCHAR(20) NOT NULL, -- SYSTEM_ADMIN, SERVICE_ADMIN, USER
+    EMAIL VARCHAR(100) NOT NULL,
+    STATUS VARCHAR(20) DEFAULT 'ACTIVE',
+    -- 감사 필드
+    CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UPDATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 서비스 정보
+CREATE TABLE SERVICE (
+    SERVICE_ID VARCHAR(50) PRIMARY KEY,
+    SERVICE_NAME VARCHAR(100) NOT NULL,
+    DB_CONNECTION_INFO TEXT NOT NULL, -- AES-256 암호화된 연결 정보
+    STATUS VARCHAR(20) DEFAULT 'ACTIVE',
+    -- 감사 필드
+    CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 관리자-서비스 매핑
+CREATE TABLE ADMIN_SERVICE_ROLE (
+    UUID VARCHAR(36) PRIMARY KEY,
+    ADMIN_UUID VARCHAR(36) NOT NULL,
+    SERVICE_ID VARCHAR(50) NOT NULL,
+    ROLE VARCHAR(20) NOT NULL, -- SERVICE_ADMIN, USER
+    FOREIGN KEY (ADMIN_UUID) REFERENCES ADMIN_USER(UUID),
+    FOREIGN KEY (SERVICE_ID) REFERENCES SERVICE(SERVICE_ID)
+);
+```
+
+### 서비스별 DB 스키마 (기존 구조 유지)
+
+```sql
+-- 각 서비스 DB (예: douzone, service1, service2)
+-- 기존 CMS 테이블 구조 그대로 유지
+
+-- 사용자 테이블 (기존)
+CREATE TABLE user (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    -- 기존 필드들 유지
+);
+
+-- 콘텐츠 테이블 (기존)
+CREATE TABLE content (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    status VARCHAR(20) DEFAULT 'DRAFT',
+    -- 기존 필드들 유지
+);
+```
+
+## 🔧 동적 데이터소스 구현
+
+### 1. 데이터소스 설정
+
+```java
+@Configuration
+public class DynamicDataSourceConfiguration {
+
+    @Primary
+    @Bean
+    public DataSource dataSource() {
+        return new DynamicRoutingDataSource();
+    }
+
+    @Bean
+    public DataSource integratedCmsDataSource() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://localhost:3306/integrated_cms");
+        config.setUsername("integrated.admin");
+        config.setPassword(getDecryptedPassword("integrated_cms_password"));
+        return new HikariDataSource(config);
+    }
+
+        // 동적 데이터소스 라우팅
+    public static class DynamicRoutingDataSource extends AbstractRoutingDataSource {
+
+        private final Map<String, DataSource> dataSourceCache = new ConcurrentHashMap<>();
+        private final ServiceRepository serviceRepository;
+        private final DatabaseConnectionService connectionService;
+
+        @Override
+        protected Object determineCurrentLookupKey() {
+            return ServiceContextHolder.getCurrentServiceId();
+        }
+
+        @Override
+        protected DataSource determineTargetDataSource() {
+            String serviceId = ServiceContextHolder.getCurrentServiceId();
+
+            if ("integrated_cms".equals(serviceId) || serviceId == null) {
+                return getResolvedDataSource("integrated_cms");
+            }
+
+            // 서비스별 DB 연결 정보 조회 및 DataSource 생성
+            return getOrCreateServiceDataSource(serviceId);
+        }
+
+        private DataSource getOrCreateServiceDataSource(String serviceId) {
+            // 캐시에서 DataSource 확인
+            DataSource cachedDataSource = dataSourceCache.get(serviceId);
+            if (cachedDataSource != null) {
+                return cachedDataSource;
+            }
+
+            // integrated_cms에서 서비스 정보 조회
+            ServiceEntity service = serviceRepository.findByServiceId(serviceId);
+            if (service == null) {
+                throw new ServiceNotFoundException("Service not found: " + serviceId);
+            }
+
+            // 암호화된 연결 정보 복호화
+            DatabaseConnectionInfo connectionInfo = connectionService.decryptConnectionInfo(service.getDbConnectionInfo());
+
+            // 새 DataSource 생성
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(connectionInfo.getJdbcUrl());
+            config.setUsername(connectionInfo.getUsername());
+            config.setPassword(connectionInfo.getPassword());
+            config.setMaximumPoolSize(10);
+            config.setMinimumIdle(2);
+
+            DataSource dataSource = new HikariDataSource(config);
+            dataSourceCache.put(serviceId, dataSource);
+
+            return dataSource;
+        }
+    }
+}
+```
+
+### 2. 서비스 컨텍스트 관리
+
+```java
+public final class ServiceContextHolder {
+    private static final ThreadLocal<String> CONTEXT = new ThreadLocal<>();
+
+    public static void setCurrentServiceId(String serviceId) {
+        CONTEXT.set(serviceId);
+    }
+
+    public static String getCurrentServiceId() {
+        return CONTEXT.get();
+    }
+
+    public static void clear() {
+        CONTEXT.remove();
+    }
+}
+
+// URL 프리픽스 기반 서비스 컨텍스트 주입
+@Component
+public class ServiceContextInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        String path = request.getRequestURI();
+
+        if (path.startsWith("/api/v2/integrated-cms/")) {
+            ServiceContextHolder.setCurrentServiceId("integrated_cms");
+        } else if (path.startsWith("/api/v2/cms/douzone/")) {
+            ServiceContextHolder.setCurrentServiceId("douzone");
+        } else if (path.startsWith("/api/v2/cms/service1/")) {
+            ServiceContextHolder.setCurrentServiceId("service1");
+        } else if (path.startsWith("/api/v2/cms/service2/")) {
+            ServiceContextHolder.setCurrentServiceId("service2");
+        }
+        // Note: /api/v2/integrated-cms/** 는 "integrated_cms" DB로 라우팅
+        // /api/v2/cms/{serviceId}/** 는 각 서비스별 DB로 동적 라우팅
+
+        return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
+        ServiceContextHolder.clear();
+    }
+}
+```
+
+### 3. 기존 Service Layer 재사용
+
+```java
+@Service
+@Transactional
+public class ContentService {
+
+    @Autowired
+    private ContentRepository contentRepository;
+
+    // 기존 메서드들 그대로 유지
+    // ServiceContextHolder에 의해 자동으로 적절한 DB에 연결됨
+    public Page<ContentDto> getAllContents(Pageable pageable) {
+        Page<Content> contents = contentRepository.findAll(pageable);
+        return contents.map(this::convertToDto);
+    }
+
+    public ContentDto createContent(ContentDto dto) {
+        Content content = convertToEntity(dto);
+        Content saved = contentRepository.save(content);
+        return convertToDto(saved);
+    }
+}
+```
+
+## 📊 데이터 마이그레이션 전략
+
+### 1. 기존 데이터 분석 및 매핑
+
+```sql
+-- 기존 사용자 데이터를 ADMIN_USER로 마이그레이션
+INSERT INTO integrated_cms.ADMIN_USER (
+    UUID, USERNAME, PASSWORD, EMAIL, ROLE, STATUS, CREATED_AT
+)
+SELECT
+    UUID() as UUID,
+    username,
+    password,
+    email,
+    CASE
+        WHEN role = 'SUPER_ADMIN' THEN 'SYSTEM_ADMIN'
+        WHEN role = 'ADMIN' THEN 'SERVICE_ADMIN'
+        ELSE 'USER'
+    END as ROLE,
+    'ACTIVE' as STATUS,
+    created_at
+FROM legacy_cms.user
+WHERE role IN ('SUPER_ADMIN', 'ADMIN', 'MANAGER');
+```
+
+### 2. 서비스 정보 등록
+
+```sql
+-- 서비스 정보 등록
+INSERT INTO integrated_cms.SERVICE (
+    SERVICE_ID, SERVICE_NAME, DB_CONNECTION_INFO, STATUS
+) VALUES (
+    'douzone',
+    '두존 CMS',
+    AES_ENCRYPT('{"jdbcUrl":"jdbc:mysql://localhost:3306/douzone","username":"admin","password":"admin123"}', 'encryption_key'),
+    'ACTIVE'
+);
+```
+
+### 3. 점진적 마이그레이션 도구
+
+```java
+@Component
+public class DataMigrationService {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    public void migrateServiceData(String sourceServiceId, String targetServiceId) {
+        // 1. 소스 DB에서 데이터 추출
+        ServiceContext.setCurrentServiceId(sourceServiceId);
+        List<ContentDto> sourceData = contentService.getAllContents();
+
+        // 2. 타겟 DB로 데이터 이관
+        ServiceContext.setCurrentServiceId(targetServiceId);
+        sourceData.forEach(content -> {
+            content.setId(null); // ID 초기화
+            contentService.createContent(content);
+        });
+
+        ServiceContext.clear();
+    }
+
+    public MigrationStatus checkMigrationStatus(String serviceId) {
+        // 마이그레이션 진행 상황 확인
+        ServiceContext.setCurrentServiceId(serviceId);
+
+        long totalRecords = contentRepository.count();
+        long migratedRecords = contentRepository.countByMigrationStatus("MIGRATED");
+
+        return new MigrationStatus(totalRecords, migratedRecords);
+    }
+}
+```
+
+## 🔄 실시간 데이터 동기화
+
+### 1. 변경 감지 및 동기화
+
+```java
+@Entity
+@EntityListeners(ChangeTrackingListener.class)
+public class Content {
+    // 기존 필드들
+
+    @Column(name = "sync_status")
+    private String syncStatus = "PENDING"; // PENDING, SYNCED, FAILED
+
+    @Column(name = "last_sync_at")
+    private LocalDateTime lastSyncAt;
+}
+
+@Component
+public class ChangeTrackingListener {
+
+    @PostPersist
+    @PostUpdate
+    @PostRemove
+    public void handleChange(Object entity) {
+        if (entity instanceof SyncableEntity) {
+            syncService.markForSync(entity);
+        }
+    }
+}
+```
+
+### 2. 배치 동기화 작업
+
+```java
+@Component
+public class DataSyncService {
+
+    @Scheduled(fixedDelay = 60000) // 1분마다 실행
+    public void syncPendingChanges() {
+        List<String> activeServices = serviceRepository.findActiveServiceIds();
+
+        for (String serviceId : activeServices) {
+            ServiceContext.setCurrentServiceId(serviceId);
+
+            // 동기화 대기 중인 데이터 조회
+            List<SyncableEntity> pendingEntities = findPendingSyncEntities();
+
+            // 통합 DB로 동기화
+            for (SyncableEntity entity : pendingEntities) {
+                try {
+                    syncToIntegratedDb(entity);
+                    markAsSynced(entity);
+                } catch (Exception e) {
+                    markAsFailed(entity, e.getMessage());
+                }
+            }
+
+            ServiceContext.clear();
+        }
+    }
+}
+```
+
+## 🔐 암호화된 연결 정보 관리
+
+### 1. DB 연결 정보 암호화
+
+```java
+@Service
+public class DatabaseConnectionService {
+
+    @Value("${app.encryption.key}")
+    private String encryptionKey;
+
+    public String encryptConnectionInfo(DatabaseConnectionInfo info) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String jsonInfo = mapper.writeValueAsString(info);
+
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            SecretKeySpec keySpec = new SecretKeySpec(encryptionKey.getBytes(), "AES");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+
+            byte[] encrypted = cipher.doFinal(jsonInfo.getBytes());
+            return Base64.getEncoder().encodeToString(encrypted);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to encrypt connection info", e);
+        }
+    }
+
+    public DatabaseConnectionInfo decryptConnectionInfo(String encryptedInfo) {
+        try {
+            byte[] encrypted = Base64.getDecoder().decode(encryptedInfo);
+
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            SecretKeySpec keySpec = new SecretKeySpec(encryptionKey.getBytes(), "AES");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec);
+
+            byte[] decrypted = cipher.doFinal(encrypted);
+            String jsonInfo = new String(decrypted);
+
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(jsonInfo, DatabaseConnectionInfo.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to decrypt connection info", e);
+        }
+    }
+}
+```
+
+### 2. 환경별 설정 관리
+
+```yaml
+# application-dev.yml
+app:
+  encryption:
+    key: "dev-encryption-key-32-characters"
+  database:
+    integrated-cms:
+      url: jdbc:mysql://localhost:3306/integrated_cms
+      username: integrated.admin
+      password: dev_password
+
+# application-prod.yml
+app:
+  encryption:
+    key: ${ENCRYPTION_KEY} # 환경변수에서 읽기
+  database:
+    integrated-cms:
+      url: ${DB_URL}
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+```
+
+## 📋 마이그레이션 체크리스트
+
+### Phase 1: 환경 준비
+
+- [ ] integrated_cms DB 생성
+- [ ] 관리자 계정 생성 (integrated.admin, admin)
+- [ ] 암호화 키 설정
+- [ ] 기본 스키마 생성
+
+### Phase 2: 데이터 마이그레이션
+
+- [ ] 기존 사용자 데이터 → ADMIN_USER 이관
+- [ ] 서비스 정보 등록
+- [ ] 권한 매핑 설정
+- [ ] 데이터 검증
+
+### Phase 3: 동적 라우팅 적용
+
+- [ ] DynamicDataSource 설정
+- [ ] ServiceContext 구현
+- [ ] 기존 Service Layer 테스트
+- [ ] v2 API 엔드포인트 구현
+
+### Phase 4: 안정화
+
+- [ ] 동기화 시스템 구축
+- [ ] 모니터링 시스템 연동
+- [ ] 백업/복구 계획 수립
+- [ ] 성능 최적화

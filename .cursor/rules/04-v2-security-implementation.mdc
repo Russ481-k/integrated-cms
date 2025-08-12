@@ -1,0 +1,464 @@
+---
+globs: *.java,*.ts,*.tsx
+description: v2 보안 시스템 구현 가이드 (하이브리드 계층 구조)
+---
+
+# v2 보안 시스템 구현 가이드
+
+## 🛡️ 하이브리드 보안 계층 구조
+
+### 3계층 보안 전략
+
+1. **SecurityConfig**: 기본 보안 정책 + 큰 도메인 분류
+2. **커스텀 어노테이션**: 공통 비즈니스 권한 로직
+3. **컨트롤러**: 세밀한 메서드별 제어
+
+## 🔧 백엔드 보안 구현
+
+### 1. 통합 백엔드 라우팅 기반 보안 설정
+
+```java
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class UnifiedCmsSecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+            .cors().configurationSource(corsConfigurationSource())
+            .and()
+            .csrf().disable()
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
+            .authorizeHttpRequests(authz -> authz
+                // 기본 공개 경로
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/login/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/v2/auth/**").permitAll()
+
+                                // 통합 관리 영역 - integrated_cms 관련
+                .requestMatchers("/api/v2/integrated-cms/**")
+                    .hasAnyRole("SUPER_ADMIN", "SERVICE_ADMIN")
+
+                // 서비스별 CMS API - 계층적 권한
+                .requestMatchers("/api/v2/cms/**")
+                    .hasAnyRole("SUPER_ADMIN", "SERVICE_ADMIN", "SITE_ADMIN", "ADMIN")
+
+                // 기존 v1 경로 유지 (호환성)
+                .requestMatchers("/cms/**").authenticated()
+                .requestMatchers("/egov/**").authenticated()
+
+                // 나머지는 컨트롤러에서 세밀하게 제어
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling()
+            .authenticationEntryPoint(jwtAuthenticationEntryPoint);
+
+        return http.build();
+    }
+}
+```
+
+### 2. 커스텀 보안 어노테이션
+
+```java
+// 서비스 접근 권한
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@PreAuthorize("@serviceAccessChecker.hasAccess(authentication, #serviceId)")
+public @interface RequireServiceAccess {}
+
+// 통합 권한
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@PreAuthorize("@unifiedPermissionService.hasPermission(authentication, #resource, #action)")
+public @interface UnifiedPermission {
+    String resource();
+    String action();
+}
+
+// 서비스 관리자
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@PreAuthorize("hasRole('SERVICE_ADMIN') and @serviceAccessChecker.isServiceAdmin(authentication, #serviceId)")
+public @interface ServiceAdmin {}
+
+// 콘텐츠 권한
+@Target({ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@PreAuthorize("@contentPermissionChecker.canAccess(authentication, #serviceId, #contentType, #action)")
+public @interface ContentAccess {
+    String contentType() default "GENERAL";
+    String action(); // READ, WRITE, DELETE
+}
+```
+
+### 3. 권한 검증 Service 구현
+
+```java
+@Component("serviceAccessChecker")
+public class ServiceAccessChecker {
+
+    @Autowired
+    private ServiceRepository serviceRepository;
+
+    @Autowired
+    private AdminUserService adminUserService;
+
+    public boolean hasAccess(Authentication authentication, String serviceId) {
+        String username = authentication.getName();
+        AdminUser user = adminUserService.findByUsername(username);
+
+        // SYSTEM_ADMIN은 모든 서비스 접근 가능
+        if (user.getRole() == Role.SYSTEM_ADMIN) {
+            return true;
+        }
+
+        // 서비스별 권한 확인
+        return serviceRepository.hasUserAccess(serviceId, user.getUuid());
+    }
+
+    public boolean isServiceAdmin(Authentication authentication, String serviceId) {
+        String username = authentication.getName();
+        AdminUser user = adminUserService.findByUsername(username);
+
+        return serviceRepository.isServiceAdmin(serviceId, user.getUuid());
+    }
+}
+
+@Component("unifiedPermissionService")
+public class UnifiedPermissionService {
+
+    public boolean hasPermission(Authentication authentication, String resource, String action) {
+        String username = authentication.getName();
+        // 통합 권한 시스템에서 권한 확인
+        return permissionRepository.checkPermission(username, resource, action);
+    }
+}
+```
+
+### 4. 컨트롤러에서 세밀한 권한 제어
+
+```java
+// 통합 관리 컨트롤러 (integrated_cms DB 접근)
+@RestController
+@RequestMapping("/api/v2/integrated-cms")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN')")
+public class IntegratedCmsController {
+
+    private final AdminUserService adminUserService;
+    private final SystemService systemService;
+    private final ServiceManagementService serviceManagementService;
+
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @GetMapping("/admins")
+    public ResponseEntity<ApiResponseSchema<List<AdminUserDto>>> getAdminUsers() {
+        List<AdminUserDto> users = adminUserService.getAllAdminUsers();
+        return ResponseEntity.ok(ApiResponseSchema.success(users));
+    }
+
+    @GetMapping("/permissions")
+    public ResponseEntity<ApiResponseSchema<List<PermissionDto>>> getPermissions() {
+        List<PermissionDto> permissions = systemService.getAllPermissions();
+        return ResponseEntity.ok(ApiResponseSchema.success(permissions));
+    }
+
+    @GetMapping("/services")
+    public ResponseEntity<ApiResponseSchema<List<ServiceDto>>> getServices() {
+        List<ServiceDto> services = serviceManagementService.getAllServices();
+        return ResponseEntity.ok(ApiResponseSchema.success(services));
+    }
+
+    @PostMapping("/services")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponseSchema<ServiceDto>> createService(@RequestBody CreateServiceRequest request) {
+        ServiceDto service = serviceManagementService.createService(request);
+        return ResponseEntity.ok(ApiResponseSchema.success(service, "서비스가 생성되었습니다."));
+    }
+}
+
+// 서비스별 CMS 컨트롤러 (각 서비스 DB에 동적 라우팅)
+@RestController
+@RequestMapping("/api/v2/cms/{serviceId}/content")
+@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN', 'SITE_ADMIN', 'ADMIN')")
+public class CmsContentController {
+
+    private final ContentService contentService; // 기존 Service 재사용
+
+    @GetMapping
+    public ResponseEntity<ApiResponseSchema<Page<ContentDto>>> getContents(
+            @PathVariable String serviceId,
+            Pageable pageable) {
+
+        // ServiceContextHolder에 의해 자동으로 적절한 DB에 연결됨
+        Page<ContentDto> contents = contentService.getAllContents(pageable);
+        return ResponseEntity.ok(ApiResponseSchema.success(contents));
+    }
+
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN')")
+    @PostMapping
+    public ResponseEntity<ApiResponseSchema<ContentDto>> createContent(
+            @PathVariable String serviceId,
+            @RequestBody ContentDto contentDto) {
+
+        ContentDto created = contentService.createContent(contentDto);
+        return ResponseEntity.ok(ApiResponseSchema.success(created, "콘텐츠가 생성되었습니다."));
+    }
+
+    @PreAuthorize("@contentPermissionChecker.canDelete(authentication, #serviceId, #id)")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponseSchema<Void>> deleteContent(
+            @PathVariable String serviceId,
+            @PathVariable Long id) {
+
+        contentService.deleteContent(id);
+        return ResponseEntity.ok(ApiResponseSchema.success("콘텐츠가 삭제되었습니다."));
+    }
+}
+```
+
+## 🔐 프론트엔드 보안 구현
+
+### 1. 라우트 보호
+
+```typescript
+// middleware.ts
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "@/lib/auth-utils";
+
+export function middleware(request: NextRequest) {
+  const token = getToken(request);
+
+  // v2 API 경로 보호
+  if (
+    request.nextUrl.pathname.startsWith("/api/v2/") &&
+    !request.nextUrl.pathname.startsWith("/api/v2/auth/") &&
+    !request.nextUrl.pathname.startsWith("/api/v2/public/")
+  ) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
+  // CMS 관리 페이지 보호
+  if (request.nextUrl.pathname.startsWith("/cms/")) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/cms/login", request.url));
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/cms/:path*", "/api/v2/:path*"],
+};
+```
+
+### 2. 컴포넌트 레벨 권한 검증
+
+```typescript
+// components/auth/AuthGuard.tsx
+interface AuthGuardProps {
+  children: React.ReactNode;
+  requireRole?: UserRole;
+  requireServiceAccess?: boolean;
+  fallback?: React.ReactNode;
+}
+
+export const AuthGuard: React.FC<AuthGuardProps> = ({
+  children,
+  requireRole,
+  requireServiceAccess,
+  fallback = <div>접근 권한이 없습니다.</div>,
+}) => {
+  const { user } = useAuthStore();
+  const { serviceId } = useServiceContext();
+
+  // 인증 확인
+  if (!user) {
+    return <div>로그인이 필요합니다.</div>;
+  }
+
+  // 역할 확인
+  if (requireRole && !hasRole(user, requireRole)) {
+    return fallback;
+  }
+
+  // 서비스 접근 권한 확인
+  if (requireServiceAccess && !hasServiceAccess(user, serviceId)) {
+    return fallback;
+  }
+
+  return <>{children}</>;
+};
+
+// 사용 예시
+<AuthGuard requireRole="SERVICE_ADMIN" requireServiceAccess>
+  <ContentManagementPanel />
+</AuthGuard>;
+```
+
+### 3. Hook 기반 권한 검증
+
+```typescript
+// hooks/usePermissions.ts
+export const usePermissions = () => {
+  const { user } = useAuthStore();
+  const { serviceId } = useServiceContext();
+
+  const hasRole = useCallback(
+    (role: UserRole) => {
+      return user?.role === role || user?.role === "SYSTEM_ADMIN";
+    },
+    [user]
+  );
+
+  const hasServiceAccess = useCallback(
+    (targetServiceId?: string) => {
+      if (!user) return false;
+      if (user.role === "SYSTEM_ADMIN") return true;
+
+      const checkServiceId = targetServiceId || serviceId;
+      return user.accessibleServices?.includes(checkServiceId) || false;
+    },
+    [user, serviceId]
+  );
+
+  const canManageContent = useCallback(
+    (contentType: string = "GENERAL") => {
+      if (!hasServiceAccess()) return false;
+
+      return (
+        user?.permissions?.some(
+          (p) =>
+            p.resource === "CONTENT" &&
+            p.action === "WRITE" &&
+            p.resourceType === contentType
+        ) || false
+      );
+    },
+    [user, hasServiceAccess]
+  );
+
+  return {
+    hasRole,
+    hasServiceAccess,
+    canManageContent,
+    isSystemAdmin: user?.role === "SYSTEM_ADMIN",
+    isServiceAdmin: hasRole("SERVICE_ADMIN"),
+  };
+};
+```
+
+### 4. API 호출 시 권한 체크
+
+```typescript
+// hooks/useSecureApi.ts
+export const useSecureApi = () => {
+  const { hasServiceAccess, hasRole } = usePermissions();
+  const { serviceId } = useServiceContext();
+
+  const secureApiCall = useCallback(
+    async <T>(
+      apiCall: () => Promise<T>,
+      requiredPermissions?: {
+        role?: UserRole;
+        serviceAccess?: boolean;
+        action?: string;
+      }
+    ): Promise<T> => {
+      // 클라이언트 사이드 권한 검증 (추가 보안)
+      if (requiredPermissions?.role && !hasRole(requiredPermissions.role)) {
+        throw new Error("접근 권한이 없습니다.");
+      }
+
+      if (requiredPermissions?.serviceAccess && !hasServiceAccess()) {
+        throw new Error("서비스 접근 권한이 없습니다.");
+      }
+
+      return await apiCall();
+    },
+    [hasServiceAccess, hasRole]
+  );
+
+  return { secureApiCall };
+};
+
+// 사용 예시
+const { secureApiCall } = useSecureApi();
+
+const handleDeleteContent = async (id: number) => {
+  try {
+    await secureApiCall(() => contentApi.deleteContent(serviceId, id), {
+      serviceAccess: true,
+      action: "DELETE",
+    });
+    toast.success("콘텐츠가 삭제되었습니다.");
+  } catch (error) {
+    toast.error(error.message);
+  }
+};
+```
+
+## 🔍 보안 감사 및 로깅
+
+### 백엔드 감사 로그
+
+```java
+@Aspect
+@Component
+public class SecurityAuditAspect {
+
+    @Around("@annotation(requireServiceAccess)")
+    public Object auditServiceAccess(ProceedingJoinPoint joinPoint, RequireServiceAccess requireServiceAccess) throws Throwable {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+        String methodName = joinPoint.getSignature().getName();
+
+        try {
+            Object result = joinPoint.proceed();
+            auditLogger.logSuccess(username, methodName, "SERVICE_ACCESS");
+            return result;
+        } catch (AccessDeniedException e) {
+            auditLogger.logFailure(username, methodName, "SERVICE_ACCESS_DENIED", e.getMessage());
+            throw e;
+        }
+    }
+}
+```
+
+### 프론트엔드 보안 이벤트 추적
+
+```typescript
+// utils/securityTracker.ts
+export const securityTracker = {
+  trackPermissionCheck: (action: string, result: boolean, context?: any) => {
+    console.log(
+      `[Security] ${action}: ${result ? "ALLOWED" : "DENIED"}`,
+      context
+    );
+
+    // 운영 환경에서는 서버로 전송
+    if (process.env.NODE_ENV === "production" && !result) {
+      analytics.track("security_permission_denied", {
+        action,
+        context,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  },
+
+  trackUnauthorizedAccess: (path: string, user?: User) => {
+    console.warn(`[Security] Unauthorized access attempt to ${path}`, user);
+
+    analytics.track("security_unauthorized_access", {
+      path,
+      userId: user?.id,
+      timestamp: new Date().toISOString(),
+    });
+  },
+};
+```

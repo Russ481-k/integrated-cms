@@ -1,0 +1,519 @@
+---
+globs: *.java,*.ts,*.tsx,*.js,*.jsx
+description: 코드 품질 표준 및 개발 베스트 프랙티스
+---
+
+# 코드 품질 표준 및 개발 베스트 프랙티스
+
+## 🎯 코드 작성 원칙
+
+### 1. SOLID 원칙 적용
+
+- **Single Responsibility**: 클래스는 하나의 책임만 가져야 함
+- **Open/Closed**: 확장에는 열려있고 수정에는 닫혀있어야 함
+- **Liskov Substitution**: 상위 타입의 객체를 하위 타입으로 치환 가능해야 함
+- **Interface Segregation**: 클라이언트는 사용하지 않는 인터페이스에 의존하면 안됨
+- **Dependency Inversion**: 고수준 모듈은 저수준 모듈에 의존하면 안됨
+
+### 2. DRY (Don't Repeat Yourself) 원칙
+
+- 중복 코드 제거
+- 공통 로직의 유틸리티 함수화
+- 재사용 가능한 컴포넌트 설계
+
+## 🏗️ 백엔드 코드 품질 기준
+
+### 1. 클래스 및 메서드 설계
+
+```java
+// ✅ 좋은 예시: 책임이 명확한 클래스
+@Service
+@Transactional
+public class ContentManagementService {
+
+    private final ContentRepository contentRepository;
+    private final ContentValidator contentValidator;
+    private final ContentNotificationService notificationService;
+
+    public ContentDto createContent(String serviceId, CreateContentRequest request) {
+        // 1. 입력 검증
+        contentValidator.validateCreateRequest(request);
+
+        // 2. 비즈니스 로직 처리
+        Content content = Content.builder()
+                .serviceId(serviceId)
+                .title(request.getTitle())
+                .content(request.getContent())
+                .status(ContentStatus.DRAFT)
+                .build();
+
+        // 3. 저장 및 후처리
+        Content saved = contentRepository.save(content);
+        notificationService.notifyContentCreated(saved);
+
+        return ContentMapper.toDto(saved);
+    }
+}
+
+// ❌ 나쁜 예시: 너무 많은 책임을 가진 클래스
+@Service
+public class ContentService {
+    // 콘텐츠 CRUD + 알림 + 검증 + 파일 처리 + 권한 체크 등 모든 것을 처리
+}
+```
+
+### 2. 예외 처리 및 로깅
+
+```java
+// ✅ 구체적이고 의미있는 예외 처리
+@Service
+public class UserService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
+    public UserDto createUser(CreateUserRequest request) {
+        try {
+            logger.info("Creating user: {}", request.getUsername());
+
+            if (userRepository.existsByUsername(request.getUsername())) {
+                throw new DuplicateUsernameException("Username already exists: " + request.getUsername());
+            }
+
+            User user = userMapper.toEntity(request);
+            User saved = userRepository.save(user);
+
+            logger.info("User created successfully: {}", saved.getUuid());
+            return userMapper.toDto(saved);
+
+        } catch (DataIntegrityViolationException e) {
+            logger.error("Database constraint violation while creating user: {}", request.getUsername(), e);
+            throw new UserCreationException("Failed to create user due to data constraint", e);
+        } catch (Exception e) {
+            logger.error("Unexpected error while creating user: {}", request.getUsername(), e);
+            throw new UserCreationException("Failed to create user", e);
+        }
+    }
+}
+
+// ❌ 나쁜 예시: 구체적이지 않은 예외 처리
+public UserDto createUser(CreateUserRequest request) {
+    try {
+        // 비즈니스 로직
+        return result;
+    } catch (Exception e) {
+        logger.error("Error", e);
+        throw new RuntimeException("Something went wrong");
+    }
+}
+```
+
+### 3. 데이터 검증 및 변환
+
+```java
+// ✅ 명확한 검증 및 변환 로직
+@Component
+public class ContentValidator {
+
+    public void validateCreateRequest(CreateContentRequest request) {
+        ValidationResult result = ValidationResult.builder();
+
+        if (StringUtils.isBlank(request.getTitle())) {
+            result.addError("title", "제목은 필수입니다.");
+        } else if (request.getTitle().length() > 100) {
+            result.addError("title", "제목은 100자 이하여야 합니다.");
+        }
+
+        if (StringUtils.isBlank(request.getContent())) {
+            result.addError("content", "내용은 필수입니다.");
+        }
+
+        if (!result.isValid()) {
+            throw new ValidationException(result);
+        }
+    }
+}
+
+@Component
+public class ContentMapper {
+
+    public static ContentDto toDto(Content entity) {
+        if (entity == null) return null;
+
+        return ContentDto.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .content(entity.getContent())
+                .status(entity.getStatus())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+
+    public static Content toEntity(CreateContentRequest request) {
+        return Content.builder()
+                .title(StringUtils.trim(request.getTitle()))
+                .content(StringUtils.trim(request.getContent()))
+                .status(ContentStatus.DRAFT)
+                .build();
+    }
+}
+```
+
+### 4. 테스트 가능한 코드 설계
+
+```java
+// ✅ 의존성 주입을 통한 테스트 가능한 설계
+@Service
+public class ContentService {
+
+    private final ContentRepository contentRepository;
+    private final TimeProvider timeProvider;
+    private final NotificationService notificationService;
+
+    public ContentService(
+            ContentRepository contentRepository,
+            TimeProvider timeProvider,
+            NotificationService notificationService) {
+        this.contentRepository = contentRepository;
+        this.timeProvider = timeProvider;
+        this.notificationService = notificationService;
+    }
+
+    public ContentDto publishContent(Long contentId) {
+        Content content = contentRepository.findById(contentId)
+                .orElseThrow(() -> new ContentNotFoundException(contentId));
+
+        content.publish(timeProvider.now());
+        Content published = contentRepository.save(content);
+
+        notificationService.notifyContentPublished(published);
+
+        return ContentMapper.toDto(published);
+    }
+}
+
+// 테스트 코드
+@ExtendWith(MockitoExtension.class)
+class ContentServiceTest {
+
+    @Mock private ContentRepository contentRepository;
+    @Mock private TimeProvider timeProvider;
+    @Mock private NotificationService notificationService;
+
+    @InjectMocks private ContentService contentService;
+
+    @Test
+    void publishContent_Success() {
+        // Given
+        Long contentId = 1L;
+        LocalDateTime publishTime = LocalDateTime.of(2024, 1, 1, 10, 0);
+        Content content = createTestContent();
+
+        when(contentRepository.findById(contentId)).thenReturn(Optional.of(content));
+        when(timeProvider.now()).thenReturn(publishTime);
+        when(contentRepository.save(any())).thenReturn(content);
+
+        // When
+        ContentDto result = contentService.publishContent(contentId);
+
+        // Then
+        assertThat(result.getStatus()).isEqualTo(ContentStatus.PUBLISHED);
+        verify(notificationService).notifyContentPublished(content);
+    }
+}
+```
+
+## 🎨 프론트엔드 코드 품질 기준
+
+### 1. 컴포넌트 설계 원칙
+
+```typescript
+// ✅ 좋은 예시: 단일 책임을 가진 컴포넌트
+interface ContentListProps {
+  serviceId: string;
+  onContentSelect?: (content: Content) => void;
+  filters?: ContentFilters;
+}
+
+export const ContentList: React.FC<ContentListProps> = ({
+  serviceId,
+  onContentSelect,
+  filters,
+}) => {
+  const { data: contents, isLoading, error } = useContents(serviceId, filters);
+
+  if (isLoading) return <ContentListSkeleton />;
+  if (error) return <ErrorMessage error={error} />;
+  if (!contents?.length) return <EmptyState message="콘텐츠가 없습니다." />;
+
+  return (
+    <VStack spacing={2}>
+      {contents.map((content) => (
+        <ContentListItem
+          key={content.id}
+          content={content}
+          onClick={() => onContentSelect?.(content)}
+        />
+      ))}
+    </VStack>
+  );
+};
+
+// ❌ 나쁜 예시: 너무 많은 책임을 가진 컴포넌트
+export const ContentManagement = () => {
+  // 목록 조회 + 생성 + 수정 + 삭제 + 필터링 + 페이지네이션 + 권한 체크 등
+  // 500줄이 넘는 컴포넌트
+};
+```
+
+### 2. 커스텀 Hook 설계
+
+```typescript
+// ✅ 재사용 가능하고 테스트 가능한 Hook
+interface UseContentManagementOptions {
+  serviceId: string;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+}
+
+export const useContentManagement = ({
+  serviceId,
+  autoRefresh = false,
+  refreshInterval = 30000,
+}: UseContentManagementOptions) => {
+  const queryClient = useQueryClient();
+
+  // 목록 조회
+  const {
+    data: contents,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["contents", serviceId],
+    queryFn: () => contentApi.getContents(serviceId),
+    enabled: !!serviceId,
+    refetchInterval: autoRefresh ? refreshInterval : undefined,
+  });
+
+  // 생성
+  const createMutation = useMutation({
+    mutationFn: (data: CreateContentRequest) =>
+      contentApi.createContent(serviceId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contents", serviceId] });
+      toast.success("콘텐츠가 생성되었습니다.");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  // 삭제
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => contentApi.deleteContent(serviceId, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contents", serviceId] });
+      toast.success("콘텐츠가 삭제되었습니다.");
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  return {
+    contents,
+    isLoading,
+    error,
+    refetch,
+    createContent: createMutation.mutateAsync,
+    deleteContent: deleteMutation.mutateAsync,
+    isCreating: createMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+  };
+};
+```
+
+### 3. 타입 안정성 및 검증
+
+```typescript
+// ✅ 엄격한 타입 정의
+export interface Content {
+  readonly id: number;
+  readonly serviceId: string;
+  title: string;
+  content: string;
+  status: ContentStatus;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly createdBy: {
+    id: string;
+    name: string;
+  };
+}
+
+export enum ContentStatus {
+  DRAFT = "DRAFT",
+  PUBLISHED = "PUBLISHED",
+  ARCHIVED = "ARCHIVED",
+}
+
+// Zod 스키마를 활용한 런타임 검증
+export const CreateContentSchema = z.object({
+  title: z
+    .string()
+    .min(1, "제목을 입력해주세요.")
+    .max(100, "제목은 100자 이하여야 합니다."),
+  content: z
+    .string()
+    .min(1, "내용을 입력해주세요.")
+    .max(10000, "내용은 10,000자 이하여야 합니다."),
+  tags: z
+    .array(z.string())
+    .max(10, "태그는 최대 10개까지 설정할 수 있습니다.")
+    .optional(),
+});
+
+export type CreateContentRequest = z.infer<typeof CreateContentSchema>;
+
+// 폼에서 사용
+export const useContentForm = (initialData?: Partial<Content>) => {
+  return useForm<CreateContentRequest>({
+    defaultValues: {
+      title: initialData?.title || "",
+      content: initialData?.content || "",
+      tags: initialData?.tags || [],
+    },
+    resolver: zodResolver(CreateContentSchema),
+  });
+};
+```
+
+### 4. 에러 경계 및 예외 처리
+
+```typescript
+// ✅ 에러 경계 컴포넌트
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback?: React.ComponentType<{ error: Error; resetError: () => void }>;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+}
+
+export class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+    this.props.onError?.(error, errorInfo);
+
+    // 에러 리포팅 서비스로 전송
+    errorReporter.captureException(error, {
+      tags: { component: "ErrorBoundary" },
+      extra: errorInfo,
+    });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      const FallbackComponent = this.props.fallback || DefaultErrorFallback;
+      return (
+        <FallbackComponent
+          error={this.state.error!}
+          resetError={() =>
+            this.setState({ hasError: false, error: undefined })
+          }
+        />
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// 사용 예시
+<ErrorBoundary onError={handleError}>
+  <ContentManagementPanel />
+</ErrorBoundary>;
+```
+
+## 📋 코드 리뷰 체크리스트
+
+### 백엔드 체크리스트
+
+- [ ] **아키텍처**: 레이어 간 의존성이 올바른가?
+- [ ] **보안**: 인증/인가가 적절히 적용되었는가?
+- [ ] **성능**: N+1 쿼리, 불필요한 DB 호출은 없는가?
+- [ ] **예외처리**: 구체적이고 의미있는 예외 처리인가?
+- [ ] **로깅**: 적절한 로그 레벨과 내용인가?
+- [ ] **테스트**: 단위 테스트가 작성되었는가?
+- [ ] **문서화**: API 문서(Swagger)가 업데이트되었는가?
+
+### 프론트엔드 체크리스트
+
+- [ ] **컴포넌트**: 단일 책임 원칙을 지키는가?
+- [ ] **타입 안정성**: TypeScript를 적절히 활용했는가?
+- [ ] **성능**: 불필요한 리렌더링은 없는가?
+- [ ] **접근성**: ARIA 속성, 키보드 네비게이션이 고려되었는가?
+- [ ] **에러 처리**: 사용자 친화적인 에러 메시지인가?
+- [ ] **상태 관리**: 상태가 적절한 범위에서 관리되는가?
+- [ ] **테스트**: 컴포넌트 테스트가 작성되었는가?
+
+## 🧪 테스트 전략
+
+### 백엔드 테스트 피라미드
+
+```java
+// 단위 테스트 (70%)
+@ExtendWith(MockitoExtension.class)
+class ContentServiceTest {
+    // Service 로직 테스트
+}
+
+// 통합 테스트 (20%)
+@SpringBootTest
+@Transactional
+class ContentRepositoryTest {
+    // Repository와 DB 연동 테스트
+}
+
+// E2E 테스트 (10%)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class ContentControllerE2ETest {
+    // 전체 플로우 테스트
+}
+```
+
+### 프론트엔드 테스트 피라미드
+
+```typescript
+// 단위 테스트 (70%) - Jest + Testing Library
+describe("useContentManagement", () => {
+  it("should create content successfully", async () => {
+    // Hook 로직 테스트
+  });
+});
+
+// 통합 테스트 (20%) - Component + Hook 통합
+describe("ContentForm", () => {
+  it("should submit form with valid data", async () => {
+    // 컴포넌트와 Hook 연동 테스트
+  });
+});
+
+// E2E 테스트 (10%) - Playwright/Cypress
+describe("Content Management Flow", () => {
+  it("should allow user to create, edit, and delete content", () => {
+    // 전체 사용자 플로우 테스트
+  });
+});
+```

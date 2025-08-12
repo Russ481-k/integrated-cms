@@ -1,0 +1,81 @@
+---
+alwaysApply: true
+description: 통합 CMS v2 아키텍처 핵심 설계 원칙 및 구조
+---
+
+# 통합 CMS v2 아키텍처 핵심 가이드
+
+이 프로젝트는 **다중 서비스 통합 관리**가 가능한 차세대 CMS 플랫폼입니다.
+
+## 🏗️ 시스템 아키텍처
+
+### 핵심 설계 원칙
+
+- **통합 백엔드 라우팅**: 단일 Spring 애플리케이션 내부에서 서비스별 컨텍스트 라우팅
+- **경로 기반 서비스 분리**: URL 프리픽스로 서비스 컨텍스트 주입 및 동적 DB 라우팅
+- **RBAC 기반 권한 시스템**: 역할 기반 접근 제어로 계층적 권한 관리
+- **기존 자산 최대 활용**: 기존 Service Layer 100% 재사용, Controller만 경로별 분기
+
+### 데이터베이스 구조
+
+- **통합 메타 DB** (integrated_cms): 서비스 정보, 권한 관리, 관리자 계정 ([database_schema.sql](mdc:.cursor/docs/v2/database_schema.sql))
+- **개별 서비스 DB**: 각 서비스별 독립 데이터베이스 유지 (기존 구조 보존)
+
+### API 구조 (통합 백엔드 라우팅)
+
+```
+/api/v2/
+├── integrated-cms/  # 통합 관리 API (integrated_cms DB 접근)
+│   ├── admins/      # 통합 관리자 관리
+│   ├── services/    # 서비스 관리
+│   └── permissions/ # 통합 권한 관리
+└── cms/             # 서비스별 CMS API (동적 DB 라우팅)
+    ├── douzone/     # douzone 서비스 (douzone DB 접근)
+    │   ├── content/ # 콘텐츠 관리
+    │   ├── menu/    # 메뉴 관리
+    │   ├── board/   # 게시판 관리
+    │   └── user/    # 사용자 관리
+    ├── service1/    # service1 (service1 DB 접근)
+    └── service2/    # service2 (service2 DB 접근)
+```
+
+## 🔐 권한 시스템
+
+### 사용자 계층 구조
+
+1. **슈퍼 관리자**: 모든 서비스와 DB 접근 가능 (integrated.admin 계정)
+2. **서비스 관리자**: 특정 서비스 전체 관리 권한 (integrated.admin 계정)
+3. **사이트 관리자**: 특정 사이트 관리 권한 (admin 계정)
+4. **일반 관리자**: 그룹 기반 제한된 권한 (admin 계정)
+
+### 데이터베이스 접근 권한
+
+- **integrated.admin**: 통합 DB + 모든 서비스 DB 접근 (슈퍼/서비스 관리자)
+- **admin**: 서비스별 DB만 접근 (사이트/일반 관리자)
+
+### 권한 검증 원칙
+
+- **최소 권한 원칙**: 필요한 최소한의 권한만 부여
+- **직무 분리**: 권한 부여자와 실행자 분리
+- **RBAC 기반**: 역할 기반 접근 제어로 계층적 관리
+
+자세한 권한 시스템은 [database_access_policy.md](mdc:.cursor/docs/v2/database_access_policy.md)를 참조하세요.
+
+## 🚀 개발 일정
+
+상세한 개발 일정과 마일스톤은 [development-schedule.md](mdc:.cursor/docs/v2/development-schedule.md)를 참조하세요.
+
+## 📋 개발 시 주의사항
+
+### 통합 백엔드 라우팅 구현
+
+- **ServiceContextHolder**: ThreadLocal로 요청별 서비스 컨텍스트 관리
+- **HandlerInterceptor**: URL 프리픽스 → 서비스 컨텍스트 주입
+- **AbstractRoutingDataSource**: 서비스 컨텍스트 기반 동적 DB 라우팅
+
+### 기존 자산 활용 전략
+
+- **Service Layer**: 100% 재사용 (비즈니스 로직 보존)
+- **Repository Layer**: 100% 재사용 (데이터 접근 계층 유지)
+- **Controller Layer**: 경로별 분기로 최소 변경
+- **Domain Model**: 90% 재사용 (기존 엔티티 구조 보존)
