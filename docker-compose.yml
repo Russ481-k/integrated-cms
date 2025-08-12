@@ -39,9 +39,6 @@ services:
       - ./server/.env
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-integrated_cms}
-      - MYSQL_USER=${MYSQL_USER:-admin}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-admin123}
     ports:
       - "${DB_PORT:-3306}:3306"
     command: 

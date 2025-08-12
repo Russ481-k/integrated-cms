@@ -9,13 +9,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface UserManageRepository extends JpaRepository<User, Long> {
+public interface UserManageRepository extends JpaRepository<User, String> {
     User findByUsername(String userId);
-    
+
     @Query("SELECT u FROM User u WHERE (:searchCondition = 'USER_ID' AND u.username LIKE CONCAT('%',:searchKeyword,'%')) OR (:searchCondition = 'USER_NM' AND u.name LIKE CONCAT('%',:searchKeyword,'%')) OR (:searchCondition = 'EMAIL' AND u.email LIKE CONCAT('%',:searchKeyword,'%'))")
     Page<User> searchUsers(
-        @Param("searchCondition") String searchCondition,
-        @Param("searchKeyword") String searchKeyword,
-        Pageable pageable
-    );
-} 
+            @Param("searchCondition") String searchCondition,
+            @Param("searchKeyword") String searchKeyword,
+            Pageable pageable);
+}

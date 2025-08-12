@@ -195,6 +195,43 @@ sudo systemctl enable cms.service
 sudo systemctl start cms.service
 ```
 
+## 🚀 **새로운 서비스 추가 방법**
+
+시스템은 중앙 통합 데이터베이스(`integrated_cms`)와 개별 서비스별 데이터베이스(`douzone` 등)로 구성됩니다.
+새로운 서비스를 추가할 때는 다음 단계를 따르세요:
+
+### **1. 데이터베이스 생성**
+
+```sql
+CREATE DATABASE IF NOT EXISTS service_name;
+```
+
+### **2. 권한 부여**
+
+```sql
+-- 통합 관리자 권한 부여
+GRANT ALL PRIVILEGES ON service_name.* TO 'interated.admin'@'%';
+
+-- 개별 서비스 사용자 권한 부여
+GRANT ALL PRIVILEGES ON service_name.* TO 'admin'@'%';
+
+-- 권한 적용
+FLUSH PRIVILEGES;
+```
+
+### **3. 환경변수 추가** (필요시)
+
+```bash
+# .env 파일에 추가
+SERVICE_NAME_DATASOURCE_URL=jdbc:mariadb://db:3306/service_name?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+SERVICE_NAME_DB_USERNAME=admin
+SERVICE_NAME_DB_PASSWORD=your_password
+```
+
+### **4. 데이터소스 설정 업데이트**
+
+새로운 서비스가 별도의 데이터소스가 필요한 경우, `EgovConfigAppDataSource.java`에서 해당 설정을 추가하세요.
+
 ## 📚 **문서**
 
 - [🏗️ 시스템 아키텍처](./Docs/cms/enrollment-system.md)
@@ -261,5 +298,3 @@ ps aux --sort=-%mem | head
 | **v2.2** | **2025-05-23** | **Redis 제거, 세션 관리 단순화** |
 
 ---
-
-_Made with ❤️ by CMS Development Team_

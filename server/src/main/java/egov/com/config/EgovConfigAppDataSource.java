@@ -58,29 +58,29 @@ public class EgovConfigAppDataSource {
             String integratedUsername = dotenv.get("INTEGRATED_DB_USERNAME");
             String integratedPassword = dotenv.get("INTEGRATED_DB_PASSWORD");
 
-            // 환경변수가 없으면 기본값 사용
+            // 환경변수 필수 체크 - 보안을 위해 기본값 제공하지 않음
             if (integratedUrl == null || integratedUsername == null || integratedPassword == null) {
-                logger.warn("Integrated CMS database configuration not found in .env, using defaults");
-                integratedUrl = "jdbc:mariadb://db:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true";
-                integratedUsername = "admin";
-                integratedPassword = "admin123";
+                logger.error("Integrated CMS database configuration is missing in .env file");
+                logger.error(
+                        "Required environment variables: INTEGRATED_CMS_DATASOURCE_URL, INTEGRATED_DB_USERNAME, INTEGRATED_DB_PASSWORD");
+                throw new RuntimeException("Integrated CMS database configuration is missing. Please check .env file.");
             }
 
             integratedDbConfig.put("url", integratedUrl);
             integratedDbConfig.put("username", integratedUsername);
             integratedDbConfig.put("password", integratedPassword);
 
-            // 개별 CMS 데이터베이스 설정 (기본값 설정)
-            String cmsUrl = dotenv.get("CMS_DATASOURCE_URL");
-            String cmsUsername = dotenv.get("CMS_DB_USERNAME");
-            String cmsPassword = dotenv.get("CMS_DB_PASSWORD");
+            // 개별 CMS 데이터베이스 설정 (DOUZONE)
+            String cmsUrl = dotenv.get("DOUZONE_DATASOURCE_URL");
+            String cmsUsername = dotenv.get("DOUZONE_DB_USERNAME");
+            String cmsPassword = dotenv.get("DOUZONE_DB_PASSWORD");
 
-            // 환경변수가 없으면 기본값 사용
+            // 환경변수 필수 체크 - 보안을 위해 기본값 제공하지 않음
             if (cmsUrl == null || cmsUsername == null || cmsPassword == null) {
-                logger.warn("CMS database configuration not found in .env, using defaults");
-                cmsUrl = "jdbc:mariadb://db:3306/cms?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true";
-                cmsUsername = "admin";
-                cmsPassword = "admin123";
+                logger.error("CMS database configuration is missing in .env file");
+                logger.error(
+                        "Required environment variables: DOUZONE_DATASOURCE_URL, DOUZONE_DB_USERNAME, DOUZONE_DB_PASSWORD");
+                throw new RuntimeException("CMS database configuration is missing. Please check .env file.");
             }
 
             cmsDbConfig.put("url", cmsUrl);
@@ -94,21 +94,48 @@ public class EgovConfigAppDataSource {
             logger.info("CMS DB configuration loaded - URL: {}, Username: {}",
                     cmsDbConfig.get("url"), cmsDbConfig.get("username"));
         } catch (Exception e) {
-            logger.error("Error loading environment variables", e);
-            // 환경변수 로딩 실패 시 기본값으로 설정
-            logger.warn("Using fallback database configuration");
+            logger.error("Error loading environment variables from .env file", e);
 
-            integratedDbConfig.put("url",
-                    "jdbc:mariadb://db:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true");
-            integratedDbConfig.put("username", "admin");
-            integratedDbConfig.put("password", "admin123");
+            // .env 파일 로딩 실패 시 시스템 환경변수에서 직접 읽기 시도
+            logger.info("Attempting to load configuration from system environment variables");
 
-            cmsDbConfig.put("url",
-                    "jdbc:mariadb://db:3306/cms?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true");
-            cmsDbConfig.put("username", "admin");
-            cmsDbConfig.put("password", "admin123");
+            String fallbackIntegratedUrl = System.getenv("INTEGRATED_CMS_DATASOURCE_URL");
+            String fallbackIntegratedUsername = System.getenv("INTEGRATED_DB_USERNAME");
+            String fallbackIntegratedPassword = System.getenv("INTEGRATED_DB_PASSWORD");
+
+            String fallbackCmsUrl = System.getenv("DOUZONE_DATASOURCE_URL");
+            String fallbackCmsUsername = System.getenv("DOUZONE_DB_USERNAME");
+            String fallbackCmsPassword = System.getenv("DOUZONE_DB_PASSWORD");
+
+            // 통합 CMS 환경변수 필수 체크
+            if (fallbackIntegratedUrl == null || fallbackIntegratedUsername == null
+                    || fallbackIntegratedPassword == null) {
+                logger.error("Integrated CMS database configuration is missing in system environment variables");
+                logger.error(
+                        "Required environment variables: INTEGRATED_CMS_DATASOURCE_URL, INTEGRATED_DB_USERNAME, INTEGRATED_DB_PASSWORD");
+                throw new RuntimeException("Database configuration is missing. Please check environment variables.");
+            }
+
+            // 개별 CMS 환경변수 필수 체크
+            if (fallbackCmsUrl == null || fallbackCmsUsername == null || fallbackCmsPassword == null) {
+                logger.error("CMS database configuration is missing in system environment variables");
+                logger.error(
+                        "Required environment variables: DOUZONE_DATASOURCE_URL, DOUZONE_DB_USERNAME, DOUZONE_DB_PASSWORD");
+                throw new RuntimeException("Database configuration is missing. Please check environment variables.");
+            }
+
+            // 환경변수가 모두 존재할 때만 설정
+            integratedDbConfig.put("url", fallbackIntegratedUrl);
+            integratedDbConfig.put("username", fallbackIntegratedUsername);
+            integratedDbConfig.put("password", fallbackIntegratedPassword);
+
+            cmsDbConfig.put("url", fallbackCmsUrl);
+            cmsDbConfig.put("username", fallbackCmsUsername);
+            cmsDbConfig.put("password", fallbackCmsPassword);
 
             this.dbType = "mariadb";
+
+            logger.info("Successfully loaded database configuration from system environment variables");
         }
     }
 
@@ -142,12 +169,13 @@ public class EgovConfigAppDataSource {
     }
 
     /**
-     * Primary DataSource - 기본적으로 통합 CMS 데이터소스 사용
+     * Primary DataSource - 동적 라우팅 데이터소스 사용
+     * 주의: DynamicDataSourceConfiguration이 우선 적용되므로
+     * 이 빈은 fallback으로만 사용됩니다.
      */
-    @Bean(name = { "dataSource", "egov.dataSource", "egovDataSource" })
-    @Primary
-    public DataSource dataSource() {
-        logger.info("Creating Primary DataSource with dbType: {}", dbType);
+    @Bean(name = { "egov.dataSource", "egovDataSource", "dataSource" })
+    public DataSource egovDataSource() {
+        logger.info("Creating Egov DataSource with dbType: {}", dbType);
         if ("hsql".equals(dbType)) {
             return dataSourceHSQL();
         } else {
