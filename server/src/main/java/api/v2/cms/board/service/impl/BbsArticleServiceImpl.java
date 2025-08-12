@@ -518,7 +518,7 @@ public class BbsArticleServiceImpl implements BbsArticleService {
                                     .mimeType(cmsFile.getMimeType())
                                     .ext(cmsFile.getExt())
                                     .downloadUrl(
-                                            appApiBaseUrl + "/api/v1/cms/file/public/download/" + cmsFile.getFileId())
+                                            appApiBaseUrl + "/api/v2/cms/file/public/download/" + cmsFile.getFileId())
                                     .build())
                             .collect(Collectors.toList());
                 }
@@ -618,7 +618,7 @@ public class BbsArticleServiceImpl implements BbsArticleService {
                     log.debug("[traverseAndReplace] Found media node with src: {}", srcValue);
                     if (localIdToFileIdMap.containsKey(srcValue)) {
                         Long fileId = localIdToFileIdMap.get(srcValue);
-                        String newSrc = appApiBaseUrl + "/api/v1/cms/file/public/view/" + fileId;
+                        String newSrc = appApiBaseUrl + "/api/v2/cms/file/public/view/" + fileId;
                         objectNode.put("src", newSrc);
                         log.debug("[traverseAndReplace] Replaced src '{}' with '{}' (File ID: {})", srcValue, newSrc,
                                 fileId);
@@ -707,9 +707,9 @@ public class BbsArticleServiceImpl implements BbsArticleService {
             }
         }
 
-        // Handle full URL pattern like "http://.../api/v1/cms/file/public/view/123"
+        // Handle full URL pattern like "http://.../api/v2/cms/file/public/view/123"
         // A more robust way might involve java.net.URI if URLs can be complex
-        String viewPathSegment = "/api/v1/cms/file/public/view/";
+        String viewPathSegment = "/api/v2/cms/file/public/view/";
         int lastSegmentIndex = src.lastIndexOf(viewPathSegment);
 
         if (lastSegmentIndex != -1) {

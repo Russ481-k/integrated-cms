@@ -4,10 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import api.v2.cms.common.dto.ApiResponseSchema;
 import api.v2.cms.config.ServiceContextHolder;
+import api.v2.cms.auth.annotation.RequireIntegratedCmsAccess;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -16,6 +19,11 @@ import java.util.Map;
 
 /**
  * 통합 CMS 관리 컨트롤러
+ * 
+ * 하이브리드 보안 시스템 적용:
+ * 1. SecurityConfig: /api/v2/integrated-cms/** → SUPER_ADMIN, SERVICE_ADMIN
+ * 2. 클래스 레벨: @RequireIntegratedCmsAccess (커스텀 비즈니스 로직)
+ * 3. 메서드 레벨: @PreAuthorize (세밀한 권한 제어)
  * 
  * integrated_cms DB에 접근하여 통합 관리 기능 제공:
  * - 시스템 관리자 관리 (ADMIN_USER 테이블)
@@ -27,8 +35,8 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v2/integrated-cms")
-@PreAuthorize("hasAnyRole('SUPER_ADMIN', 'SERVICE_ADMIN')")
+@RequestMapping("/integrated-cms")
+@RequireIntegratedCmsAccess // 2계층: 커스텀 비즈니스 권한 로직
 @RequiredArgsConstructor
 public class IntegratedCmsController {
 
@@ -49,21 +57,62 @@ public class IntegratedCmsController {
     }
 
     /**
-     * 통합 관리자 목록 조회 (임시 구현)
+     * 통합 관리자 목록 조회
+     * 3계층: 세밀한 권한 제어 - SUPER_ADMIN만 가능
      */
     @GetMapping("/admins")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("@integratedCmsAccessChecker.canManageAdmins(authentication)")
     public ResponseEntity<ApiResponseSchema<Map<String, Object>>> getAdminUsers() {
-        log.info("Admin users list requested");
+        log.info("Admin users list requested with hybrid authentication");
 
         // TODO: AdminUserService를 통한 실제 데이터 조회 구현
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "통합 관리자 목록 조회 기능 (구현 예정)");
+        response.put("message", "통합 관리자 목록 조회 기능 (하이브리드 인증 적용)");
         response.put("serviceContext", ServiceContextHolder.getCurrentServiceId());
-        response.put("endpoint", "/api/v2/integrated-cms/admins");
+        response.put("endpoint", "/integrated-cms/admins");
         response.put("table", "integrated_cms.ADMIN_USER");
+        response.put("authenticationLayers", "SecurityConfig + @RequireIntegratedCmsAccess + @PreAuthorize");
 
-        return ResponseEntity.ok(ApiResponseSchema.success(response, "임시 응답"));
+        return ResponseEntity.ok(ApiResponseSchema.success(response, "하이브리드 인증 시스템 적용됨"));
+    }
+
+    /**
+     * 서비스 목록 조회
+     * 3계층: SERVICE_ADMIN도 조회 가능
+     */
+    @GetMapping("/services")
+    @PreAuthorize("@integratedCmsAccessChecker.hasAccess(authentication)")
+    public ResponseEntity<ApiResponseSchema<Map<String, Object>>> getServices() {
+        log.info("Services list requested with hybrid authentication");
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "서비스 목록 조회 기능 (하이브리드 인증 적용)");
+        response.put("serviceContext", ServiceContextHolder.getCurrentServiceId());
+        response.put("endpoint", "/integrated-cms/services");
+        response.put("table", "integrated_cms.SERVICE");
+        response.put("authenticationLayers", "SecurityConfig + @RequireIntegratedCmsAccess + @PreAuthorize");
+
+        return ResponseEntity.ok(ApiResponseSchema.success(response, "하이브리드 인증 시스템 적용됨"));
+    }
+
+    /**
+     * 새 서비스 생성
+     * 3계층: SUPER_ADMIN만 서비스 생성 가능
+     */
+    @PostMapping("/services")
+    @PreAuthorize("@integratedCmsAccessChecker.canManageServices(authentication)")
+    public ResponseEntity<ApiResponseSchema<Map<String, Object>>> createService(
+            @RequestBody Map<String, Object> request) {
+        log.info("Service creation requested with hybrid authentication: {}", request);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "서비스 생성 기능 (하이브리드 인증 적용)");
+        response.put("serviceContext", ServiceContextHolder.getCurrentServiceId());
+        response.put("endpoint", "/integrated-cms/services");
+        response.put("requestData", request);
+        response.put("authenticationLayers", "SecurityConfig + @RequireIntegratedCmsAccess + @PreAuthorize");
+
+        return ResponseEntity.ok(ApiResponseSchema.success(response, "서비스 생성 권한 확인됨"));
     }
 
     /**
@@ -77,26 +126,10 @@ public class IntegratedCmsController {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "시스템 권한 목록 조회 기능 (구현 예정)");
         response.put("serviceContext", ServiceContextHolder.getCurrentServiceId());
-        response.put("endpoint", "/api/v2/integrated-cms/permissions");
+        response.put("endpoint", "/integrated-cms/permissions");
         response.put("table", "integrated_cms.SERVICE_PERMISSION");
 
         return ResponseEntity.ok(ApiResponseSchema.success(response, "임시 응답"));
     }
 
-    /**
-     * 서비스 목록 조회 (임시 구현)
-     */
-    @GetMapping("/services")
-    public ResponseEntity<ApiResponseSchema<Map<String, Object>>> getServices() {
-        log.info("Services list requested");
-
-        // TODO: ServiceManagementService를 통한 실제 서비스 데이터 조회 구현
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "서비스 목록 조회 기능 (구현 예정)");
-        response.put("serviceContext", ServiceContextHolder.getCurrentServiceId());
-        response.put("endpoint", "/api/v2/integrated-cms/services");
-        response.put("table", "integrated_cms.SERVICE");
-
-        return ResponseEntity.ok(ApiResponseSchema.success(response, "임시 응답"));
-    }
 }

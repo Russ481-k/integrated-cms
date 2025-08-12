@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/nice/checkplus") // API 경로를 /api/v1 하위로 변경 고려
+@RequestMapping("/nice/checkplus") // API 경로를 /api/v2 하위로 변경 고려
 public class NiceController {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(NiceController.class);

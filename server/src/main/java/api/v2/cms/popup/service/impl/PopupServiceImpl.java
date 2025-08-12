@@ -135,7 +135,7 @@ public class PopupServiceImpl implements PopupService {
                 String src = objectNode.get("src").asText();
                 if (localIdToFileIdMap.containsKey(src)) {
                     long fileId = localIdToFileIdMap.get(src);
-                    objectNode.put("src", appApiBaseUrl + "/api/v1/cms/file/public/view/" + fileId);
+                    objectNode.put("src", appApiBaseUrl + "/api/v2/cms/file/public/view/" + fileId);
                     objectNode.put("fileId", fileId);
                 }
             }

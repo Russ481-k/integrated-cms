@@ -165,7 +165,7 @@ public class EnterpriseServiceImpl implements EnterpriseService {
                         uploadedFile.getOriginName());
 
                 // API 기본 경로 + 파일 다운로드 URL 형식으로 반환
-                return "/api/v1/cms/file/public/view/" + uploadedFile.getFileId();
+                return "/api/v2/cms/file/public/view/" + uploadedFile.getFileId();
             }
         } catch (Exception e) {
             log.error("입주기업 이미지 처리 중 오류 발생: {}", e.getMessage(), e);

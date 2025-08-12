@@ -81,10 +81,10 @@ public class TenantInterceptor implements HandlerInterceptor {
 
     /**
      * URL 패턴에서 테넌트 추출
-     * 예: /api/v1/arpina/*, /tenant/douzone/*, /cms/arpina/*
+     * 예: /api/v2/arpina/*, /tenant/douzone/*, /cms/arpina/*
      */
     private String resolveTenantFromPath(String requestURI) {
-        if (requestURI.startsWith("/api/v1/")) {
+        if (requestURI.startsWith("/api/v2/")) {
             String[] segments = requestURI.split("/");
             if (segments.length > 3) {
                 String possibleTenant = segments[3];

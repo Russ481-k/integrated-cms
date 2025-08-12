@@ -17,7 +17,7 @@ import java.util.Map;
  * - 테넌트별 설정 관리
  */
 @RestController
-@RequestMapping("/api/v1/admin/tenants")
+@RequestMapping("/admin/tenants")
 public class TenantManagementController {
     private static final Logger logger = LoggerFactory.getLogger(TenantManagementController.class);
 

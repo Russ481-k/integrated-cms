@@ -320,6 +320,33 @@ public class ExampleController {
 
 ## 🎯 엔드포인트 네이밍 규칙
 
+### ⚠️ 중요: API 버전 정책
+
+**통합 CMS v2는 모든 엔드포인트가 `/api/v2/` 프리픽스를 사용합니다:**
+
+- ✅ `/api/v2/` - 통합 CMS v2 전용 (하이브리드 인증, 동적 라우팅)
+- ❌ `/api/v1/` - 구 버전 (v2에서는 사용 금지)
+
+**설정 파일에서 확인:**
+
+- `WebConfig.java`: `.addPathPrefix("/api/v2", ...)` - 모든 @RestController에 자동 프리픽스 적용
+- `SwaggerConfig.java`: `.addServersItem(new Server().url("/api/v2"))`
+- `UnifiedCmsSecurityConfig.java`: `.antMatcher("/api/v2/**")`
+
+**⚠️ 컨트롤러 작성 규칙:**
+
+- 모든 `@RestController`는 **상대 경로만** 사용합니다 (WebConfig에서 자동으로 `/api/v2` 추가)
+- ✅ `@RequestMapping("/integrated-cms")` → 실제 경로: `/api/v2/integrated-cms`
+- ✅ `@RequestMapping("/cms/{serviceId}/content")` → 실제 경로: `/api/v2/cms/{serviceId}/content`
+- ❌ `@RequestMapping("/api/v2/integrated-cms")` → 중복 프리픽스 (사용 금지)
+
+**🚨 하드코딩된 URL 주의사항:**
+
+- Service 클래스의 파일 URL, 콜백 URL 등에서 `/api/v1` 사용 금지
+- ✅ `"/api/v2/cms/file/public/view/"` - v2 사용
+- ❌ `"/api/v1/cms/file/public/view/"` - v1 사용 금지
+- 응답 메시지의 endpoint 필드도 상대경로 사용: `"/integrated-cms/admins"`
+
 ### 통합 백엔드 라우팅 패턴
 
 ```

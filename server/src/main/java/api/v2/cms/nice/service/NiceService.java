@@ -72,8 +72,8 @@ public class NiceService {
 
         String authType = "";
         String customize = "";
-        String returnUrl = baseCallbackUrl + "/api/v1/nice/checkplus/success";
-        String errorUrl = baseCallbackUrl + "/api/v1/nice/checkplus/fail";
+        String returnUrl = baseCallbackUrl + "/api/v2/nice/checkplus/success";
+        String errorUrl = baseCallbackUrl + "/api/v2/nice/checkplus/fail";
 
         String plainData = "7:REQ_SEQ" + requestNumber.getBytes().length + ":" + requestNumber +
                 "8:SITECODE" + siteCode.getBytes().length + ":" + siteCode +

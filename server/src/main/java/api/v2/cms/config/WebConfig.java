@@ -22,7 +22,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void configurePathMatch(@NonNull PathMatchConfigurer configurer) {
         configurer
-                .addPathPrefix("/api/v1",
+                .addPathPrefix("/api/v2",
                         c -> c.isAnnotationPresent(org.springframework.web.bind.annotation.RestController.class));
     }
 

@@ -15,11 +15,11 @@ public class SwaggerConfig {
         @Bean
         public OpenAPI openAPI() {
                 return new OpenAPI()
-                                .addServersItem(new Server().url("/api/v1"))
+                                .addServersItem(new Server().url("/api/v2"))
                                 .info(new Info()
-                                                .title("CMS API Documentation")
-                                                .description("CMS 시스템 API 문서")
-                                                .version("v1.0.0")
+                                                .title("통합 CMS v2 API Documentation")
+                                                .description("통합 CMS v2 하이브리드 인증 시스템 API 문서")
+                                                .version("v2.0.0")
                                                 .license(new License()
                                                                 .name("Apache 2.0")
                                                                 .url("http://springdoc.org")))

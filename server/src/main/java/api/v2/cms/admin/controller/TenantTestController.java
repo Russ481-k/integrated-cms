@@ -20,7 +20,7 @@ import java.util.Map;
  * 인증 없이 테스트 가능한 엔드포인트 제공
  */
 @RestController
-@RequestMapping("/api/v1/test")
+@RequestMapping("/test")
 public class TenantTestController {
     private static final Logger logger = LoggerFactory.getLogger(TenantTestController.class);
 
