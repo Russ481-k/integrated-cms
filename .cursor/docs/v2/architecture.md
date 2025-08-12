@@ -69,10 +69,10 @@ graph TD
 
 1. 계층 구조
 
-   - 슈퍼 관리자: 모든 서비스와 DB에 대한 최고 권한
-   - 서비스 관리자: 특정 서비스 전체에 대한 관리 권한
-   - 사이트 관리자: 특정 사이트에 대한 관리 권한
-   - 일반 관리자: 그룹 기반 제한된 권한
+   - 슈퍼 관리자 (SUPER_ADMIN): 모든 서비스와 DB에 대한 최고 권한
+   - 서비스 관리자 (SERVICE_ADMIN): 특정 서비스 전체에 대한 관리 권한
+   - 사이트 관리자 (SITE_ADMIN): 특정 사이트에 대한 관리 권한
+   - 일반 관리자 (ADMIN): 그룹 기반 제한된 권한
 
 2. 권한 관리 방식
 
@@ -133,35 +133,39 @@ graph TD
 
 ### 5.1 통합 라우팅 패턴
 
-- **기본 패턴**: `/api/v2/cms/{serviceId}/**`
+- **통합 관리 패턴**: `/api/v2/integrated-cms/**`
+- **서비스별 패턴**: `/api/v2/cms/{serviceId}/**`
 - **serviceId 기반 동적 DB 라우팅**
-- **통합된 엔드포인트 구조**
+- **역할별 분리된 엔드포인트 구조**
 
 ### 5.2 API 엔드포인트 예시
 
 ```
 통합 관리 API:
-- /api/v2/cms/integrated_cms/user/list     → 통합 CMS DB 접근
-- /api/v2/cms/integrated_cms/service/list  → 서비스 관리
-- /api/v2/cms/integrated_cms/permission/** → 권한 관리
+- /api/v2/integrated-cms/admins           → 통합 관리자 관리
+- /api/v2/integrated-cms/permissions      → 시스템 권한 관리
+- /api/v2/integrated-cms/services         → 서비스 등록/관리
 
-서비스별 API:
-- /api/v2/cms/douzone/bbs/article         → douzone 서비스 DB 접근
-- /api/v2/cms/service1/menu/list          → service1 서비스 DB 접근
-- /api/v2/cms/service2/content/**         → service2 서비스 DB 접근
+서비스별 CMS API:
+- /api/v2/cms/douzone/content            → douzone DB 접근
+- /api/v2/cms/douzone/menu               → 메뉴 관리
+- /api/v2/cms/service1/content           → service1 DB 접근
+- /api/v2/cms/service2/content           → service2 DB 접근
 ```
 
 ### 5.3 서비스 라우팅 로직
 
-1. **통합 관리 접근** (serviceId == "integrated_cms"):
+1. **통합 관리 접근** (`/api/v2/integrated-cms/**`):
 
    - integrated_cms DB 직접 접근
    - 메타데이터 및 권한 관리 기능
+   - SUPER_ADMIN, SERVICE_ADMIN 권한 필요
 
-2. **개별 서비스 접근** (serviceId != "integrated_cms"):
+2. **개별 서비스 접근** (`/api/v2/cms/{serviceId}/**`):
    - integrated_cms.SERVICE 테이블에서 서비스 정보 조회
    - 해당 서비스 DB 연결 정보 획득 (DB_CONNECTION_INFO)
    - 서비스별 DB에서 실제 데이터 처리
+   - SUPER_ADMIN, SERVICE_ADMIN, SITE_ADMIN, ADMIN 권한 계층적 적용
 
 ### 5.4 권한 검증 통합
 

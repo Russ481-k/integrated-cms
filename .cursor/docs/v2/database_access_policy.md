@@ -8,31 +8,35 @@
 
 ### 2.1 사용자 계층
 
-1. 슈퍼 관리자 (Super Administrator)
+1. 슈퍼 관리자 (SUPER_ADMIN)
 
    - 시스템 최고 권한자
    - 모든 데이터베이스 접근 가능
    - 권한 관리 시스템 총괄
+   - 통합 관리 API 전체 접근
 
-2. 서비스 관리자 (Service Administrator)
+2. 서비스 관리자 (SERVICE_ADMIN)
 
    - 특정 서비스의 최고 권한자
    - 통합 DB 읽기/쓰기 권한
    - 해당 서비스 DB 전체 접근 가능
    - 서비스 내 권한 관리 가능
+   - 통합 관리 API 및 서비스별 CMS API 접근
 
-3. 사이트 관리자 (Site Administrator)
+3. 사이트 관리자 (SITE_ADMIN)
 
    - 각 사이트의 최고 권한자
    - 통합 DB 접근 불가
    - 해당 서비스 DB 내 사이트 영역 접근 가능
    - 사이트 내 권한 관리 가능
+   - 서비스별 CMS API만 접근
 
-4. 일반 관리자 (Regular Administrator)
+4. 일반 관리자 (ADMIN)
    - 통합 DB 접근 불가
    - 서비스 DB 내 그룹 권한에 따른 접근
    - 반드시 하나의 그룹에 소속
    - 추가 권한 보유 가능
+   - 서비스별 CMS API만 접근
 
 ### 2.2 데이터베이스 접근 레벨
 
@@ -49,26 +53,26 @@
 
 ### 3.1 통합 관리 데이터베이스
 
-| 테이블                 | 슈퍼 관리자 | 서비스 관리자 | 사이트 관리자 | 일반 관리자 |
-| ---------------------- | ----------- | ------------- | ------------- | ----------- |
-| ADMIN_USER             | ADMIN       | READ          | NONE          | NONE        |
-| SERVICE                | ADMIN       | READ          | NONE          | NONE        |
-| SERVICE_GROUP          | ADMIN       | WRITE\*       | NONE          | NONE        |
-| SERVICE_MEMBER_GROUP   | ADMIN       | WRITE\*       | NONE          | NONE        |
-| SERVICE_PERMISSION     | ADMIN       | WRITE\*       | NONE          | NONE        |
-| SERVICE_PERMISSION_LOG | ADMIN       | READ\*        | NONE          | NONE        |
+| 테이블                 | SUPER_ADMIN | SERVICE_ADMIN | SITE_ADMIN | ADMIN |
+| ---------------------- | ----------- | ------------- | ---------- | ----- |
+| ADMIN_USER             | ADMIN       | READ          | NONE       | NONE  |
+| SERVICE                | ADMIN       | READ          | NONE       | NONE  |
+| SERVICE_GROUP          | ADMIN       | WRITE\*       | NONE       | NONE  |
+| SERVICE_MEMBER_GROUP   | ADMIN       | WRITE\*       | NONE       | NONE  |
+| SERVICE_PERMISSION     | ADMIN       | WRITE\*       | NONE       | NONE  |
+| SERVICE_PERMISSION_LOG | ADMIN       | READ\*        | NONE       | NONE  |
 
 \* 해당 서비스 범위 내에서만 가능
 
 ### 3.2 서비스 데이터베이스
 
-| 구분        | 슈퍼 관리자  | 서비스 관리자 | 사이트 관리자 | 일반 관리자 |
-| ----------- | ------------ | ------------- | ------------- | ----------- |
-| 시스템 설정 | SYSTEM_ADMIN | SERVICE_ADMIN | NONE          | NONE        |
-| 사이트 관리 | SYSTEM_ADMIN | SERVICE_ADMIN | SITE_ADMIN    | NONE        |
-| 사용자 관리 | SYSTEM_ADMIN | SERVICE_ADMIN | SITE_ADMIN    | GROUP_BASED |
-| 컨텐츠 관리 | SYSTEM_ADMIN | SERVICE_ADMIN | SITE_ADMIN    | GROUP_BASED |
-| 통계/로그   | SYSTEM_ADMIN | SERVICE_ADMIN | SITE_ADMIN    | READ        |
+| 구분        | SUPER_ADMIN | SERVICE_ADMIN | SITE_ADMIN | ADMIN       |
+| ----------- | ----------- | ------------- | ---------- | ----------- |
+| 시스템 설정 | ADMIN       | SERVICE_ADMIN | NONE       | NONE        |
+| 사이트 관리 | ADMIN       | SERVICE_ADMIN | SITE_ADMIN | NONE        |
+| 사용자 관리 | ADMIN       | SERVICE_ADMIN | SITE_ADMIN | GROUP_BASED |
+| 컨텐츠 관리 | ADMIN       | SERVICE_ADMIN | SITE_ADMIN | GROUP_BASED |
+| 통계/로그   | ADMIN       | SERVICE_ADMIN | SITE_ADMIN | READ        |
 
 ## 4. 권한 정책
 
