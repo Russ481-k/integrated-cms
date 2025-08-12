@@ -902,7 +902,7 @@ UNLOCK TABLES;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER; ;
+DELIMITER $$
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_file_public_yn_check_insert BEFORE INSERT ON file
@@ -913,8 +913,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = 'public_yn must be Y or N';
 END IF;
 END */
-; ;
-DELIMITER;
+$$
+DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -939,7 +939,7 @@ DELIMITER;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER; ;
+DELIMITER $$
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_file_order_check_insert BEFORE INSERT ON file
@@ -950,8 +950,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = 'file_order must be greater than or equal to 0';
 END IF;
 END */
-; ;
-DELIMITER;
+$$
+DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -976,7 +976,7 @@ DELIMITER;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER; ;
+DELIMITER $$
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_file_public_yn_check_update BEFORE UPDATE ON file
@@ -987,8 +987,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = 'public_yn must be Y or N';
 END IF;
 END */
-; ;
-DELIMITER;
+$$
+DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -1013,7 +1013,7 @@ DELIMITER;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER; ;
+DELIMITER $$
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_file_order_check_update BEFORE UPDATE ON file
@@ -1024,8 +1024,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = 'file_order must be greater than or equal to 0';
 END IF;
 END */
-; ;
-DELIMITER;
+$$
+DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -1477,7 +1477,7 @@ UNLOCK TABLES;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER; ;
+DELIMITER $$
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_schedule_time_check
@@ -1489,8 +1489,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = '시작 시간은 종료 시간보다 빨라야 합니다.';
 END IF;
 END */
-; ;
-DELIMITER;
+$$
+DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -1515,7 +1515,7 @@ DELIMITER;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER; ;
+DELIMITER $$
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_schedule_time_check_update
@@ -1527,8 +1527,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = '시작 시간은 종료 시간보다 빨라야 합니다.';
 END IF;
 END */
-; ;
-DELIMITER;
+$$
+DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -2218,7 +2218,7 @@ UNLOCK TABLES;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER; ;
+DELIMITER $$
 
 CREATE DEFINER=`handy`@`%` PROCEDURE `InsertGroupReservationDummyData`()
 BEGIN
@@ -2361,9 +2361,9 @@ BEGIN
     
     SELECT '회의실 단체 예약 문의 더미 데이터 200건 생성이 완료되었습니다.' AS message;
 
-END ;;
+END$$
 
-DELIMITER;
+DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
