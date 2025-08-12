@@ -98,11 +98,9 @@ public class UnifiedCmsSecurityConfig {
         log.info("Configuring management security filter chain");
 
         return http
-                .requestMatcher(request -> 
-                    request.getRequestURI().startsWith("/actuator/") ||
-                    request.getRequestURI().startsWith("/swagger-ui/") ||
-                    request.getRequestURI().startsWith("/v3/api-docs/")
-                )
+                .requestMatcher(request -> request.getRequestURI().startsWith("/actuator/") ||
+                        request.getRequestURI().startsWith("/swagger-ui/") ||
+                        request.getRequestURI().startsWith("/v3/api-docs/"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -137,7 +135,8 @@ public class UnifiedCmsSecurityConfig {
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/schedule/public/**")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/file/public/**")).permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/popups/active")).permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/bbs/**", HttpMethod.GET.name())).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/bbs/**", HttpMethod.GET.name()))
+                        .permitAll()
 
                         // v1 인증 필요 API
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/**")).authenticated()

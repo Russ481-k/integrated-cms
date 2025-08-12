@@ -1,9 +1,5 @@
 "use client";
 
-import { CCTVGridSection } from "@/app/cms/dashboard/components/CCTVSection";
-import { EquipmentSection } from "@/app/cms/dashboard/components/EquipmentSection";
-import { MonitoringSection } from "@/app/cms/dashboard/components/MonitoringSection";
-import { StatisticsSection } from "@/app/cms/dashboard/components/StatisticsSection";
 import { GridSection } from "@/components/ui/grid-section";
 
 import { Box, Text } from "@chakra-ui/react";
@@ -63,10 +59,11 @@ export default function DashboardPage() {
   return (
     <Box bg={bg} minH="100vh" w="full" position="relative">
       <GridSection initialLayout={dashboardLayout}>
-        <MonitoringSection />
-        <CCTVGridSection />
-        <EquipmentSection />
-        <StatisticsSection />
+        {/* <MonitoringSection />
+          <CCTVGridSection />
+          <EquipmentSection />
+          <StatisticsSection /> */}
+        test
       </GridSection>
     </Box>
   );

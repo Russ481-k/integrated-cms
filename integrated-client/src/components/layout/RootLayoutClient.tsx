@@ -27,16 +27,13 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   const isLargerThanLg = useBreakpointValue({ base: false, lg: true });
   const isRootPath = pathname === "/";
-  const isCMSPath = pathname?.startsWith("/cms");
   const isLoginPage = pathname === "/login";
-  const isTestPage = pathname === "/test" || pathname === "/test2";
 
   useEffect(() => {
     setIsSidebarOpen(!!isLargerThanLg);
   }, [isLargerThanLg]);
 
-  const shouldShowCMSLayout =
-    isCMSPath && !isRootPath && isAuthenticated && !isLoginPage && !isTestPage;
+  const shouldShowSidebar = !isRootPath && isAuthenticated && !isLoginPage;
 
   return (
     <Box bg={mainBg} margin={0} padding={0} minHeight="100vh" width="100vw">
@@ -49,7 +46,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         h="100vh"
         position="relative"
       >
-        {shouldShowCMSLayout && (
+        {shouldShowSidebar && (
           <>
             <Topbar isSidebarOpen={isSidebarOpen} />
             <Sidebar
@@ -59,6 +56,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             <Bottombar />
           </>
         )}
+
         <Box
           pl="0"
           pr="0"
@@ -68,15 +66,13 @@ function Layout({ children }: { children: React.ReactNode }) {
           transition="all 0.2s ease-in-out"
           position="relative"
           ml={
-            shouldShowCMSLayout
-              ? { base: 0, md: isSidebarOpen ? "36" : "16" }
-              : 0
+            shouldShowSidebar ? { base: 0, md: isSidebarOpen ? "36" : "16" } : 0
           }
         >
           {children}
         </Box>
-        {/* CMS 화면에서만 컬러 모드 토글 버튼 표시 */}
-        {/* {shouldShowCMSLayout && (
+        {/* 인증된 사용자에게만 컬러 모드 토글 버튼 표시 */}
+        {/* {shouldShowSidebar && (
           <Flex
             position="fixed"
             bottom="4"

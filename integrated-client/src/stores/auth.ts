@@ -110,15 +110,12 @@ export const useAuthActions = () => {
     } catch (error) {
       console.error("Logout API call failed, proceeding with local logout", error);
     } finally {
-      const currentPath = window.location.pathname;
-      const fromCMS = currentPath.startsWith("/cms");
-
       removeToken();
       setAuth({ isAuthenticated: false, user: null, isLoading: false });
       queryClient.clear(); // React Query 캐시 클리어
 
-      // 리디렉션 경로가 제공되면 그곳으로, 아니면 기본 로직 따름
-      router.push(redirectPath || (fromCMS ? "/login" : "/login"));
+      // 리디렉션 경로가 제공되면 그곳으로, 아니면 로그인 페이지로
+      router.push(redirectPath || "/login");
       toaster.create({
         title: "로그아웃",
         description: "성공적으로 로그아웃되었습니다.",

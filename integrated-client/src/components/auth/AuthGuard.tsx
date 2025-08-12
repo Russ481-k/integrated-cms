@@ -108,7 +108,7 @@ export const AuthGuard = ({
         }
 
         // 통합 CMS에서 권한 문제 발생 시 로그아웃 처리
-        const isIntegratedCms = pathname.startsWith("/cms");
+        const isIntegratedCms = true; // 이제 모든 페이지가 통합 CMS
 
         setTimeout(() => {
           toaster.create({

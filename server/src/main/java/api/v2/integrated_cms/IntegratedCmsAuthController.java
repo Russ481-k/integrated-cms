@@ -12,6 +12,7 @@ import api.v2.cms.common.dto.ApiResponseSchema;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.Map;
 
@@ -37,13 +38,13 @@ public class IntegratedCmsAuthController {
 
     @PostMapping("/logout")
     @Operation(summary = "통합 CMS 로그아웃", description = "사용자를 로그아웃 처리합니다.")
-    public ResponseEntity<ApiResponseSchema<Void>> logout() {
-        return authService.logout();
+    public ResponseEntity<ApiResponseSchema<Void>> logout(HttpServletRequest request) {
+        return authService.logout(request);
     }
 
     @GetMapping("/check-username/{username}")
     @Operation(summary = "사용자명 중복 확인", description = "사용자명이 이미 사용 중인지 확인합니다.")
-    public ResponseEntity<ApiResponseSchema<Map<String, Boolean>>> checkUsername(@PathVariable String username) {
-        return authService.checkUsername(username);
+    public ResponseEntity<ApiResponseSchema<Map<String, Object>>> checkUsername(@PathVariable String username) {
+        return authService.checkUsernameAvailability(username);
     }
 }

@@ -50,8 +50,8 @@ const createApiClient = (needsAuth: boolean): AxiosInstance => {
           if (!refreshToken) {
             removeToken();
             if (typeof window !== "undefined") {
-              const isCmsApi = originalRequest.url?.startsWith("/cms");
-              const loginUrl = isCmsApi ? "/cms/login" : "/login";
+              // 통합 CMS는 모든 API가 CMS 관련이므로 항상 /login 사용
+              const loginUrl = "/login";
               window.location.href = `${loginUrl}?error=session_expired`;
             }
             return Promise.reject(new Error("No refresh token available."));
@@ -83,8 +83,8 @@ const createApiClient = (needsAuth: boolean): AxiosInstance => {
           } catch (reissueError) {
             removeToken();
             if (typeof window !== "undefined") {
-              const isCmsApi = originalRequest.url?.startsWith("/cms");
-              const loginUrl = isCmsApi ? "/cms/login" : "/login";
+              // 통합 CMS는 모든 API가 CMS 관련이므로 항상 /login 사용
+              const loginUrl = "/login";
               window.location.href = `${loginUrl}?error=session_expired`;
             }
             return Promise.reject(reissueError);
