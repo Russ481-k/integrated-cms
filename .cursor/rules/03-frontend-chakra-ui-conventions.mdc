@@ -1,0 +1,190 @@
+---
+description: 프론트엔드 Chakra UI 개발 컨벤션 및 스타일 가이드
+globs: *.tsx,*.ts,*.jsx,*.js
+---
+
+# 프론트엔드 Chakra UI 개발 컨벤션
+
+## 🎨 Chakra UI 스타일 가이드
+
+### ⚠️ 중요: Spacing 사용 규칙
+
+**모든 Chakra UI 컴포넌트에서 spacing은 `gap` 스타일 props로 지정합니다:**
+
+- ✅ **권장**: `gap` 속성 사용
+- ❌ **금지**: `spacing` 속성 사용
+
+### 📏 Spacing 적용 예시
+
+#### Stack 컴포넌트들
+
+```tsx
+// ✅ 올바른 사용법
+<VStack gap={4}>
+  <Text>첫 번째 아이템</Text>
+  <Text>두 번째 아이템</Text>
+</VStack>
+
+<HStack gap={6}>
+  <Button>버튼 1</Button>
+  <Button>버튼 2</Button>
+</HStack>
+
+<Stack gap={3} direction={{ base: "column", md: "row" }}>
+  <Box>박스 1</Box>
+  <Box>박스 2</Box>
+</Stack>
+
+// ❌ 잘못된 사용법 (사용 금지)
+<VStack spacing={4}>  // spacing 대신 gap 사용
+  <Text>아이템</Text>
+</VStack>
+```
+
+#### Flex 컴포넌트
+
+```tsx
+// ✅ 올바른 사용법
+<Flex gap={4} wrap="wrap">
+  <Box flex="1">플렉스 아이템 1</Box>
+  <Box flex="1">플렉스 아이템 2</Box>
+</Flex>
+
+// ✅ 반응형 gap
+<Flex gap={{ base: 2, md: 4, lg: 6 }}>
+  <Card>카드 1</Card>
+  <Card>카드 2</Card>
+</Flex>
+```
+
+#### Grid 컴포넌트
+
+```tsx
+// ✅ Grid에서 gap 사용
+<Grid templateColumns="repeat(3, 1fr)" gap={6}>
+  <GridItem>그리드 아이템 1</GridItem>
+  <GridItem>그리드 아이템 2</GridItem>
+  <GridItem>그리드 아이템 3</GridItem>
+</Grid>
+
+<SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
+  <Box>심플 그리드 아이템</Box>
+</SimpleGrid>
+```
+
+### 🎯 Gap 값 가이드라인
+
+```tsx
+// 표준 gap 값들
+gap={1}   // 0.25rem (4px)  - 아주 작은 간격
+gap={2}   // 0.5rem (8px)   - 작은 간격
+gap={3}   // 0.75rem (12px) - 일반적인 작은 간격
+gap={4}   // 1rem (16px)    - 기본 간격 (가장 많이 사용)
+gap={6}   // 1.5rem (24px)  - 중간 간격
+gap={8}   // 2rem (32px)    - 큰 간격
+gap={12}  // 3rem (48px)    - 매우 큰 간격
+
+// 반응형 gap
+gap={{ base: 2, md: 4, lg: 6 }}
+```
+
+### 📱 반응형 디자인 패턴
+
+```tsx
+// ✅ 반응형 gap 적용
+<VStack
+  gap={{ base: 3, md: 4, lg: 6 }}
+  align="stretch"
+  w="full"
+>
+  <Heading>제목</Heading>
+  <Text>내용</Text>
+  <Button>액션</Button>
+</VStack>
+
+// ✅ 복합적인 반응형 스타일링
+<Flex
+  direction={{ base: "column", md: "row" }}
+  gap={{ base: 4, md: 6 }}
+  align={{ base: "stretch", md: "center" }}
+>
+  <Box flex="1">왼쪽 콘텐츠</Box>
+  <Box flex="1">오른쪽 콘텐츠</Box>
+</Flex>
+```
+
+### 🔄 기존 코드 마이그레이션
+
+기존 `spacing` 속성을 `gap`으로 변경:
+
+```tsx
+// Before (변경 전)
+<VStack spacing={4}>
+<HStack spacing={6}>
+<Stack spacing={3}>
+
+// After (변경 후)
+<VStack gap={4}>
+<HStack gap={6}>
+<Stack gap={3}>
+```
+
+### 🎨 컴포넌트별 가이드
+
+#### 폼 레이아웃
+
+```tsx
+// ✅ 폼 필드 간격
+<VStack gap={4} align="stretch">
+  <FormControl>
+    <FormLabel>이름</FormLabel>
+    <Input />
+  </FormControl>
+  <FormControl>
+    <FormLabel>이메일</FormLabel>
+    <Input type="email" />
+  </FormControl>
+  <Button type="submit">제출</Button>
+</VStack>
+```
+
+#### 카드 그리드
+
+```tsx
+// ✅ 카드 레이아웃
+<SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6}>
+  {items.map((item) => (
+    <Card key={item.id} p={4}>
+      <CardBody gap={3}>
+        <Heading size="md">{item.title}</Heading>
+        <Text>{item.description}</Text>
+      </CardBody>
+    </Card>
+  ))}
+</SimpleGrid>
+```
+
+#### 네비게이션
+
+```tsx
+// ✅ 네비게이션 바
+<HStack gap={6} as="nav">
+  <Link href="/">홈</Link>
+  <Link href="/about">소개</Link>
+  <Link href="/contact">연락처</Link>
+</HStack>
+```
+
+### 🚨 주의사항
+
+1. **일관성 유지**: 프로젝트 전체에서 `gap` 사용을 일관되게 유지
+2. **디자인 시스템**: gap 값은 디자인 시스템의 spacing scale을 따름
+3. **접근성**: 충분한 간격으로 터치 타겟과 가독성 확보
+4. **성능**: 불필요한 중첩 레이아웃 지양
+
+### 📚 추가 참고사항
+
+- Chakra UI v2.8.0+ 에서 `gap` 속성 완전 지원
+- CSS Gap과 동일한 동작 방식
+- Flexbox와 Grid 레이아웃에서 표준적인 spacing 방법
+- 기존 `spacing` 속성보다 더 예측 가능한 동작

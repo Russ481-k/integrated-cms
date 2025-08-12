@@ -9,30 +9,30 @@ description: 프론트엔드 API 통신 및 개발 컨벤션
 
 ### Core Framework
 
-- **Next.js 14** (App Router)
-- **React 18** + TypeScript 5.x
-- **Chakra UI** + **TanStack Query** + **Zustand**
+- **Next.js 14** (App Router) + **React 18** + **TypeScript 5.x**
+- **Chakra UI** + **TanStack Query** + **Recoil**
 - **React Hook Form** + **Chart.js/Recharts**
 
 ## 📡 API 클라이언트 구조
 
+### ⚠️ 중요: 서비스별 API 기본 URL 설정
+
+**통합 CMS vs 서비스별 CMS 구분:**
+
+- 통합 CMS (integrated-client): `NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v2/integrated-cms`
+- 서비스별 CMS (douzone-client): `NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v2/cms/douzone`
+
 ### 기본 클라이언트 설정
 
-```typescript
-// lib/api/client.ts 기반
-import { publicApi, privateApi } from "@/lib/api/client";
-
-// 공개 API (인증 불필요)
-const response = await publicApi.get<UserSignupResponse>("/auth/signup");
-
-// 인증 API (JWT 토큰 자동 포함)
-const response = await privateApi.get<UserProfile>("/user/profile");
-```
+- 공개 API: `publicApi.get("/auth/signup")` (인증 불필요)
+- 인증 API: `privateApi.get("/user/profile")` (JWT 토큰 자동 포함)
+- 상대 경로 사용: 환경변수 기반 자동 라우팅
 
 ### API 응답 타입 정의
 
+백엔드 `ApiResponseSchema`와 일치하는 구조를 사용합니다:
+
 ```typescript
-// 백엔드 ApiResponseSchema와 일치하는 구조
 export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
@@ -40,427 +40,140 @@ export interface ApiResponse<T = any> {
   errorCode?: string | null;
   stackTrace?: string | null;
 }
-
-// 사용 예시
-export interface UserApiResponse extends ApiResponse<User> {}
-export interface MenuApiResponse extends ApiResponse<Menu[]> {}
 ```
 
 ## 🔐 인증 및 토큰 관리
 
-### JWT 토큰 자동 관리
+### JWT 토큰 처리
 
-```typescript
-// privateApi는 자동으로 JWT 토큰을 헤더에 포함
-// 401 응답 시 자동 토큰 갱신 시도
-// 갱신 실패 시 로그인 페이지로 리다이렉트
-
-// 토큰 유틸리티 함수
-import { getToken, setToken, removeToken } from "@/lib/auth-utils";
-
-// API 호출 시 자동 인증 처리
-const userProfile = await privateApi.get<User>("/user/me");
-```
-
-### 인증 에러 처리
-
-```typescript
-// withAuthRedirect HOF 사용
-import { withAuthRedirect } from "@/lib/api/withAuthRedirect";
-
-const getUserProfile = withAuthRedirect(async () => {
-  return await privateApi.get<User>("/user/profile");
-});
-
-// 401 에러 시 자동으로:
-// 1. 토스트 메시지 표시
-// 2. 현재 경로 저장
-// 3. 로그인 페이지로 리다이렉트
-```
+- Access Token: HTTP-only 쿠키 또는 localStorage 저장
+- Refresh Token: HTTP-only 쿠키로 보안 저장
+- 토큰 만료 시 자동 갱신 로직 구현
+- 401 응답 시 자동 로그아웃 처리
 
 ## 📋 API 호출 패턴
 
-### 표준 CRUD 패턴 (통합 백엔드 라우팅)
+### 표준 CRUD 패턴 (하이브리드 라우팅)
 
-```typescript
-// services/contentApi.ts
-export const contentApi = {
-  // 목록 조회
-  getContents: async (
-    serviceId: string,
-    params?: PaginationParams
-  ): Promise<Page<Content>> => {
-    return await privateApi.get<Page<Content>>(
-      `/api/v2/cms/${serviceId}/content`,
-      { params }
-    );
-  },
+**서비스별 CMS API**: 환경변수 기반 자동 라우팅으로 상대 경로 사용
 
-  // 단일 조회
-  getContent: async (serviceId: string, id: number): Promise<Content> => {
-    return await privateApi.get<Content>(
-      `/api/v2/cms/${serviceId}/content/${id}`
-    );
-  },
+- 목록 조회: `privateApi.get("/content", { params })`
+- 단일 조회: `privateApi.get("/content/${id}")`
+- 생성/수정/삭제: 해당 HTTP 메서드 사용
 
-  // 생성
-  createContent: async (
-    serviceId: string,
-    data: CreateContentRequest
-  ): Promise<Content> => {
-    return await privateApi.post<Content>(`/api/v2/${serviceId}/content`, data);
-  },
+**통합 CMS 전용 API**: SUPER_ADMIN, SERVICE_ADMIN 권한 필요
 
-  // 수정
-  updateContent: async (
-    serviceId: string,
-    id: number,
-    data: UpdateContentRequest
-  ): Promise<Content> => {
-    return await privateApi.put<Content>(
-      `/api/v2/${serviceId}/content/${id}`,
-      data
-    );
-  },
+- 관리자 관리: `privateApi.get("/admins")`
+- 서비스 관리: `privateApi.get("/services")`
+- 시스템 권한: `privateApi.get("/permissions")`
 
-  // 삭제
-  deleteContent: async (serviceId: string, id: number): Promise<void> => {
-    await privateApi.delete(`/api/v2/cms/${serviceId}/content/${id}`);
-  },
-};
+**인증 API (공통)**: 모든 클라이언트에서 동일하게 사용
 
-// 통합 관리 API (integrated_cms DB 접근)
-export const integratedCmsApi = {
-  // 통합 관리자 목록 조회
-  getAdminUsers: async (): Promise<AdminUser[]> => {
-    return await privateApi.get<AdminUser[]>("/api/v2/integrated-cms/admins");
-  },
-
-  // 시스템 권한 조회
-  getPermissions: async (): Promise<Permission[]> => {
-    return await privateApi.get<Permission[]>(
-      "/api/v2/integrated-cms/permissions"
-    );
-  },
-
-  // 서비스 목록 조회
-  getServices: async (): Promise<Service[]> => {
-    return await privateApi.get<Service[]>("/api/v2/integrated-cms/services");
-  },
-
-  // 서비스 생성
-  createService: async (data: CreateServiceRequest): Promise<Service> => {
-    return await privateApi.post<Service>(
-      "/api/v2/integrated-cms/services",
-      data
-    );
-  },
-
-  // 관리자 생성
-  createAdmin: async (data: CreateAdminRequest): Promise<AdminUser> => {
-    return await privateApi.post<AdminUser>(
-      "/api/v2/integrated-cms/admins",
-      data
-    );
-  },
-
-  // 관리자 권한 업데이트
-  updateAdminPermissions: async (
-    adminId: string,
-    data: UpdatePermissionsRequest
-  ): Promise<AdminUser> => {
-    return await privateApi.put<AdminUser>(
-      `/api/v2/integrated-cms/admins/${adminId}/permissions`,
-      data
-    );
-  },
-};
-```
+- 로그인: `publicApi.post("/auth/login", credentials)`
+- 사용자명 확인: `publicApi.get("/auth/check-username/${username}")`
+- 토큰 갱신: `publicApi.post("/auth/refresh-token", { refreshToken })`
 
 ### TanStack Query 사용 패턴
 
-```typescript
-// hooks/useContent.ts
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+**쿼리 키 전략**: `["resource", serviceType, params]` 형태 사용
 
-export const useContents = (serviceId: string, params?: PaginationParams) => {
-  return useQuery({
-    queryKey: ["contents", serviceId, params],
-    queryFn: () => contentApi.getContents(serviceId, params),
-    enabled: !!serviceId,
-  });
-};
+- 서비스별 CMS: `queryKey: ["contents", serviceType, params]`
+- 통합 CMS: `queryKey: ["integrated-cms", "services"]`
+- 환경변수 기반 조건부 활성화: `enabled: process.env.NEXT_PUBLIC_SERVICE_TYPE === "integrated-cms"`
 
-export const useCreateContent = (serviceId: string) => {
-  const queryClient = useQueryClient();
+**뮤테이션 후 처리**:
 
-  return useMutation({
-    mutationFn: (data: CreateContentRequest) =>
-      contentApi.createContent(serviceId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contents", serviceId] });
-      toast.success("콘텐츠가 생성되었습니다.");
-    },
-    onError: (error) => {
-      toast.error(error.message || "콘텐츠 생성에 실패했습니다.");
-    },
-  });
-};
-```
+- 성공 시: 관련 쿼리 무효화 + 성공 토스트
+- 실패 시: 에러 토스트 + 에러 로깅
 
 ## 🎭 상태 관리 패턴
 
-### Zustand 스토어 구조
+### Recoil 아톰 구조
 
-```typescript
-// stores/authStore.ts
-interface AuthState {
-  user: User | null;
-  serviceId: string | null;
-  isAuthenticated: boolean;
-  setUser: (user: User | null) => void;
-  setServiceId: (serviceId: string) => void;
-  logout: () => void;
-}
+**인증 상태**: `authState` 아톰으로 중앙 관리
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  serviceId: null,
-  isAuthenticated: false,
-  setUser: (user) => set({ user, isAuthenticated: !!user }),
-  setServiceId: (serviceId) => set({ serviceId }),
-  logout: () => {
-    removeToken();
-    set({ user: null, serviceId: null, isAuthenticated: false });
-  },
-}));
-```
+- 사용자 정보, 인증 상태, 로딩 상태 포함
+- `useAuthActions` 훅으로 login/logout/syncAuthState 제공
 
-### 서비스 컨텍스트 관리
+**서비스 컨텍스트**: 환경변수 기반 서비스 타입 관리
 
-```typescript
-// hooks/useServiceContext.ts
-export const useServiceContext = () => {
-  const { serviceId } = useAuthStore();
-  const router = useRouter();
+- `process.env.NEXT_PUBLIC_SERVICE_TYPE`으로 구분
+- 통합 CMS vs 서비스별 CMS 조건부 렌더링
+- 서비스 간 이동은 새 탭으로 처리
 
-  const switchService = useCallback(
-    (newServiceId: string) => {
-      useAuthStore.getState().setServiceId(newServiceId);
-      router.push(`/services/${newServiceId}/dashboard`);
-    },
-    [router]
-  );
+### 권한 기반 UI 렌더링
 
-  return { serviceId, switchService };
-};
-```
+- 사용자 역할에 따른 조건부 컴포넌트 렌더링
+- SUPER_ADMIN: 모든 기능 접근
+- SERVICE_ADMIN: 할당된 서비스 관리
+- SITE_ADMIN/ADMIN: 제한된 관리 기능
 
 ## 📝 폼 관리 및 검증
 
 ### React Hook Form 패턴
 
-```typescript
-// hooks/useContentForm.ts
-interface ContentFormData {
-  title: string;
-  content: string;
-  status: ContentStatus;
-  tags: string[];
-}
-
-export const useContentForm = (initialData?: Partial<Content>) => {
-  const form = useForm<ContentFormData>({
-    defaultValues: {
-      title: initialData?.title || "",
-      content: initialData?.content || "",
-      status: initialData?.status || ContentStatus.DRAFT,
-      tags: initialData?.tags || [],
-    },
-    resolver: zodResolver(contentSchema),
-  });
-
-  return form;
-};
-
-// Zod 스키마 검증
-const contentSchema = z.object({
-  title: z
-    .string()
-    .min(1, "제목을 입력해주세요.")
-    .max(100, "제목은 100자 이하여야 합니다."),
-  content: z.string().min(1, "내용을 입력해주세요."),
-  status: z.nativeEnum(ContentStatus),
-  tags: z.array(z.string()).max(10, "태그는 최대 10개까지 설정할 수 있습니다."),
-});
-```
-
-## 🚨 에러 처리 및 사용자 피드백
-
-### 에러 처리 계층
-
-```typescript
-// utils/errorHandler.ts
-export const handleApiError = (error: unknown) => {
-  if (error instanceof AxiosError) {
-    const apiError = error.response?.data as ApiResponse;
-
-    // 백엔드 에러 메시지 우선 사용
-    const message =
-      apiError?.message || error.message || "알 수 없는 오류가 발생했습니다.";
-
-    switch (error.response?.status) {
-      case 400:
-        toast.error(`잘못된 요청: ${message}`);
-        break;
-      case 401:
-        // withAuthRedirect에서 처리
-        break;
-      case 403:
-        toast.error("접근 권한이 없습니다.");
-        break;
-      case 404:
-        toast.error("요청한 리소스를 찾을 수 없습니다.");
-        break;
-      case 500:
-        toast.error("서버 내부 오류가 발생했습니다.");
-        break;
-      default:
-        toast.error(message);
-    }
-  }
-};
-```
+- Zod 스키마를 통한 타입 안전 검증
+- `@hookform/resolvers/zod` 사용
+- 에러 상태를 Chakra UI와 연동
 
 ### 로딩 상태 관리
 
-```typescript
-// hooks/useApiState.ts
-export const useApiState = <T>() => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<T | null>(null);
-
-  const execute = useCallback(async (apiCall: () => Promise<T>) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await apiCall();
-      setData(result);
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "알 수 없는 오류";
-      setError(message);
-      handleApiError(err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  return { isLoading, error, data, execute };
-};
-```
+- TanStack Query의 `isLoading`, `isFetching` 활용
+- 커스텀 `useApiState` 훅으로 일관된 로딩/에러 처리
 
 ## 🎨 UI 컴포넌트 패턴
 
 ### 공통 컴포넌트 구조
 
-```typescript
-// components/common/DataTable.tsx
-interface DataTableProps<T> {
-  data: T[];
-  columns: ColumnDef<T>[];
-  isLoading?: boolean;
-  onRowClick?: (row: T) => void;
-  pagination?: PaginationProps;
-}
+- **DataTable**: 제네릭 타입으로 재사용 가능한 테이블
+- **FormField**: React Hook Form과 Chakra UI 통합
+- **LoadingSpinner**: 표준화된 로딩 인디케이터
 
-export const DataTable = <T>({
-  data,
-  columns,
-  isLoading,
-  onRowClick,
-  pagination,
-}: DataTableProps<T>) => {
-  // AG Grid 또는 TanStack Table 사용
-  return (
-    <Box>
-      {isLoading ? <Spinner /> : <Table data={data} columns={columns} />}
-      {pagination && <Pagination {...pagination} />}
-    </Box>
-  );
-};
-```
+### Chakra UI 사용 규칙
 
-### 폼 컴포넌트 패턴
+- **중요**: `spacing` prop 대신 `gap` 스타일 prop 사용
+- 색상은 테마 토큰 사용 (`colorScheme` prop)
+- 반응형 값은 객체 문법 사용: `{ base: "column", md: "row" }`
 
-```typescript
-// components/forms/ContentForm.tsx
-interface ContentFormProps {
-  serviceId: string;
-  initialData?: Content;
-  onSubmit: (data: ContentFormData) => void;
-  isLoading?: boolean;
-}
+## 🚨 에러 처리 및 예외 상황
 
-export const ContentForm: React.FC<ContentFormProps> = ({
-  serviceId,
-  initialData,
-  onSubmit,
-  isLoading,
-}) => {
-  const form = useContentForm(initialData);
+### 글로벌 에러 처리
 
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <VStack spacing={4}>
-        <FormControl isInvalid={!!form.formState.errors.title}>
-          <FormLabel>제목</FormLabel>
-          <Input {...form.register("title")} />
-          <FormErrorMessage>
-            {form.formState.errors.title?.message}
-          </FormErrorMessage>
-        </FormControl>
+- Axios 인터셉터로 공통 에러 처리
+- 401: 자동 로그아웃 + 로그인 페이지 리다이렉트
+- 403: 권한 없음 토스트 + 이전 페이지 이동
+- 5xx: 서버 오류 토스트 + 에러 리포팅
 
-        <Button type="submit" isLoading={isLoading}>
-          저장
-        </Button>
-      </VStack>
-    </form>
-  );
-};
-```
+### 네트워크 에러 대응
 
-## 🔄 실시간 데이터 동기화
+- 오프라인 상태 감지
+- 재시도 로직 구현 (TanStack Query의 retry 설정)
+- 타임아웃 설정 및 처리
 
-### WebSocket 연결 관리
+## 📦 번들 최적화
 
-```typescript
-// hooks/useWebSocket.ts
-export const useWebSocket = (serviceId: string) => {
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<
-    "connecting" | "connected" | "disconnected"
-  >("disconnected");
+### 코드 스플리팅
 
-  useEffect(() => {
-    const ws = new WebSocket(`ws://localhost:8080/ws/${serviceId}`);
+- Next.js의 자동 코드 스플리팅 활용
+- `dynamic` import로 지연 로딩
+- 번들 분석기로 크기 모니터링
 
-    ws.onopen = () => setConnectionStatus("connected");
-    ws.onclose = () => setConnectionStatus("disconnected");
-    ws.onmessage = (event) => {
-      // 실시간 데이터 처리
-      const data = JSON.parse(event.data);
-      // TanStack Query 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["realtime", serviceId] });
-    };
+### 성능 최적화
 
-    setSocket(ws);
-    return () => ws.close();
-  }, [serviceId]);
+- React.memo로 불필요한 리렌더링 방지
+- useMemo, useCallback으로 계산 최적화
+- 이미지 최적화: Next.js Image 컴포넌트 사용
 
-  return { socket, connectionStatus };
-};
-```
+## 🔧 개발 도구 및 디버깅
+
+### DevTools 활용
+
+- TanStack Query DevTools: 쿼리 상태 디버깅
+- Recoil DevTools: 상태 변화 추적
+- Next.js 번들 분석기: 성능 모니터링
+
+### 로깅 전략
+
+- 개발 환경: console.log 활용
+- 프로덕션: 에러 리포팅 서비스 연동
+- API 호출 로깅: 요청/응답 시간 측정
