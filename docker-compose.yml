@@ -1,10 +1,11 @@
 services:
-  frontend:
+  # 통합 CMS 프론트엔드 (관리자용)
+  integrated-frontend:
     build:
-      context: ./client
+      context: ./integrated-client
       dockerfile: Dockerfile.dev
     volumes:
-      - ./client:/app
+      - ./integrated-client:/app
       - /app/node_modules
     ports:
       - "3000:3000"
@@ -12,8 +13,29 @@ services:
       - ./server/.env
     environment:
       - NODE_ENV=development
+      - NEXT_PUBLIC_SERVICE_TYPE=integrated-cms
+      - NEXT_PUBLIC_SERVICE_NAME=통합 CMS 관리
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v2/integrated-cms
 
-  backend:
+  # 더존 CMS 프론트엔드 (서비스용)
+  douzone-frontend:
+    build:
+      context: ./douzone-client
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./douzone-client:/app
+      - /app/node_modules
+    ports:
+      - "3001:3000"
+    env_file:
+      - ./server/.env
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_SERVICE_TYPE=douzone
+      - NEXT_PUBLIC_SERVICE_NAME=더존 CMS
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v2/cms/douzone
+
+  integrated-backend:
     build:
       context: ./server
       dockerfile: Dockerfile.dev
@@ -39,12 +61,18 @@ services:
       - ./server/.env
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root}
+      - MYSQL_ROOT_HOST=%
     ports:
       - "${DB_PORT:-3306}:3306"
     command: 
       - --character-set-server=${MARIADB_CHARSET:-utf8mb4}
       - --collation-server=${MARIADB_COLLATION:-utf8mb4_unicode_ci}
       - --skip-character-set-client-handshake
+      - --bind-address=0.0.0.0
+      - --max_connections=1000
+      - --innodb_buffer_pool_size=256M
+      - --wait_timeout=300
+      - --interactive_timeout=300
 
 volumes:
   mysql_data:
