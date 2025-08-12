@@ -35,17 +35,95 @@
 
 ## 4. 기술 스택
 
-Next.js
-TypeScript
-Chakra UI
-React Query
-STOMP.js + SockJS (WebSocket)
+### 4.1 프론트엔드
 
-## 5. 화면 구성
+- Next.js
+- TypeScript
+- Chakra UI
+- React Query
+- STOMP.js + SockJS (WebSocket)
 
-### 5.1 CS Manager 어드민 화면
+### 4.2 백엔드
 
-#### 5.1.1 대시보드 화면
+- 전자정부프레임워크 (Spring 기반)
+- JPA (Hibernate)
+- MariaDB
+- STOMP + WebSocket
+
+### 4.3 개발 환경
+
+- Docker & Docker Compose
+
+## 5. 개발 환경 설정
+
+### 5.1 Docker 설치 (Ubuntu 22.04 기준)
+
+#### 필수 패키지 설치
+
+```bash
+# 시스템 패키지 업데이트
+sudo apt update
+
+# 필수 패키지 설치
+sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+```
+
+#### Docker 설치
+
+```bash
+# Docker 공식 GPG 키 추가
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Docker 저장소 추가
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# 패키지 인덱스 업데이트 및 Docker 설치
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# Docker 서비스 시작 및 활성화
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 사용자를 docker 그룹에 추가 (선택사항)
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+#### 설치 확인
+
+```bash
+# Docker 버전 확인
+docker --version
+
+# Docker Compose 버전 확인
+docker compose version
+
+# Docker 실행 테스트
+docker run hello-world
+```
+
+### 5.2 프로젝트 실행
+
+```bash
+# 프로젝트 클론 후 디렉토리 이동
+cd integrated-cms
+
+# Docker Compose로 전체 서비스 실행
+docker compose up
+
+# 백그라운드 실행
+docker compose up -d
+
+# 서비스 중지
+docker compose down
+```
+
+## 6. 화면 구성
+
+### 6.1 CS Manager 어드민 화면
+
+#### 6.1.1 대시보드 화면
 
 ```
 +--------------------------------------------------------------------------------------+
@@ -78,13 +156,13 @@ STOMP.js + SockJS (WebSocket)
 | +--------------------------------------------------------------------------------------+
 ```
 
-#### 5.1.2 채팅 관리 화면
+#### 6.1.2 채팅 관리 화면
 
 - **3단 레이아웃**: 좌측(CMS 목록), 중앙(대화 목록), 우측(메시지 타임라인)으로 구성됩니다.
 
 _최종 UI 시안을 기준으로 구현한다._
 
-### 5.2 사용자 채팅창 (팝업)
+### 6.2 사용자 채팅창 (팝업)
 
 - CMS 페이지의 버튼 클릭을 통해 열리는 별도의 브라우저 창(팝업).
 - 메시지 타임라인과 입력창으로 구성된 단순한 UI.
@@ -99,7 +177,7 @@ _최종 UI 시안을 기준으로 구현한다._
   :휴지통: 삭제: 삭제 시 확인창
   메시지 전송 시 WebSocket + optimistic update 적용
 
-## 6. 상태 관리
+## 7. 상태 관리
 
 채팅방 목록: React Query (GET /api/chats)
 메시지 목록: React Query + WebSocket 병행
@@ -107,14 +185,14 @@ _최종 UI 시안을 기준으로 구현한다._
 첨부파일 탭: 메시지 목록 중 type != TEXT 필터링하여 리스트 표시 + 별도 파일 리스트 컴포넌트로 렌더링
 :흰색*확인*표시: 백엔드 상세 기획 (전자정부프레임워크 + JPA)
 
-## 7. 기술 스택
+## 8. 백엔드 기술 스택
 
 전자정부프레임워크 (Spring 기반)
 JPA (Hibernate)
 MariaDB
 STOMP + WebSocket
 
-## 8. 주요 Entity 구조
+## 9. 주요 Entity 구조
 
 ChatChannel (CMS 채널)
 id (PK)
@@ -148,7 +226,7 @@ size
 url
 uploadedAt
 
-## 9. WebSocket Topic 구조
+## 10. WebSocket Topic 구조
 
 구독
 /sub/chat/{threadId} : 메시지 수신
@@ -157,7 +235,7 @@ uploadedAt
 /pub/chat/message : 메시지 전송
 /pub/chat/read : 메시지 읽음 처리
 
-## 10. API 명세
+## 11. API 명세
 
     메서드URL설명GET/api/chat/threadsCMS별 채팅방 목록GET/api/chat/messages?threadId=채팅방 메시지 목록POST/api/chat/message메시지 저장PATCH/api/chat/message/{id}메시지 수정DELETE/api/chat/message/{id}메시지 삭제POST/api/chat/read읽음 처리 (여러 개 가능)GET/api/chat/files?cmsCode=CMS01CMS 단위 첨부파일 리스트 조회
     :흰색*확인*표시: 기타 고려사항
