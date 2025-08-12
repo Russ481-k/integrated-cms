@@ -47,7 +47,7 @@ function LoginForm() {
 
   // Check if user has admin role
   const hasAdminRole =
-    user && (user.role === "ADMIN" || user.role === "SYSTEM_ADMIN");
+    user && (user.role === "ADMIN" || user.role === "SUPER_ADMIN");
 
   useEffect(() => {
     // Only redirect if authenticated and has admin role

@@ -24,7 +24,7 @@ export const mainMediaKeys = {
 
 export const mainMediaApi = {
   getMainMediaList: async () => {
-    const response = await privateApi.get<MainMediaResponse>("/cms/main-media");
+    const response = await privateApi.get<MainMediaResponse>("/integrated-cms/main-media");
     return response;
   },
 
@@ -37,7 +37,7 @@ export const mainMediaApi = {
 
   createMainMedia: async (formData: FormData) => {
     const response = await privateApi.post<MainMediaDto>(
-      "/cms/main-media",
+      "/integrated-cms/main-media",
       formData
     );
     return response;
@@ -57,7 +57,7 @@ export const mainMediaApi = {
   },
 
   updateMainMediaOrder: async (orderData: MainMediaOrderDto[]) => {
-    const response = await privateApi.put("/cms/main-media/order", orderData);
+    const response = await privateApi.put("/integrated-cms/main-media/order", orderData);
     return response;
   },
 };

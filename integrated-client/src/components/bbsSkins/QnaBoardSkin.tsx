@@ -28,7 +28,7 @@ import {
   themeDarkMode,
   themeLightMode,
   WriterCellRenderer,
-} from "@/lib/ag-grid-config"; // Theme styles
+} from "@/lib/config/ag-grid-config"; // Theme styles
 import { LuImage, LuPaperclip, LuEye } from "react-icons/lu"; // Icons
 import TitleCellRenderer from "@/components/common/TitleCellRenderer"; // TitleCellRenderer 임포트
 

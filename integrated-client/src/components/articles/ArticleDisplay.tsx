@@ -30,7 +30,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
-import { baseInitialConfig } from "@/lib/lexicalConfig";
+import { baseInitialConfig } from "@/lib/config/lexicalConfig";
 import { useColors } from "@/styles/theme";
 
 // Simple Error Boundary for Lexical (Keep or import from shared location)

@@ -11,6 +11,7 @@ import {
   LessonDto,
 } from "@/types/api";
 import { privateApi } from "./client";
+import { API_CONFIG } from "@/lib/config/api-config";
 
 export interface UserListParams {
   page?: number;
@@ -34,29 +35,29 @@ export const userKeys = {
 
 export const userCmsApi = {
   getUsers: (params: UserListParams) =>
-    privateApi.get<PaginatedResponse<UserEnrollmentHistoryDto>>("/cms/user", {
+    privateApi.get<PaginatedResponse<UserEnrollmentHistoryDto>>("/integrated-cms/user", {
       params,
     }),
 
   getUser: (uuid: string) => {
-    return privateApi.get<User>(`/cms/user/${uuid}`);
+    return privateApi.get<User>(`/integrated-cms/user/${uuid}`);
   },
 
   createUser: (data: UserCreationDto) =>
-    privateApi.post<ApiResponse<any>>("/cms/user", data),
+    privateApi.post<ApiResponse<any>>("/integrated-cms/user", data),
 
   updateUser: (userId: string, data: Partial<UserUpdateDto>) =>
-    privateApi.patch<ApiResponse<any>>(`/cms/user/${userId}`, data),
+    privateApi.patch<ApiResponse<any>>(`/integrated-cms/user/${userId}`, data),
 
   deleteUser: (userId: string) =>
-    privateApi.delete<ApiResponse<any>>(`/cms/user/${userId}`),
+    privateApi.delete<ApiResponse<any>>(`/integrated-cms/user/${userId}`),
 
   getLatestMonthlyLessons: () =>
     privateApi.get<ApiResponse<LessonDto[]>>("/lessons/latest-monthly"),
 
   changeUserLesson: (enrollmentId: string, newLessonId: string) =>
     privateApi.patch<ApiResponse<null>>(
-      `/cms/enrollments/${enrollmentId}/change-lesson`,
+      `/integrated-cms/enrollments/${enrollmentId}/change-lesson`,
       { newLessonId }
     ),
 };

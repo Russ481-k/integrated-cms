@@ -17,7 +17,7 @@ export const templateKeys = {
 export const templateApi = {
   getTemplates: (type?: string) => {
     return privateApi.get<TemplateListResponse>(
-      type ? `/cms/template?type=${type}` : "/cms/template"
+      type ? `/integrated-cms/template?type=${type}` : "/integrated-cms/template"
     );
   },
 
@@ -26,7 +26,7 @@ export const templateApi = {
   },
 
   createTemplate: (data: TemplateData) => {
-    return privateApi.post<Template>("/cms/template", data);
+    return privateApi.post<Template>("/integrated-cms/template", data);
   },
 
   updateTemplate: (id: string, data: TemplateData) => {
@@ -54,6 +54,6 @@ export const templateApi = {
   },
 
   preview: (data: TemplateData) => {
-    return privateApi.post<Template>("/cms/template/preview", data);
+    return privateApi.post<Template>("/integrated-cms/template/preview", data);
   },
 };

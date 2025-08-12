@@ -143,7 +143,7 @@ public class AuthController {
             authService.resetPassword(request, userDetails);
             return ResponseEntity.ok(ApiResponseSchema.success("비밀번호가 성공적으로 재설정되었습니다."));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponseSchema.error("400", e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponseSchema.error(e.getMessage(), "400"));
         }
     }
 
@@ -221,7 +221,7 @@ public class AuthController {
             @Valid @RequestBody SendEmailVerificationRequestDto requestDto) {
         if (userRepository.existsByEmail(requestDto.getEmail())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ApiResponseSchema.error("409", "이미 가입된 이메일입니다."));
+                    .body(ApiResponseSchema.error("이미 가입된 이메일입니다.", "409"));
         }
 
         try {
@@ -231,7 +231,7 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Email sending failed for {}: {}", requestDto.getEmail(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponseSchema.error("500", "이메일 발송 중 오류가 발생했습니다."));
+                    .body(ApiResponseSchema.error("이메일 발송 중 오류가 발생했습니다.", "500"));
         }
     }
 
@@ -250,7 +250,7 @@ public class AuthController {
             return ResponseEntity.ok(ApiResponseSchema.success("이메일 인증이 완료되었습니다."));
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponseSchema.error("400", "인증번호가 일치하지 않거나 만료되었습니다."));
+                    .body(ApiResponseSchema.error("인증번호가 일치하지 않거나 만료되었습니다.", "400"));
         }
     }
 }

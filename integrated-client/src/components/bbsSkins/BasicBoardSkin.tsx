@@ -24,7 +24,7 @@ import {
 } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
-import { themeDarkMode, themeLightMode } from "@/lib/ag-grid-config";
+import { themeDarkMode, themeLightMode } from "@/lib/config/ag-grid-config";
 import dayjs from "dayjs";
 
 import { PageDetailsDto } from "@/types/menu";
@@ -35,7 +35,7 @@ import { LuEye } from "react-icons/lu";
 // Import GenericArticleCard and the mapping function
 import GenericArticleCard from "@/components/common/cards/GenericArticleCard";
 import { mapPostToCommonCardData } from "@/lib/card-utils";
-import { WriterCellRenderer } from "@/lib/ag-grid-config";
+import { WriterCellRenderer } from "@/lib/config/ag-grid-config";
 import TitleCellRenderer from "@/components/common/TitleCellRenderer";
 import { CustomPagination } from "@/components/common/CustomPagination";
 

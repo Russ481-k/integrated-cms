@@ -9,9 +9,10 @@ import {
   getRefreshToken,
   setToken,
 } from "../auth-utils";
+import { API_CONFIG, getApiUrl } from "@/lib/config/api-config";
 
-// Java 백엔드 서버 주소 설정
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL + "/api/v1";
+// 통합 CMS용 API 기본 URL 설정
+const BASE_URL = API_CONFIG.BASE_URL;
 
 // 기본 API 클라이언트 설정
 const createApiClient = (needsAuth: boolean): AxiosInstance => {
@@ -58,7 +59,7 @@ const createApiClient = (needsAuth: boolean): AxiosInstance => {
 
           try {
             const reissueResponse = await axios.post(
-              `${BASE_URL}/auth/reissue`,
+              `${getApiUrl.integratedCms("/auth/reissue")}`,
               {},
               {
                 headers: { Authorization: `Bearer ${refreshToken}` },

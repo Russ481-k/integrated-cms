@@ -89,7 +89,7 @@ export const articleApi = {
   // 게시글 목록 조회
   getArticles: (params: any) => {
     return privateApi.get<ApiResponse<ArticleListResponse>>(
-      "/cms/bbs/article",
+      "/integrated-cms/bbs/article",
       {
         params: params,
       }
@@ -109,7 +109,7 @@ export const articleApi = {
   // 게시글 생성
   createArticle: async (formData: FormData): Promise<ApiResponse<number>> => {
     const response = await privateApi.post<ApiResponse<number>>(
-      "/cms/bbs/article",
+      "/integrated-cms/bbs/article",
       formData,
       {
         headers: {
@@ -184,7 +184,7 @@ export const articleApi = {
     params: AnonymousArticleParams
   ): Promise<ApiResponse<{ nttId: number }>> => {
     const response = await privateApi.post<ApiResponse<{ nttId: number }>>(
-      "/cms/bbs/article/anonymous",
+      "/integrated-cms/bbs/article/anonymous",
       params
     );
     return response.data;

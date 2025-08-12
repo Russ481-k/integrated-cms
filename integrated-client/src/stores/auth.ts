@@ -59,9 +59,11 @@ export const useAuthActions = () => {
         } else if (fromCMS) {
           if (
             appUser.role === "ADMIN" ||
-            appUser.role === "SYSTEM_ADMIN"
+            appUser.role === "SUPER_ADMIN" ||
+            appUser.role === "SERVICE_ADMIN" ||
+            appUser.role === "SITE_ADMIN"
           ) {
-            router.push("/cms/menu");
+            router.push("/dashboard");
             toaster.create({
               title: "로그인 성공",
               description: "CMS에 오신 것을 환영합니다.",
@@ -116,7 +118,7 @@ export const useAuthActions = () => {
       queryClient.clear(); // React Query 캐시 클리어
 
       // 리디렉션 경로가 제공되면 그곳으로, 아니면 기본 로직 따름
-      router.push(redirectPath || (fromCMS ? "/cms/login" : "/login"));
+      router.push(redirectPath || (fromCMS ? "/login" : "/login"));
       toaster.create({
         title: "로그아웃",
         description: "성공적으로 로그아웃되었습니다.",

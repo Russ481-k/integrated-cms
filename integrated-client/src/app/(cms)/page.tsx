@@ -14,9 +14,9 @@ export default function Cms() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push("/cms/login");
+      router.push("/login");
     } else {
-      router.push("/cms/menu");
+      router.push("/dashboard");
     }
   }, [isAuthenticated, isLoading, router]);
 

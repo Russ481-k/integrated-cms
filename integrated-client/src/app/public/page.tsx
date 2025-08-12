@@ -13,7 +13,7 @@ export default function Home() {
     if (serviceType === "integrated-cms") {
       // 3초 후 자동 리다이렉트
       const timer = setTimeout(() => {
-        router.push("/cms/login");
+        router.push("/login");
       }, 3000);
       return () => clearTimeout(timer);
     }
@@ -52,7 +52,7 @@ export default function Home() {
         <Button
           colorScheme="blue"
           size="lg"
-          onClick={() => router.push("/cms/login")}
+          onClick={() => router.push("/login")}
         >
           관리자 로그인
         </Button>

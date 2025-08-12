@@ -1,4 +1,4 @@
-export type AuthType = "USER" | "ADMIN" | "SYSTEM_ADMIN";
+export type AuthType = "USER" | "ADMIN" | "SUPER_ADMIN";
 export type YesNoType = "Y" | "N";
 export type ListType = "list" | "grid" | "gallery";
 export type SkinType = "BASIC" | "FAQ" | "QNA" | "PRESS" | "FORM";

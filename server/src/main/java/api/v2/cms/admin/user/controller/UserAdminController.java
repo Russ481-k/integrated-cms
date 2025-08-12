@@ -21,7 +21,7 @@ import javax.validation.Valid;
 @RestController
 @RequestMapping("/cms/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN', 'SYSTEM_ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 public class UserAdminController {
 
     private final UserAdminService userAdminService;

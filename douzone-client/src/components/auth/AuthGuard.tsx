@@ -94,7 +94,7 @@ export const AuthGuard = ({
 
         // 관리자 권한이 필요한 페이지에 접근 시 더 구체적인 메시지 표시
         const requiresAdmin = allowedRoles.some(
-          (role) => role === "ADMIN" || role === "SYSTEM_ADMIN"
+          (role) => role === "ADMIN" || role === "SUPER_ADMIN"
         );
         if (requiresAdmin) {
           title = "관리자 전용 페이지";
@@ -108,7 +108,7 @@ export const AuthGuard = ({
         });
 
         let redirectPath = "/";
-        if (userRole === "ADMIN" || userRole === "SYSTEM_ADMIN") {
+        if (userRole === "ADMIN" || userRole === "SUPER_ADMIN") {
           redirectPath = "/cms/menu";
         }
         router.push(redirectPath);
@@ -117,7 +117,7 @@ export const AuthGuard = ({
     }
 
     if (
-      (user.role === "ADMIN" || user.role === "SYSTEM_ADMIN") &&
+      (user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
       pathname.startsWith("/application/confirm")
     ) {
       toaster.create({

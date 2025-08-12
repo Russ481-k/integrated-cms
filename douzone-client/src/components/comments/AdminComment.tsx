@@ -30,7 +30,7 @@ interface AdminCommentProps {
 
 export function AdminComment({ nttId, isReadOnly = false }: AdminCommentProps) {
   const { user } = useRecoilValue(authState);
-  const isAdmin = user?.role === "ADMIN" || user?.role === "SYSTEM_ADMIN";
+  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
 
   const [comments, setComments] = useState<BbsComment[]>([]);
   const [newComment, setNewComment] = useState("");

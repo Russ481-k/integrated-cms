@@ -2,7 +2,7 @@
 
 import React, { useEffect, ReactNode } from "react";
 import { useRecoilValue } from "recoil";
-import { authState, AppUser } from "@/stores/auth";
+import { authState, AppUser, useAuthActions } from "@/stores/auth";
 import { usePathname, useRouter } from "next/navigation";
 import { Spinner, Flex, Text, Box } from "@chakra-ui/react";
 import { toaster } from "@/components/ui/toaster";
@@ -37,6 +37,7 @@ export const AuthGuard = ({
   },
 }: AuthGuardProps) => {
   const { user, isAuthenticated, isLoading } = useRecoilValue(authState);
+  const { logout } = useAuthActions();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -48,17 +49,20 @@ export const AuthGuard = ({
     if (!isAuthenticated) {
       const publicPaths = [
         "/login",
-        "/cms/login",
+        "/login",
         "/signup",
         "/find-credentials/id",
         "/find-credentials/password",
       ];
       if (!publicPaths.includes(pathname) && pathname !== redirectTo) {
-        toaster.create({
-          title: authenticationNeededMessage.title,
-          description: authenticationNeededMessage.description,
-          type: "error",
-        });
+        // flushSync 문제를 피하기 위해 setTimeout으로 래핑
+        setTimeout(() => {
+          toaster.create({
+            title: authenticationNeededMessage.title,
+            description: authenticationNeededMessage.description,
+            type: "error",
+          });
+        }, 0);
         router.push(redirectTo);
       }
       return;
@@ -75,13 +79,15 @@ export const AuthGuard = ({
       user.requiresPasswordChange &&
       pathname !== changePasswordPath
     ) {
-      toaster.create({
-        title: "비밀번호 변경 필요",
-        description:
-          "계속하려면 비밀번호를 변경해야 합니다. 안전한 서비스 이용을 위해 비밀번호를 변경해주세요.",
-        type: "warning",
-        duration: 5000,
-      });
+      setTimeout(() => {
+        toaster.create({
+          title: "비밀번호 변경 필요",
+          description:
+            "계속하려면 비밀번호를 변경해야 합니다. 안전한 서비스 이용을 위해 비밀번호를 변경해주세요.",
+          type: "warning",
+          duration: 5000,
+        });
+      }, 0);
       router.push(changePasswordPath);
       return;
     }
@@ -94,30 +100,43 @@ export const AuthGuard = ({
 
         // 관리자 권한이 필요한 페이지에 접근 시 더 구체적인 메시지 표시
         const requiresAdmin = allowedRoles.some(
-          (role) => role === "ADMIN" || role === "SYSTEM_ADMIN"
+          (role) => role === "SERVICE_ADMIN" || role === "SUPER_ADMIN"
         );
         if (requiresAdmin) {
           title = "관리자 전용 페이지";
           description = "이 페이지에 접근하려면 관리자 권한이 필요합니다.";
         }
 
-        toaster.create({
-          title,
-          description,
-          type: "error",
-        });
+        // 통합 CMS에서 권한 문제 발생 시 로그아웃 처리
+        const isIntegratedCms = pathname.startsWith("/cms");
 
-        let redirectPath = "/";
-        if (userRole === "ADMIN" || userRole === "SYSTEM_ADMIN") {
-          redirectPath = "/cms/menu";
+        setTimeout(() => {
+          toaster.create({
+            title,
+            description: isIntegratedCms
+              ? "권한이 없어 로그아웃됩니다."
+              : description,
+            type: "error",
+          });
+        }, 0);
+
+        if (isIntegratedCms) {
+          // 통합 CMS에서는 권한 문제 시 로그아웃
+          logout("/login");
+        } else {
+          // 일반 사이트에서는 메인으로 리다이렉트
+          let redirectPath = "/";
+          if (userRole === "SERVICE_ADMIN" || userRole === "SUPER_ADMIN") {
+            redirectPath = "/dashboard";
+          }
+          router.push(redirectPath);
         }
-        router.push(redirectPath);
         return;
       }
     }
 
     if (
-      (user.role === "ADMIN" || user.role === "SYSTEM_ADMIN") &&
+      (user.role === "SERVICE_ADMIN" || user.role === "SUPER_ADMIN") &&
       pathname.startsWith("/application/confirm")
     ) {
       toaster.create({

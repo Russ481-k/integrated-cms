@@ -154,7 +154,7 @@ public class AuthServiceImpl implements AuthService {
             // TODO: 리프레시 토큰 검증 및 새로운 액세스 토큰 발급 로직 구현
             return ResponseEntity.ok(ApiResponseSchema.success(result, "토큰이 성공적으로 갱신되었습니다."));
         } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseSchema.error("400", "토큰 갱신에 실패했습니다."));
+            return ResponseEntity.ok(ApiResponseSchema.error("토큰 갱신에 실패했습니다.", "400"));
         }
     }
 

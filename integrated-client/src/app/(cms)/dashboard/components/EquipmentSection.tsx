@@ -15,7 +15,7 @@ import {
   defaultGridOptions,
   themeDarkMode,
   themeLightMode,
-} from "@/lib/ag-grid-config";
+} from "@/lib/config/ag-grid-config";
 import { useColors } from "@/styles/theme";
 
 // Register required modules

@@ -10,7 +10,7 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
-import { baseInitialConfig } from "@/lib/lexicalConfig";
+import { baseInitialConfig } from "@/lib/config/lexicalConfig";
 
 // Simple Error Boundary for Lexical
 function LexicalErrorBoundary({ children }: { children: React.ReactNode }) {

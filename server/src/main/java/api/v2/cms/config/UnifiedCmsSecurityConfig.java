@@ -24,6 +24,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import java.util.Arrays;
 
@@ -61,22 +62,24 @@ public class UnifiedCmsSecurityConfig {
         log.info("Configuring v2 API security filter chain with hybrid authentication");
 
         return http
-                .antMatcher("/api/v2/**")
+                .requestMatcher(request -> request.getRequestURI().startsWith("/api/v2/"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         // 공개 API (인증 불필요)
-                        .antMatchers(HttpMethod.OPTIONS, "/api/v2/**").permitAll()
-                        .antMatchers("/api/v2/auth/**").permitAll()
-                        .antMatchers("/api/v2/public/**").permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v2/**", HttpMethod.OPTIONS.name())).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v2/auth/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v2/integrated-cms/auth/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v2/cms/**/auth/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v2/public/**")).permitAll()
 
                         // 통합 관리 영역 - SUPER_ADMIN, SERVICE_ADMIN만 접근
-                        .antMatchers("/api/v2/integrated-cms/**")
+                        .requestMatchers(new AntPathRequestMatcher("/api/v2/integrated-cms/**"))
                         .hasAnyRole("SUPER_ADMIN", "SERVICE_ADMIN")
 
                         // 서비스별 CMS API - 계층적 권한 (세부 권한은 컨트롤러에서 제어)
-                        .antMatchers("/api/v2/cms/**")
+                        .requestMatchers(new AntPathRequestMatcher("/api/v2/cms/**"))
                         .hasAnyRole("SUPER_ADMIN", "SERVICE_ADMIN", "SITE_ADMIN", "ADMIN")
 
                         // 나머지는 인증 필요 (세부 권한은 @PreAuthorize에서 제어)
@@ -87,33 +90,58 @@ public class UnifiedCmsSecurityConfig {
     }
 
     /**
-     * 기존 v1 API 호환성을 위한 보안 필터 체인
+     * 공통/관리 도구용 보안 필터 체인 (Actuator 등)
      */
     @Bean
     @Order(2)
+    public SecurityFilterChain managementSecurityFilterChain(HttpSecurity http) throws Exception {
+        log.info("Configuring management security filter chain");
+
+        return http
+                .requestMatcher(request -> 
+                    request.getRequestURI().startsWith("/actuator/") ||
+                    request.getRequestURI().startsWith("/swagger-ui/") ||
+                    request.getRequestURI().startsWith("/v3/api-docs/")
+                )
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers(new AntPathRequestMatcher("/actuator/health")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/swagger-ui/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/v3/api-docs/**")).permitAll()
+                        .anyRequest().authenticated())
+                .build();
+    }
+
+    /**
+     * 기존 v1 API 호환성을 위한 보안 필터 체인
+     */
+    @Bean
+    @Order(3)
     public SecurityFilterChain legacyApiSecurityFilterChain(HttpSecurity http) throws Exception {
         log.info("Configuring legacy v1 API security filter chain");
 
         return http
-                .antMatcher("/api/v1/**")
+                .requestMatcher(request -> request.getRequestURI().startsWith("/api/v1/"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         // v1 공개 API
-                        .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .antMatchers("/api/v1/auth/**").permitAll()
-                        .antMatchers("/api/v1/cms/menu/public/**").permitAll()
-                        .antMatchers("/api/v1/cms/template/public").permitAll()
-                        .antMatchers("/api/v1/cms/bbs/master").permitAll()
-                        .antMatchers("/api/v1/cms/schedule/public/**").permitAll()
-                        .antMatchers("/api/v1/cms/file/public/**").permitAll()
-                        .antMatchers("/api/v1/cms/popups/active").permitAll()
-                        .antMatchers(HttpMethod.GET, "/api/v1/cms/bbs/**").permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/**", HttpMethod.OPTIONS.name())).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/auth/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/menu/public/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/template/public")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/bbs/master")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/schedule/public/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/file/public/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/popups/active")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/bbs/**", HttpMethod.GET.name())).permitAll()
 
                         // v1 인증 필요 API
-                        .antMatchers("/api/v1/cms/**").authenticated()
-                        .antMatchers("/api/v1/mypage/**").hasRole("USER")
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/cms/**")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/mypage/**")).hasRole("USER")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))

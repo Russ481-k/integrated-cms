@@ -1,5 +1,6 @@
 import { privateApi, publicApi } from "./client";
 import { Popup, PopupOrderUpdatePayload } from "@/types/api";
+import { API_CONFIG } from "@/lib/config/api-config";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -14,7 +15,7 @@ export type PopupListResponse = {
   // ... other pagination properties if any
 };
 
-const API_URL = "/cms/popups";
+const API_URL = API_CONFIG.INTEGRATED_CMS.POPUP;
 
 export const popupApi = {
   getActivePopups: async (): Promise<ApiResponse<Popup[]>> => {

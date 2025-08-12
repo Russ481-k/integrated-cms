@@ -5,6 +5,7 @@ import {
   FileOrder,
 } from "@/app/cms/file/types";
 import { publicApi, privateApi } from "./client";
+import { API_CONFIG } from "@/lib/config/api-config";
 
 // Define the new FileUploadResponse interface as per the user's example
 export interface FileUploadResponse {
@@ -22,7 +23,7 @@ export interface FileUploadResponse {
   }[];
 }
 
-const BASE_URL = "/cms/file";
+const BASE_URL = API_CONFIG.INTEGRATED_CMS.FILE;
 
 // 관리자용 API
 export const fileApi = {

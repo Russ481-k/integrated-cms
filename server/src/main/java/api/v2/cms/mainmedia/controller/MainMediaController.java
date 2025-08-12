@@ -20,7 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/cms/main-media")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN', 'SYSTEM_ADMIN')")
+@PreAuthorize("hasRole('ADMIN', 'SUPER_ADMIN')")
 public class MainMediaController {
 
     private final MainMediaService mainMediaService;

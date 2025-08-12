@@ -37,7 +37,7 @@ import {
   themeDarkMode,
   themeLightMode,
   WriterCellRenderer,
-} from "@/lib/ag-grid-config";
+} from "@/lib/config/ag-grid-config";
 import GenericArticleCard from "@/components/common/cards/GenericArticleCard";
 import { mapPostToCommonCardData } from "@/lib/card-utils";
 import { useColors } from "@/styles/theme";

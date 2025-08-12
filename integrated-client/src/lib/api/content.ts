@@ -7,8 +7,9 @@ import {
   UpdateContentBlockDto,
 } from "@/types/api/content";
 import { ApiResponse } from "@/types/api-response";
+import { API_CONFIG } from "@/lib/config/api-config";
 
-const CMS_API_URL = "/cms";
+const CMS_API_URL = API_CONFIG.INTEGRATED_CMS.CONTENT;
 
 export const contentApi = {
   // 1a. (Public) 메인 페이지 콘텐츠 블록 목록 조회

@@ -23,7 +23,7 @@ export const boardKeys = {
 export const boardApi = {
   // Board Master APIs
   getBoardMasters: () => {
-    return privateApi.get<BoardMasterApiResponse>("/cms/bbs/master");
+    return privateApi.get<BoardMasterApiResponse>("/integrated-cms/bbs/master");
   },
 
   getBoard: (id: number) => {
@@ -49,9 +49,9 @@ export const boardApi = {
   saveBoard: ({ id, boardData }: { id?: number; boardData: BoardMaster }) => {
     const { bbsId, ...rest } = boardData;
     if (id) {
-      return privateApi.put<BoardMaster>(`/cms/bbs/master/${id}`, rest);
+      return privateApi.put<BoardMaster>(`/integrated-cms/bbs/master/${id}`, rest);
     }
-    return privateApi.post<BoardMaster>("/cms/bbs/master", rest);
+    return privateApi.post<BoardMaster>("/integrated-cms/bbs/master", rest);
   },
 
   deleteBoard: (id: number) => {
@@ -118,7 +118,7 @@ export const boardApi = {
     contentHtml: string;
     writer: string;
   }) => {
-    return privateApi.post<Post>("/cms/bbs/reply", replyData);
+    return privateApi.post<Post>("/integrated-cms/bbs/reply", replyData);
   },
 
   getArticles: ({

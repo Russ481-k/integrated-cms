@@ -63,7 +63,7 @@ import { getBbsComments } from "@/lib/api/bbs-comment";
 import GenericArticleCard from "@/components/common/cards/GenericArticleCard";
 import { mapArticleToCommonCardData } from "@/lib/card-utils";
 import { boardApi } from "@/lib/api/board";
-import { WriterCellRenderer } from "@/lib/ag-grid-config";
+import { WriterCellRenderer } from "@/lib/config/ag-grid-config";
 
 type ArticleWithAnswer = BoardArticleCommon & {
   answerContent?: string;
@@ -1107,7 +1107,7 @@ const BoardPreview = React.memo(function BoardPreview({
             selectedArticleForDetail &&
             isAuthenticated &&
             (user?.username === selectedArticleForDetail.writer ||
-              user?.role === "ADMIN")
+              user?.role === "SERVICE_ADMIN")
           )
         }
         canDelete={
@@ -1116,7 +1116,7 @@ const BoardPreview = React.memo(function BoardPreview({
             selectedArticleForDetail &&
             isAuthenticated &&
             (user?.username === selectedArticleForDetail.writer ||
-              user?.role === "ADMIN")
+              user?.role === "SERVICE_ADMIN")
           )
         }
       />

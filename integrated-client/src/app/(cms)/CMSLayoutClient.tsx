@@ -9,7 +9,7 @@ export function CMSLayoutClient({ children }: { children: React.ReactNode }) {
   const colors = useColors();
 
   return (
-    <AuthGuard allowedRoles={["ADMIN", "SYSTEM_ADMIN"]} redirectTo="/cms/login">
+    <AuthGuard allowedRoles={["ADMIN", "SUPER_ADMIN"]} redirectTo="/login">
       <Box
         minH="100vh"
         bg={colors.bg}

@@ -132,7 +132,7 @@ public class SecurityConfig {
 						.hasRole("ADMIN")
 						.antMatchers(
 								HttpMethod.POST, "/api/v1/cms/payments/**")
-						.hasAnyRole("ADMIN", "SYSTEM_ADMIN")
+						.hasAnyRole("ADMIN", "SUPER_ADMIN")
 						.antMatchers(
 								"/api/v1/cms/menu",
 								"/api/v1/cms/menu/type/**",

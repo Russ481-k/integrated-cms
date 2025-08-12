@@ -61,7 +61,7 @@ import {
   baseInitialConfig,
   $createImageNode,
   $createVideoNode,
-} from "@/lib/lexicalConfig";
+} from "@/lib/config/lexicalConfig";
 
 // --- Toolbar ---
 const Toolbar = memo(function Toolbar({

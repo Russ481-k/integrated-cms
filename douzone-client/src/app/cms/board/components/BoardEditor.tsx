@@ -191,7 +191,7 @@ export const BoardEditor = React.memo(function BoardEditor({
                   items: [
                     { value: "USER", label: "전체 공개" },
                     { value: "ADMIN", label: "관리자" },
-                    { value: "SYSTEM_ADMIN", label: "시스템 관리자" },
+                    { value: "SUPER_ADMIN", label: "시스템 관리자" },
                   ],
                 })}
                 size="xs"

@@ -28,8 +28,8 @@ function Layout({ children }: { children: React.ReactNode }) {
   const isLargerThanLg = useBreakpointValue({ base: false, lg: true });
   const isRootPath = pathname === "/";
   const isCMSPath = pathname?.startsWith("/cms");
-  const isLoginPage = pathname === "/cms/login";
-  const isTestPage = pathname === "/cms/test" || pathname === "/cms/test2";
+  const isLoginPage = pathname === "/login";
+  const isTestPage = pathname === "/test" || pathname === "/test2";
 
   useEffect(() => {
     setIsSidebarOpen(!!isLargerThanLg);

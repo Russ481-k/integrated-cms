@@ -6,6 +6,7 @@ import {
 } from "@/types/api";
 import { publicApi, privateApi } from "./client";
 import { getToken, setToken, removeToken } from "../auth-utils";
+import { getApiUrl } from "../config/api-config";
 
 // React Query 키 정의
 export const authKeys = {
@@ -27,7 +28,7 @@ export interface AuthApi {
 export const authApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await publicApi.post<AuthResponse>(
-      "/auth/login",
+      getApiUrl.integratedCms("/auth/login"),
       credentials
     );
     const authData = response.data.data; // 실제 데이터는 .data 안에 있습니다.
@@ -53,14 +54,14 @@ export const authApi = {
     // 클라이언트 측 토큰 제거
     removeToken();
 
-    // 페이지를 새로고침하여 상태를 초기화하거나, 로그인 페이지로 리디렉션
-    if (typeof window !== "undefined") {
-      window.location.reload();
-    }
+    // 새로고침 제거: 상태 관리만으로 처리
+    // if (typeof window !== "undefined") {
+    //   window.location.reload();
+    // }
   },
 
   verifyToken: async (): Promise<User> => {
-    const response = await privateApi.get<VerifyTokenResponse>("/auth/verify");
+    const response = await privateApi.get<VerifyTokenResponse>(getApiUrl.integratedCms("/auth/verify"));
 
     const apiData = response.data.data;
 

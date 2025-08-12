@@ -49,7 +49,7 @@ export const scheduleApi = {
   // Create a new schedule
   createSchedule: async (data: ScheduleFormData): Promise<ScheduleResponse> => {
     const response = await privateApi.post<ScheduleResponse>(
-      "/cms/schedule",
+      "/integrated-cms/schedule",
       data
     );
     return response.data;

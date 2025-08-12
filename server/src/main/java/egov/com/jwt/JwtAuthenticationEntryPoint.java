@@ -52,8 +52,8 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         }
 
         ApiResponseSchema<Void> apiResponse = ApiResponseSchema.error(
-                errorCode,
-                errorMessage);
+                errorMessage,
+                errorCode);
 
         response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
     }

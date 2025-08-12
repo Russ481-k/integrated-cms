@@ -59,7 +59,7 @@ export const useAuthActions = () => {
         } else if (fromCMS) {
           if (
             appUser.role === "ADMIN" ||
-            appUser.role === "SYSTEM_ADMIN"
+            appUser.role === "SUPER_ADMIN"
           ) {
             router.push("/cms/menu");
             toaster.create({

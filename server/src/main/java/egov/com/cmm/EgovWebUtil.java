@@ -24,7 +24,7 @@ import api.v2.cms.common.dto.ApiResponseSchema;
 public class EgovWebUtil {
 
 	public static ApiResponseSchema<Void> handleAuthError(int code, String msg) {
-		return ApiResponseSchema.error(String.valueOf(code), msg);
+		return ApiResponseSchema.error(msg, String.valueOf(code));
 	}
 
 	public static String clearXSSMinimum(String value) {

@@ -47,7 +47,7 @@ import {
   themeDarkMode,
   themeLightMode,
   WriterCellRenderer,
-} from "@/lib/ag-grid-config";
+} from "@/lib/config/ag-grid-config";
 import { env } from "process";
 import dayjs from "dayjs";
 
@@ -141,7 +141,7 @@ const AttachmentsRenderer: React.FC<ICellRendererParams<Post>> = ({ data }) => {
     );
   }
   const getDownloadLink = (file: FileDto) => {
-    return `${process.env.NEXT_PUBLIC_API_URL}/api/v1/cms/file/public/download/${file.fileId}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}/api/v1/file/public/download/${file.fileId}`;
   };
 
   return (

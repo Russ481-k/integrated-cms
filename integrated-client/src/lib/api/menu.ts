@@ -2,6 +2,7 @@ import { Menu } from "@/types/api";
 import { PageDetailsDto } from "@/types/menu";
 import { privateApi, publicApi } from "./client";
 import { MenuApiResponse, PageDetailsApiResponse } from "@/types/api-response";
+import { API_CONFIG } from "@/lib/config/api-config";
 
 // 메뉴를 sortOrder 기준으로 정렬하는 헬퍼 함수
 export function sortMenus(menus: Menu[]): Menu[] {
@@ -70,7 +71,7 @@ export function sortMenus(menus: Menu[]): Menu[] {
 // 메뉴 목록을 가져오는 API 함수
 export async function fetchMenus(): Promise<Menu[]> {
   try {
-    const response = await privateApi.get<Menu[]>("/cms/menu");
+    const response = await privateApi.get<Menu[]>(API_CONFIG.INTEGRATED_CMS.MENU);
     if (!response) {
       throw new Error("Failed to fetch menus");
     }
@@ -116,11 +117,11 @@ export const menuApi = {
     const response = await privateApi.get<{
       data: Menu[];
       status: number;
-    }>("/cms/menu");
+    }>(API_CONFIG.INTEGRATED_CMS.MENU);
     return response;
   },
   getPublicMenus: async () => {
-    const response = await publicApi.get<MenuApiResponse>("/cms/menu/public");
+    const response = await publicApi.get<MenuApiResponse>(`${API_CONFIG.INTEGRATED_CMS.MENU}/public`);
     return response;
   },
   getMenusByType: async (type: string) => {
@@ -130,26 +131,26 @@ export const menuApi = {
       totalElements: number;
       totalPages: number;
       last: boolean;
-    }>(`/cms/menu/type/${type}`);
+    }>(`${API_CONFIG.INTEGRATED_CMS.MENU}/type/${type}`);
     return response;
   },
   getMenu: async (id: number) => {
-    const response = await privateApi.get<Menu>(`/cms/menu/${id}`);
+    const response = await privateApi.get<Menu>(`${API_CONFIG.INTEGRATED_CMS.MENU}/${id}`);
     return response;
   },
   createMenu: async (data: Omit<Menu, "id" | "createdAt" | "updatedAt">) => {
-    const response = await privateApi.post<Menu>("/cms/menu", data);
+    const response = await privateApi.post<Menu>(API_CONFIG.INTEGRATED_CMS.MENU, data);
     return response;
   },
   updateMenu: async (
     id: number,
     data: Omit<Menu, "id" | "createdAt" | "updatedAt">
   ) => {
-    const response = await privateApi.put<Menu>(`/cms/menu/${id}`, data);
+    const response = await privateApi.put<Menu>(`${API_CONFIG.INTEGRATED_CMS.MENU}/${id}`, data);
     return response;
   },
   deleteMenu: async (id: number) => {
-    await privateApi.delete(`/cms/menu/${id}`);
+    await privateApi.delete(`${API_CONFIG.INTEGRATED_CMS.MENU}/${id}`);
   },
   updateMenuOrder: async (
     orders: Array<{
@@ -158,14 +159,14 @@ export const menuApi = {
       position: "before" | "after" | "inside";
     }>
   ) => {
-    const response = await privateApi.put<Menu[]>("/cms/menu/order", orders);
+    const response = await privateApi.put<Menu[]>(`${API_CONFIG.INTEGRATED_CMS.MENU}/order`, orders);
     return response;
   },
 
   // New function to get page details for a menu item
   getPageDetails: async (menuId: number): Promise<PageDetailsDto> => {
     const response = await publicApi.get<PageDetailsApiResponse>(
-      `/cms/menu/public/${menuId}/page-details`
+      `${API_CONFIG.INTEGRATED_CMS.MENU}/public/${menuId}/page-details`
     );
 
     // API 응답에서 data 필드를 반환
