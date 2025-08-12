@@ -3,6 +3,7 @@ package egov.com.security;
 import egov.com.jwt.JwtAuthenticationEntryPoint;
 import egov.com.jwt.JwtRequestFilter;
 import lombok.RequiredArgsConstructor;
+import api.v2.cms.auth.service.CustomUserDetailsService;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.MultipartConfigFactory;
@@ -27,8 +28,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-
-import cms.auth.service.CustomUserDetailsService;
 
 import java.util.ArrayList;
 import java.util.Arrays;

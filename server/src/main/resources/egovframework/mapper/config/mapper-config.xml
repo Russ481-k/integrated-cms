@@ -18,7 +18,7 @@
     </settings>
     
     <typeAliases>
-        <typeAlias type="cms.user.domain.User" alias="user"/>
+        <typeAlias type="api.v2.cms.user.domain.User" alias="user"/>
     </typeAliases>
     
     <mappers>

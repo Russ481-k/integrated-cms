@@ -9,9 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import cms.auth.provider.JwtTokenProvider;
+
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import api.v2.cms.auth.provider.JwtTokenProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -50,28 +51,30 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        
+
         String requestURI = request.getRequestURI();
-        log.info("[JwtRequestFilter] ACTUALLY FILTERING URI: {} (shouldNotFilter must have returned false)", requestURI);
-        
+        log.info("[JwtRequestFilter] ACTUALLY FILTERING URI: {} (shouldNotFilter must have returned false)",
+                requestURI);
+
         final String requestTokenHeader = request.getHeader("Authorization");
-        
+
         if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
             String token = requestTokenHeader.substring(7).trim();
             log.debug("Extracted token from header for URI: {}", requestURI);
-            
+
             try {
                 log.debug("Validating token for URI: {}...", requestURI);
                 if (jwtTokenProvider.validateToken(token)) {
                     log.debug("Token validation successful for URI: {}, creating authentication...", requestURI);
                     Authentication authentication = jwtTokenProvider.getAuthentication(token);
                     if (authentication != null) {
-                        log.debug("Authentication created successfully for user: {} on URI: {}", authentication.getName(), requestURI);
+                        log.debug("Authentication created successfully for user: {} on URI: {}",
+                                authentication.getName(), requestURI);
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                         log.debug("Security context updated with authentication for URI: {}", requestURI);
                     } else {
                         log.warn("Failed to create authentication object for token on URI: {}", requestURI);
-                        SecurityContextHolder.clearContext(); 
+                        SecurityContextHolder.clearContext();
                     }
                 } else {
                     log.warn("Token validation failed (validateToken returned false) for URI: {}", requestURI);
@@ -91,9 +94,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 return;
             }
         } else {
-            log.debug("No Bearer token found for (presumably) authenticated path URI: {}. Passing to next filter.", requestURI);
+            log.debug("No Bearer token found for (presumably) authenticated path URI: {}. Passing to next filter.",
+                    requestURI);
         }
-        
+
         log.debug("Proceeding with filter chain for URI: {}", requestURI);
         chain.doFilter(request, response);
         log.debug("=== JwtRequestFilter End for URI: {} ===", requestURI);
@@ -103,20 +107,16 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        
+
         String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        
+
         String errorResponse = String.format(
-            "{\"status\":%d,\"message\":\"%s\",\"timestamp\":\"%s\"}",
-            HttpServletResponse.SC_UNAUTHORIZED,
-            message,
-            timestamp
-        );
-        
+                "{\"status\":%d,\"message\":\"%s\",\"timestamp\":\"%s\"}",
+                HttpServletResponse.SC_UNAUTHORIZED,
+                message,
+                timestamp);
+
         log.debug("Sending error response: {}", errorResponse);
         response.getWriter().write(errorResponse);
     }
-} 
- 
- 
- 
+}

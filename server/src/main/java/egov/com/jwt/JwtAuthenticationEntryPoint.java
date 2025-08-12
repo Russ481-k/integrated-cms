@@ -1,10 +1,12 @@
 package egov.com.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cms.common.dto.ApiResponseSchema;
-import cms.common.exception.ErrorCode;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.cms.common.exception.ErrorCode;
+
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;

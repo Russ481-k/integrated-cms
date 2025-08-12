@@ -37,7 +37,8 @@ import java.util.Properties;
 @EnableJpaRepositories(basePackages = {
     "egov.**.repository",
     "cms.**.repository",
-    "feature.**.repository"
+    "feature.**.repository",
+    "api.v2.cms.**.repository"
 })
 @EnableTransactionManagement
 public class EgovConfigAppJpa {
@@ -55,7 +56,9 @@ public class EgovConfigAppJpa {
             "cms.**.domain",
             "cms.**.entity", 
             "feature.**.domain",
-            "feature.**.entity"
+            "feature.**.entity",
+            "api.v2.cms.**.domain",
+            "api.v2.cms.**.entity"
         );
         
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

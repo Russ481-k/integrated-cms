@@ -3,7 +3,7 @@ package egov.com.cmm;
 import java.io.File;
 import java.util.regex.Pattern;
 
-import cms.common.dto.ApiResponseSchema;
+import api.v2.cms.common.dto.ApiResponseSchema;
 
 /**
  * 교차접속 스크립트 공격 취약성 방지(파라미터 문자열 교체)
@@ -23,10 +23,10 @@ import cms.common.dto.ApiResponseSchema;
 
 public class EgovWebUtil {
 
-
 	public static ApiResponseSchema<Void> handleAuthError(int code, String msg) {
 		return ApiResponseSchema.error(String.valueOf(code), msg);
 	}
+
 	public static String clearXSSMinimum(String value) {
 		if (value == null || value.trim().equals("")) {
 			return "";
@@ -73,7 +73,7 @@ public class EgovWebUtil {
 
 		return returnValue;
 	}
-	
+
 	/**
 	 * 파일경로 보안취약점 조치
 	 * # 주의사항
@@ -81,14 +81,14 @@ public class EgovWebUtil {
 	 * 2. basePath는 ROOT Path "/" 사용 금지 한다.
 	 * 3. basePath 하위 디렉토리는 업로드한 파일이 존재하도록 구성하며 중요파일이 존재하지 않도록 관리한다.
 	 *
-	 * @param value 파일명
+	 * @param value    파일명
 	 * @param basePath 기본 경로
 	 * @return
 	 */
 	public static String filePathBlackList(String value, String basePath) {
-		if ( basePath == null || "".equals(basePath) )
+		if (basePath == null || "".equals(basePath))
 			throw new SecurityException("base path is empty.");
-		if ( File.separator.equals(basePath) || "/".equals(basePath) )
+		if (File.separator.equals(basePath) || "/".equals(basePath))
 			throw new SecurityException("base path does not allow Root.");
 		return filePathBlackList(basePath + value);
 	}
@@ -112,14 +112,13 @@ public class EgovWebUtil {
 
 		return returnValue;
 	}
-	
+
 	public static String fileInjectPathReplaceAll(String value) {
 		String returnValue = value;
 		if (returnValue == null || returnValue.trim().equals("")) {
 			return "";
 		}
 
-		
 		returnValue = returnValue.replaceAll("/", "");
 		returnValue = returnValue.replaceAll("\\..", ""); // ..
 		returnValue = returnValue.replaceAll("\\\\", "");// \
@@ -136,14 +135,15 @@ public class EgovWebUtil {
 		Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
 		return ipPattern.matcher(str).matches();
-    }
+	}
 
 	public static String removeCRLF(String parameter) {
 		return parameter.replaceAll("\r", "").replaceAll("\n", "");
 	}
 
 	public static String removeSQLInjectionRisk(String parameter) {
-		return parameter.replaceAll("\\p{Space}", "").replaceAll("\\*", "").replaceAll("%", "").replaceAll(";", "").replaceAll("-", "").replaceAll("\\+", "").replaceAll(",", "");
+		return parameter.replaceAll("\\p{Space}", "").replaceAll("\\*", "").replaceAll("%", "").replaceAll(";", "")
+				.replaceAll("-", "").replaceAll("\\+", "").replaceAll(",", "");
 	}
 
 	public static String removeOSCmdRisk(String parameter) {

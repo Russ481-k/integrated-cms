@@ -12,7 +12,7 @@ import org.springframework.data.domain.Pageable;
 import egov.com.cmm.util.EgovFileScrty;
 
 import egov.com.uss.umt.service.EgovUserManageService;
-import cms.user.domain.User;
+import api.v2.cms.user.domain.User;
 import egov.com.uss.umt.dto.UserSearchDto;
 import egov.com.uss.umt.repository.UserManageRepository;
 
@@ -24,7 +24,8 @@ public class EgovUserManageServiceImpl implements EgovUserManageService {
     private final UserManageRepository userManageRepository;
     private final EgovIdGnrService idgenService;
 
-    public EgovUserManageServiceImpl(UserManageRepository userManageRepository, @Qualifier("egovIdGnrService") EgovIdGnrService idgenService) {
+    public EgovUserManageServiceImpl(UserManageRepository userManageRepository,
+            @Qualifier("egovIdGnrService") EgovIdGnrService idgenService) {
         this.userManageRepository = userManageRepository;
         this.idgenService = idgenService;
     }
@@ -62,7 +63,7 @@ public class EgovUserManageServiceImpl implements EgovUserManageService {
                 String pass = EgovFileScrty.encryptPassword(user.getPassword(), user.getUsername());
                 user.setPassword(pass);
             }
-            
+
             userManageRepository.save(user);
         } catch (Exception e) {
             throw new RuntimeException("사용자 정보 수정 중 오류가 발생했습니다.", e);
@@ -86,21 +87,19 @@ public class EgovUserManageServiceImpl implements EgovUserManageService {
     @Transactional(readOnly = true)
     public List<User> selectUserList(UserSearchDto searchDto) {
         Pageable pageable = PageRequest.of(
-            searchDto.getPageIndex() - 1,
-            searchDto.getPageSize()
-        );
-        
+                searchDto.getPageIndex() - 1,
+                searchDto.getPageSize());
+
         Page<User> page;
         if (searchDto.getSearchCondition() != null && searchDto.getSearchKeyword() != null) {
             page = userManageRepository.searchUsers(
-                searchDto.getSearchCondition(),
-                searchDto.getSearchKeyword(),
-                pageable
-            );
+                    searchDto.getSearchCondition(),
+                    searchDto.getSearchKeyword(),
+                    pageable);
         } else {
             page = userManageRepository.findAll(pageable);
         }
-        
+
         return page.getContent();
     }
 
@@ -109,12 +108,11 @@ public class EgovUserManageServiceImpl implements EgovUserManageService {
     public int selectUserListTotCnt(UserSearchDto searchDto) {
         if (searchDto.getSearchCondition() != null && searchDto.getSearchKeyword() != null) {
             Page<User> page = userManageRepository.searchUsers(
-                searchDto.getSearchCondition(),
-                searchDto.getSearchKeyword(),
-                PageRequest.of(0, Integer.MAX_VALUE)
-            );
+                    searchDto.getSearchCondition(),
+                    searchDto.getSearchKeyword(),
+                    PageRequest.of(0, Integer.MAX_VALUE));
             return (int) page.getTotalElements();
         }
         return (int) userManageRepository.count();
     }
-} 
+}

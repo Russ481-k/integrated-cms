@@ -3,7 +3,8 @@ package egov.com.cmm.util;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import cms.user.dto.CustomUserDetails;
+
+import api.v2.cms.user.dto.CustomUserDetails;
 
 import java.util.Collections;
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @see
  *
- * <pre>
+ *      <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일      수정자           수정내용
@@ -26,12 +27,13 @@ import java.util.stream.Collectors;
  *   2011.08.31  JJY            경량환경 템플릿 커스터마이징버전 생성
  *   2024.03.14  JWT 기반 인증으로 변경
  *
- * </pre>
+ *      </pre>
  */
 public class EgovUserDetailsHelper {
 
 	/**
 	 * 인증된 사용자객체를 VO형식으로 가져온다.
+	 * 
 	 * @return Object - 사용자 ValueObject
 	 */
 	public static Object getAuthenticatedUser() {
@@ -44,6 +46,7 @@ public class EgovUserDetailsHelper {
 
 	/**
 	 * 인증된 사용자의 권한 정보를 가져온다.
+	 * 
 	 * @return List<String> - 사용자 권한정보 목록
 	 */
 	public static List<String> getAuthorities() {
@@ -58,12 +61,13 @@ public class EgovUserDetailsHelper {
 
 	/**
 	 * 인증된 사용자 여부를 체크한다.
+	 * 
 	 * @return Boolean - 인증된 사용자 여부(TRUE / FALSE)
 	 */
 	public static Boolean isAuthenticated() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		return authentication != null && 
-			   authentication.getPrincipal() instanceof CustomUserDetails && 
-			   !"anonymousUser".equals(authentication.getPrincipal());
+		return authentication != null &&
+				authentication.getPrincipal() instanceof CustomUserDetails &&
+				!"anonymousUser".equals(authentication.getPrincipal());
 	}
 }

@@ -6,15 +6,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import egov.com.uss.umt.service.EgovUserManageService;
-import cms.user.domain.User;
 import egov.com.uss.umt.dto.UserSearchDto;
 import lombok.RequiredArgsConstructor;
+import api.v2.cms.user.domain.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/egov/user")
 @RequiredArgsConstructor
-@Tag(name = "egov_00_User", description = "사용자 관리 API")        
+@Tag(name = "egov_00_User", description = "사용자 관리 API")
 public class EgovUserManageController {
 
     private final EgovUserManageService userManageService;
@@ -57,4 +57,4 @@ public class EgovUserManageController {
         int count = userManageService.selectUserListTotCnt(searchDto);
         return ResponseEntity.ok(count);
     }
-} 
+}
