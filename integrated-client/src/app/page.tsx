@@ -1,5 +1,5 @@
 import { AuthRedirect } from "@/components/auth/AuthRedirect";
 
-export default function Cms() {
+export default function RootPage() {
   return <AuthRedirect />;
 }

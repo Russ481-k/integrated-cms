@@ -183,6 +183,24 @@ public class JwtTokenProvider {
         return null;
     }
 
+    /**
+     * 토큰에서 사용자명 추출
+     */
+    public String getUsernameFromToken(String token) {
+        try {
+            Key key = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), SignatureAlgorithm.HS256.getJcaName());
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token.trim())
+                    .getBody();
+            return claims.getSubject();
+        } catch (Exception e) {
+            logger.warn("Failed to extract username from token: {}", e.getMessage());
+            return null;
+        }
+    }
+
     public boolean validateToken(String token) {
         logger.debug("=== JwtTokenProvider.validateToken Start ===");
         logger.debug("Token to validate: {}", token);

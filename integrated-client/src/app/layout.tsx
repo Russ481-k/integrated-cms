@@ -2,6 +2,8 @@ import "@/styles/globals.css";
 import "@/styles/fonts.css";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/toaster";
+import { AuthInitializer } from "@/components/auth/AuthInitializer";
+import { AuthRedirectHandler } from "@/components/auth/AuthRedirectHandler";
 import Script from "next/script";
 
 export default function RootLayout({
@@ -28,6 +30,8 @@ export default function RootLayout({
       <body>
         <div id="google_translate_element" style={{ display: "none" }}></div>
         <Providers>
+          <AuthInitializer />
+          <AuthRedirectHandler />
           {children}
           <Toaster />
         </Providers>

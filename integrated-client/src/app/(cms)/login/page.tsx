@@ -10,7 +10,6 @@ import {
   Input,
   Text,
   Checkbox,
-  Center,
 } from "@chakra-ui/react";
 import { LuEye, LuEyeOff, LuCheck } from "react-icons/lu";
 import { useRecoilValue } from "recoil";
@@ -20,18 +19,18 @@ import { InputGroup } from "@/components/ui/input-group";
 import { useColors } from "@/styles/theme";
 import { Button } from "@/components/ui/button";
 import { useColorModeValue } from "@/components/ui/color-mode";
-import { toaster } from "@/components/ui/toaster";
 import { Logo } from "@/components/ui/logo";
 
 function LoginForm() {
-  const { isAuthenticated, isLoading, user } = useRecoilValue(authState);
-  const { login, logout } = useAuthActions();
+  const { isAuthenticated, user } = useRecoilValue(authState);
+  const { login } = useAuthActions();
   const router = useRouter();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{
     username?: string;
     password?: string;
@@ -46,21 +45,7 @@ function LoginForm() {
   const pageBg = useColorModeValue("gray.50", "gray.900");
   const headingColor = useColorModeValue("gray.900", "white");
 
-  // Check if user has admin role
-  const hasAdminRole =
-    user &&
-    (user.role === "ADMIN" ||
-      user.role === "SUPER_ADMIN" ||
-      user.role === "SUPER_ADMIN" ||
-      user.role === "SERVICE_ADMIN" ||
-      user.role === "SITE_ADMIN");
-
-  useEffect(() => {
-    // Only redirect if authenticated and has admin role
-    if (isAuthenticated && hasAdminRole) {
-      router.push("/dashboard");
-    }
-  }, [isAuthenticated, hasAdminRole, router]);
+  // AuthRedirectHandler가 인증된 사용자의 리다이렉트를 처리함
 
   useEffect(() => {
     const rememberedId = localStorage.getItem("rememberedId");
@@ -70,25 +55,10 @@ function LoginForm() {
     }
   }, []);
 
-  const validateForm = () => {
-    const newErrors: { username?: string; password?: string } = {};
-
-    if (!username) {
-      newErrors.username = "Please enter your username";
-    }
-
-    if (!password) {
-      newErrors.password = "Please enter your password";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form
+    // 폼 검증
     const validationErrors: any = {};
     if (!username) validationErrors.username = "아이디를 입력해주세요";
     if (!password) validationErrors.password = "비밀번호를 입력해주세요";
@@ -98,36 +68,18 @@ function LoginForm() {
       return;
     }
 
-    // Attempt login
-    login({ username, password }, true).catch(() => {
-      // 에러는 useAuthActions 내에서 토스터로 처리되므로 여기서는 추가 작업이 필요 없습니다.
-      // 필요하다면 추가적인 클라이언트 사이드 로직을 여기에 구현할 수 있습니다.
-    });
+    // 로그인 시도
+    setIsSubmitting(true);
+    try {
+      await login({ username, password });
+      // 로그인 성공 시 useEffect에서 자동으로 리다이렉트 처리됨
+    } catch (error) {
+      // 에러는 useAuthActions 내에서 토스터로 처리됨
+      console.error("Login failed:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
-  if (isLoading) {
-    return (
-      <Center h="100vh" bg={pageBg}>
-        <Flex direction="column" align="center" gap={4}>
-          <Box
-            width="40px"
-            height="40px"
-            border="4px solid"
-            borderColor="blue.500"
-            borderTopColor="transparent"
-            borderRadius="full"
-            animation="spin 1s linear infinite"
-          />
-          <Text fontSize="sm" color="gray.500">
-            로그인 시스템을 초기화하고 있습니다...
-          </Text>
-          <Text fontSize="xs" color="gray.400">
-            5초 후 자동으로 로그인 폼이 표시됩니다.
-          </Text>
-        </Flex>
-      </Center>
-    );
-  }
 
   return (
     <Flex
@@ -309,27 +261,14 @@ function LoginForm() {
                   bgGradient={colors.gradient.primary}
                   color="white"
                   letterSpacing="wide"
+                  loading={isSubmitting}
+                  disabled={isSubmitting}
                   _hover={{
                     bgGradient: "linear-gradient(135deg, #4f46e5, #7c3aed)",
                     boxShadow: colors.shadow.md,
                   }}
                 >
-                  Sign In
-                </Button>
-                <Button
-                  type="submit"
-                  colorPalette="blue"
-                  variant="outline"
-                  size="lg"
-                  fontSize="md"
-                  fontWeight="semibold"
-                  h="12"
-                  bgGradient={colors.gradient.primary}
-                  color="white"
-                  letterSpacing="wide"
-                  onClick={() => router.push("/")}
-                >
-                  Home
+                  {isSubmitting ? "로그인 중..." : "Sign In"}
                 </Button>
               </Flex>
             </form>

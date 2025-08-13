@@ -97,10 +97,21 @@ public class AdminAuthServiceImpl implements AdminAuthService {
     @Override
     public ResponseEntity<ApiResponseSchema<Void>> logout(HttpServletRequest request) {
         try {
-            // JWT 토큰 무효화 로직이 필요하다면 여기에 추가
-            // 현재는 클라이언트에서 토큰을 삭제하는 방식으로 처리
+            // Stateless JWT 기반이므로 서버에서 별도 처리할 내용 없음
+            // 클라이언트에서 토큰을 삭제하면 인증이 해제됨
+            
+            // 필요시 로그아웃 감사 로그 기록
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                try {
+                    String username = jwtTokenProvider.getUsernameFromToken(token);
+                    log.info("Admin logout successful for user: {}", username);
+                } catch (Exception e) {
+                    log.debug("Could not extract username from token during logout", e);
+                }
+            }
 
-            log.info("Admin logout successful");
             return ResponseEntity.ok(ApiResponseSchema.success(null, "로그아웃이 성공적으로 처리되었습니다."));
 
         } catch (Exception e) {

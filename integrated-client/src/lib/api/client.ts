@@ -44,14 +44,23 @@ const createApiClient = (needsAuth: boolean): AxiosInstance => {
         };
 
         if (error.response?.status === 401 && !originalRequest._retry) {
+          console.log("🚨 [API Client] 401 Unauthorized detected:", {
+            url: originalRequest.url,
+            method: originalRequest.method,
+            hasRefreshToken: !!getRefreshToken(),
+            timestamp: new Date().toISOString(),
+          });
+
           originalRequest._retry = true;
           const refreshToken = getRefreshToken();
 
           if (!refreshToken) {
+            console.log("❌ [API Client] No refresh token available, forcing logout");
             removeToken();
             if (typeof window !== "undefined") {
               // 통합 CMS는 모든 API가 CMS 관련이므로 항상 /login 사용
               const loginUrl = "/login";
+              console.log("🔄 [API Client] Redirecting to:", `${loginUrl}?error=session_expired`);
               window.location.href = `${loginUrl}?error=session_expired`;
             }
             return Promise.reject(new Error("No refresh token available."));
