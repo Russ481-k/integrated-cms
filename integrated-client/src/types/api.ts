@@ -246,6 +246,12 @@ export interface VerifyTokenResponse {
     valid: boolean;
     uuid: string;
     username: string;
+    role: string;
+    name: string;
+    email: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
     authorities: {
       authority: string;
     }[];

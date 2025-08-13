@@ -11,6 +11,7 @@ import org.springframework.retry.annotation.EnableRetry;
         "egov",
         "api",
         "api.v2.cms",
+        "api.v2.common",  // 🎯 새로 추가된 공통 패키지
         "feature"
 })
 

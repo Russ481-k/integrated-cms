@@ -14,6 +14,35 @@ description: 통합 CMS v2 백엔드 API 개발 컨벤션 및 표준
 - **통합 백엔드 라우팅**: 단일 애플리케이션 내부 서비스 컨텍스트 라우팅
 - **MySQL 8.x** / MariaDB
 
+### 🚨 중요: Import 패키지 규칙
+
+**현재 프로젝트에서는 `javax.*` 패키지를 사용합니다:**
+
+```java
+// ✅ 올바른 사용
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
+// ❌ 사용 금지 - Jakarta 패키지
+import jakarta.servlet.http.HttpServletRequest;  // 사용하지 말 것
+import jakarta.validation.Valid;                 // 사용하지 말 것
+```
+
+**적용 대상:**
+
+- `javax.servlet.*` - 서블릿 관련 클래스
+- `javax.validation.*` - 검증 어노테이션
+- `javax.persistence.*` - JPA 관련 클래스
+- 기타 모든 `javax.*` 패키지
+
+**이유:**
+
+- 프로젝트 전체의 일관성 유지
+- 기존 코드와의 호환성 보장
+- Spring Boot 버전과 관계없이 통일된 import 규칙 적용
+
 ### 인증 및 보안
 
 - **JWT 기반 인증**: Access Token (15분) + Refresh Token (7일)

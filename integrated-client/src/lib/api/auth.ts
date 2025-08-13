@@ -65,21 +65,16 @@ export const authApi = {
 
     const apiData = response.data.data;
 
-    // "ROLE_ADMIN" -> "ADMIN"
-    const role =
-      apiData.authorities?.[0]?.authority.replace("ROLE_", "") || "USER";
-
-    // 프론트엔드 User 모델로 변환
+    // 백엔드에서 직접 제공하는 사용자 정보 사용
     const user: User = {
-      uuid: apiData.uuid,
-      username: apiData.username,
-      role: role,
-      // 백엔드 응답에 없는 필드는 기본값 또는 빈 값으로 채웁니다.
-      name: apiData.username, // name이 없으면 username으로 대체
-      email: "", // email 정보가 없음
-      status: "ACTIVE", // status 정보가 없음
-      createdAt: new Date().toISOString(), // 정보가 없으므로 현재 시간으로 설정
-      updatedAt: new Date().toISOString(),
+      uuid: apiData.uuid || "",
+      username: apiData.username || "",
+      role: apiData.role || "USER", // 백엔드에서 이미 "ROLE_" 제거됨
+      name: apiData.name || apiData.username || "",
+      email: apiData.email || "",
+      status: apiData.status || "ACTIVE",
+      createdAt: apiData.createdAt || new Date().toISOString(),
+      updatedAt: apiData.updatedAt || new Date().toISOString(),
     };
 
     return user;

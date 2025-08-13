@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * - 테넌트별 독립적인 연결 풀 관리
  * - 장애 격리 및 성능 모니터링
  */
-@Configuration
+// @Configuration  // 🚨 일시적으로 비활성화 - RoutingDataSourceConfig와 충돌 방지
 public class DynamicDataSourceConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(DynamicDataSourceConfiguration.class);
 
