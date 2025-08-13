@@ -106,12 +106,4 @@ export const validateApiConfig = () => {
   };
 };
 
-// 디버깅용 (개발 환경에서만)
-if (process.env.NODE_ENV === 'development') {
-  console.log('API Configuration:', {
-    BASE_URL: API_CONFIG.BASE_URL,
-    INTEGRATED_CMS: API_CONFIG.INTEGRATED_CMS.BASE,
-    SERVICE_CMS: API_CONFIG.SERVICE_CMS.BASE,
-    AUTH: API_CONFIG.AUTH.BASE,
-  });
-}
+

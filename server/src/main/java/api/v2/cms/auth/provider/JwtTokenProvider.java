@@ -4,6 +4,7 @@ import io.jsonwebtoken.*;
 import lombok.RequiredArgsConstructor;
 import api.v2.cms.auth.security.JwtAuthenticationToken;
 import api.v2.cms.user.domain.User;
+import api.v2.cms.user.domain.AdminUser;
 import api.v2.cms.user.domain.UserRoleType;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -63,6 +64,32 @@ public class JwtTokenProvider {
     public String createRefreshToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getUsername());
         claims.put("userId", user.getUuid());
+        claims.put(TOKEN_TYPE_CLAIM, TOKEN_TYPE_REFRESH);
+
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
+
+        return createToken(claims, now, validity);
+    }
+
+    // AdminUser용 토큰 생성 메서드
+    public String createAccessToken(AdminUser adminUser) {
+        Claims claims = Jwts.claims().setSubject(adminUser.getUsername());
+        claims.put("userId", adminUser.getUuid());
+        claims.put("role", "ROLE_" + adminUser.getRole().name());
+        claims.put("name", adminUser.getName());
+        claims.put("email", adminUser.getEmail());
+        claims.put(TOKEN_TYPE_CLAIM, TOKEN_TYPE_ACCESS);
+
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
+
+        return createToken(claims, now, validity);
+    }
+
+    public String createRefreshToken(AdminUser adminUser) {
+        Claims claims = Jwts.claims().setSubject(adminUser.getUsername());
+        claims.put("userId", adminUser.getUuid());
         claims.put(TOKEN_TYPE_CLAIM, TOKEN_TYPE_REFRESH);
 
         Date now = new Date();

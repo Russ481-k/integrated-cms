@@ -227,7 +227,6 @@ export function ContentList({
       if (isFolder && menu.id !== 0) {
         toggleMenu(menu.id);
       } else {
-        console.log("선택된 컨텐츠 메뉴:", menu);
         onEditContent(menu);
       }
     };

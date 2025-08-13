@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import api.v2.cms.auth.dto.LoginRequest;
-import api.v2.cms.auth.service.AuthService;
+import api.v2.cms.auth.service.AdminAuthService;
 import api.v2.cms.common.dto.ApiResponseSchema;
 
 import org.springframework.http.ResponseEntity;
@@ -23,7 +23,7 @@ import java.util.Map;
 @Tag(name = "Integrated CMS Authentication", description = "통합 CMS 인증 API")
 public class IntegratedCmsAuthController {
 
-    private final AuthService authService;
+    private final AdminAuthService adminAuthService;
 
     @PostMapping("/login")
     @Operation(summary = "통합 CMS 로그인", description = "통합 CMS 관리자 로그인을 처리하고 JWT 토큰을 반환합니다.")
@@ -33,18 +33,18 @@ public class IntegratedCmsAuthController {
     })
     public ResponseEntity<ApiResponseSchema<Map<String, Object>>> login(@Valid @RequestBody LoginRequest request) {
         log.info("Integrated CMS login attempt for user: {}", request.getUsername());
-        return authService.loginUser(request);
+        return adminAuthService.loginUser(request);
     }
 
     @PostMapping("/logout")
     @Operation(summary = "통합 CMS 로그아웃", description = "사용자를 로그아웃 처리합니다.")
     public ResponseEntity<ApiResponseSchema<Void>> logout(HttpServletRequest request) {
-        return authService.logout(request);
+        return adminAuthService.logout(request);
     }
 
     @GetMapping("/check-username/{username}")
     @Operation(summary = "사용자명 중복 확인", description = "사용자명이 이미 사용 중인지 확인합니다.")
     public ResponseEntity<ApiResponseSchema<Map<String, Object>>> checkUsername(@PathVariable String username) {
-        return authService.checkUsernameAvailability(username);
+        return adminAuthService.checkUsernameAvailability(username);
     }
 }

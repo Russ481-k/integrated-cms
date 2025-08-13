@@ -12,7 +12,6 @@ const MainSection = () => {
     queryFn: () => contentApi.getMainPageContentBlocks(),
   });
 
-  console.log("contents", contents);
   return (
     <Box
       as="main"

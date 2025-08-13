@@ -27,7 +27,7 @@ function LoginForm() {
   const { isAuthenticated, isLoading, user } = useRecoilValue(authState);
   const { login, logout } = useAuthActions();
   const router = useRouter();
-  const [forceShowForm, setForceShowForm] = useState(false);
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -68,17 +68,7 @@ function LoginForm() {
       setUsername(rememberedId);
       setRememberMe(true);
     }
-
-    // 5초 후에도 로딩이 계속되면 강제로 폼 표시
-    const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.warn("Auth loading timeout, forcing form display");
-        setForceShowForm(true);
-      }
-    }, 5000);
-
-    return () => clearTimeout(timeout);
-  }, [isLoading]);
+  }, []);
 
   const validateForm = () => {
     const newErrors: { username?: string; password?: string } = {};
@@ -115,7 +105,7 @@ function LoginForm() {
     });
   };
 
-  if (isLoading && !forceShowForm) {
+  if (isLoading) {
     return (
       <Center h="100vh" bg={pageBg}>
         <Flex direction="column" align="center" gap={4}>
