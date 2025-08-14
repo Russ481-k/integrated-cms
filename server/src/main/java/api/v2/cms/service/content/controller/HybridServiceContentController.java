@@ -2,8 +2,8 @@ package api.v2.cms.service.content.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import api.v2.cms.common.dto.ApiResponseSchema;
-import api.v2.cms.config.ServiceContextHolder;
+import api.v2.common.dto.ApiResponseSchema;
+import api.v2.common.config.ServiceContextHolder;
 import api.v2.cms.auth.annotation.RequireServiceAccess;
 import api.v2.cms.auth.annotation.RequireContentPermission;
 

@@ -3,7 +3,7 @@ package egov.com.cmm;
 import java.io.File;
 import java.util.regex.Pattern;
 
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 
 /**
  * 교차접속 스크립트 공격 취약성 방지(파라미터 문자열 교체)

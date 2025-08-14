@@ -1,5 +1,7 @@
 package api.v2.cms.common.exception;
 
+import api.v2.common.exception.CustomBaseException;
+import api.v2.common.exception.ErrorCode;
 import org.springframework.http.HttpStatus;
 
 public class InvalidInputException extends CustomBaseException {

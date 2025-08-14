@@ -3,7 +3,7 @@ package api.v2.cms.template.service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.cms.template.dto.TemplateDto;
 
 public interface TemplateService {

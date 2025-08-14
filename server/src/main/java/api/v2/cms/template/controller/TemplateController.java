@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.cms.template.dto.TemplateDto;
 import api.v2.cms.template.service.TemplateService;
 

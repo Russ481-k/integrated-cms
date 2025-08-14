@@ -3,7 +3,7 @@ package api.v2.cms.mainmedia.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.cms.mainmedia.dto.MainMediaRequestDto;
 import api.v2.cms.mainmedia.dto.MainMediaResponseDto;
 import api.v2.cms.mainmedia.service.MainMediaService;

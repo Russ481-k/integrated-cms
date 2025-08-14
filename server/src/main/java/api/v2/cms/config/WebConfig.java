@@ -1,5 +1,6 @@
 package api.v2.cms.config;
 
+import api.v2.common.config.ServiceContextInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

@@ -1,8 +1,7 @@
 package api.v2.cms.mainmedia.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import api.v2.cms.common.exception.ErrorCode;
-import api.v2.cms.common.exception.ResourceNotFoundException;
+import api.v2.common.crud.exception.CrudResourceNotFoundException;
 import api.v2.cms.file.entity.CmsFile;
 import api.v2.cms.file.service.FileService;
 import api.v2.cms.mainmedia.domain.MainMedia;
@@ -49,8 +48,7 @@ public class MainMediaServiceImpl implements MainMediaService {
     @Transactional(readOnly = true)
     public MainMediaResponseDto getMainMedia(Long id) {
         MainMedia mainMedia = mainMediaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("MainMedia not found with id: " + id,
-                        ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new CrudResourceNotFoundException("MainMedia not found with id: " + id));
         return MainMediaResponseDto.from(mainMedia, fileBaseUrl);
     }
 
@@ -65,8 +63,7 @@ public class MainMediaServiceImpl implements MainMediaService {
     @Override
     public MainMediaResponseDto updateMainMedia(Long id, MainMediaRequestDto requestDto) {
         MainMedia mainMedia = mainMediaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("MainMedia not found with id: " + id,
-                        ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new CrudResourceNotFoundException("MainMedia not found with id: " + id));
 
         if (!mainMedia.getCmsFile().getFileId().equals(requestDto.getFileId())) {
             fileService.deleteFile(mainMedia.getCmsFile().getFileId());
@@ -86,8 +83,7 @@ public class MainMediaServiceImpl implements MainMediaService {
     @Override
     public void deleteMainMedia(Long id) {
         MainMedia mainMedia = mainMediaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("MainMedia not found with id: " + id,
-                        ErrorCode.RESOURCE_NOT_FOUND));
+                .orElseThrow(() -> new CrudResourceNotFoundException("MainMedia not found with id: " + id));
 
         fileService.deleteFile(mainMedia.getCmsFile().getFileId());
         mainMediaRepository.delete(mainMedia);

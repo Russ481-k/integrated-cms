@@ -1,7 +1,8 @@
 package api.v2.cms.schedule.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import api.v2.cms.common.exception.BusinessException;
+import api.v2.common.crud.exception.CrudBusinessRuleException;
+import api.v2.common.crud.exception.CrudResourceNotFoundException;
 import api.v2.cms.schedule.dto.ScheduleDto;
 import api.v2.cms.schedule.entity.Schedule;
 import api.v2.cms.schedule.repository.ScheduleRepository;
@@ -57,7 +58,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     public ScheduleDto getSchedule(Long scheduleId) {
         return scheduleRepository.findById(scheduleId)
                 .map(this::toDto)
-                .orElseThrow(() -> new BusinessException("SCHEDULE_NOT_FOUND", "스케줄을 찾을 수 없습니다."));
+                .orElseThrow(() -> new CrudResourceNotFoundException("스케줄을 찾을 수 없습니다."));
     }
 
     @Override
@@ -65,7 +66,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     public ScheduleDto createSchedule(ScheduleDto scheduleDto, String createdBy, String createdIp) {
         // 중복 체크
         if (scheduleRepository.existsByTitleAndStartDateTime(scheduleDto.getTitle(), scheduleDto.getStartDateTime())) {
-            throw new BusinessException("SCHEDULE_DUPLICATE", "이미 등록된 스케줄입니다.");
+            throw new CrudBusinessRuleException("이미 등록된 스케줄입니다.");
         }
 
         Schedule schedule = Schedule.builder()
@@ -85,12 +86,12 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Transactional
     public ScheduleDto updateSchedule(Long scheduleId, ScheduleDto scheduleDto, String updatedBy, String updatedIp) {
         Schedule schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new BusinessException("SCHEDULE_NOT_FOUND", "스케줄을 찾을 수 없습니다."));
+                .orElseThrow(() -> new CrudResourceNotFoundException("스케줄을 찾을 수 없습니다."));
 
         // 중복 체크 (자신 제외)
         if (scheduleRepository.existsByTitleAndStartDateTimeAndScheduleIdNot(
                 scheduleDto.getTitle(), scheduleDto.getStartDateTime(), scheduleId)) {
-            throw new BusinessException("SCHEDULE_DUPLICATE", "이미 등록된 스케줄입니다.");
+            throw new CrudBusinessRuleException("이미 등록된 스케줄입니다.");
         }
 
         schedule.update(
@@ -109,7 +110,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Transactional
     public void deleteSchedule(Long scheduleId) {
         if (!scheduleRepository.existsById(scheduleId)) {
-            throw new BusinessException("SCHEDULE_NOT_FOUND", "스케줄을 찾을 수 없습니다.");
+            throw new CrudResourceNotFoundException("스케줄을 찾을 수 없습니다.");
         }
         scheduleRepository.deleteById(scheduleId);
     }

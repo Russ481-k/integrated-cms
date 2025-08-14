@@ -2,7 +2,7 @@ package api.v2.cms.auth.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import api.v2.cms.config.ServiceContextHolder;
+import api.v2.common.config.ServiceContextHolder;
 import api.v2.cms.user.domain.User;
 import api.v2.cms.user.domain.UserRoleType;
 

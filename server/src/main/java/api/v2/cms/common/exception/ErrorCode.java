@@ -21,6 +21,18 @@ public enum ErrorCode {
     DATA_INTEGRITY_VIOLATION("CM_0010", "데이터 무결성 제약조건을 위반했습니다. 입력값을 확인해주세요.", HttpStatus.CONFLICT),
     INVALID_REQUEST("CM_0011", "잘못된 요청입니다.", HttpStatus.BAD_REQUEST),
 
+    // CRUD Operation Errors (CR_xxxx)
+    CRUD_RESOURCE_NOT_FOUND("CR_0001", "요청한 리소스를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    CRUD_PERMISSION_DENIED("CR_0002", "해당 리소스에 대한 권한이 없습니다.", HttpStatus.FORBIDDEN),
+    CRUD_VALIDATION_FAILED("CR_0003", "입력 데이터 검증에 실패했습니다.", HttpStatus.BAD_REQUEST),
+    CRUD_BUSINESS_RULE_VIOLATION("CR_0004", "비즈니스 규칙 위반으로 작업을 수행할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    CRUD_DUPLICATE_RESOURCE("CR_0005", "이미 존재하는 리소스입니다.", HttpStatus.CONFLICT),
+    CRUD_RESOURCE_IN_USE("CR_0006", "사용 중인 리소스는 삭제할 수 없습니다.", HttpStatus.CONFLICT),
+    CRUD_OPERATION_FAILED("CR_0007", "요청한 작업을 수행할 수 없습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    CRUD_INVALID_SORT_FIELD("CR_0008", "유효하지 않은 정렬 필드입니다.", HttpStatus.BAD_REQUEST),
+    CRUD_INVALID_FILTER_VALUE("CR_0009", "유효하지 않은 필터 값입니다.", HttpStatus.BAD_REQUEST),
+    CRUD_PAGE_SIZE_EXCEEDED("CR_0010", "페이지 크기가 허용된 최대값을 초과했습니다.", HttpStatus.BAD_REQUEST),
+
     // User Errors (US_xxxx)
     USER_NOT_FOUND("US_0001", "해당 사용자를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     DUPLICATE_USERNAME("US_0002", "이미 사용 중인 사용자 ID입니다.", HttpStatus.CONFLICT), // username 중복은 DUPLICATE_USERNAME 사용

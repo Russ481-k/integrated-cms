@@ -3,7 +3,7 @@ package api.v2.cms.file.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.cms.file.dto.FileDto;
 import api.v2.cms.file.entity.CmsFile;
 import api.v2.cms.file.service.FileService;

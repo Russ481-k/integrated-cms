@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import api.v2.cms.board.dto.BbsMasterDto;
 import api.v2.cms.board.service.BbsMasterService;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

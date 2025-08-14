@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import api.v2.cms.admin.user.dto.UserMemoDto;
 import api.v2.cms.admin.user.service.UserAdminService;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

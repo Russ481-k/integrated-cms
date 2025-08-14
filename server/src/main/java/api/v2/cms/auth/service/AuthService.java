@@ -8,7 +8,7 @@ import api.v2.cms.auth.dto.LoginRequest;
 import api.v2.cms.auth.dto.ResetPasswordRequest;
 import api.v2.cms.auth.dto.SignupRequest;
 import api.v2.cms.auth.dto.UserRegistrationRequest;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.cms.user.dto.CustomUserDetails;
 
 import javax.servlet.http.HttpServletRequest;

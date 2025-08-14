@@ -28,8 +28,9 @@ public interface EnterpriseService {
          *
          * @param id 조회할 기업의 ID
          * @return 기업 DTO
-         * @throws api.v2.cms.common.exception.ResourceNotFoundException 해당 ID의 기업이 없을
-         *                                                               경우
+         * @throws api.v2.common.crud.exception.CrudResourceNotFoundException 해당 ID의 기업이
+         *                                                                    없을
+         *                                                                    경우
          */
         EnterpriseDto getEnterpriseById(Long id);
 
@@ -56,10 +57,13 @@ public interface EnterpriseService {
          * @param updatedBy     수정자 ID (감사 정보용)
          * @param updatedIp     수정자 IP (감사 정보용)
          * @return 수정된 기업 DTO
-         * @throws api.v2.cms.common.exception.ResourceNotFoundException  해당 ID의 기업이 없을
-         *                                                                경우
-         * @throws api.v2.cms.common.exception.DuplicateResourceException 수정 시 다른 기업과 동일
-         *                                                                연도/기업명 충돌 시
+         * @throws api.v2.common.crud.exception.CrudResourceNotFoundException 해당 ID의 기업이
+         *                                                                    없을
+         *                                                                    경우
+         * @throws api.v2.cms.common.exception.DuplicateResourceException     수정 시 다른
+         *                                                                    기업과 동일
+         *                                                                    연도/기업명 충돌
+         *                                                                    시
          */
         EnterpriseDto updateEnterprise(Long id, UpdateEnterpriseRequest updateRequest, MultipartFile imageFile,
                         String updatedBy, String updatedIp);
@@ -68,8 +72,9 @@ public interface EnterpriseService {
          * 특정 입주 기업 정보를 삭제합니다.
          *
          * @param id 삭제할 기업의 ID
-         * @throws api.v2.cms.common.exception.ResourceNotFoundException 해당 ID의 기업이 없을
-         *                                                               경우
+         * @throws api.v2.common.crud.exception.CrudResourceNotFoundException 해당 ID의 기업이
+         *                                                                    없을
+         *                                                                    경우
          */
         void deleteEnterprise(Long id);
 }

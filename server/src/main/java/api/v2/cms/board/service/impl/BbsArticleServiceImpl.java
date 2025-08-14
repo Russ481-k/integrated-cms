@@ -12,7 +12,7 @@ import api.v2.cms.common.exception.BbsArticleNotFoundException;
 import api.v2.cms.common.exception.BbsMasterNotFoundException;
 import api.v2.cms.common.exception.FilePolicyViolationException;
 import api.v2.cms.common.exception.InvalidParentArticleException;
-import api.v2.cms.common.exception.UnauthorizedAccessException;
+import api.v2.common.crud.exception.CrudPermissionDeniedException;
 import api.v2.cms.file.dto.AttachmentInfoDto;
 import api.v2.cms.file.entity.CmsFile;
 import api.v2.cms.file.service.FileService;
@@ -98,7 +98,7 @@ public class BbsArticleServiceImpl implements BbsArticleService {
                     throw new InvalidParentArticleException("답변은 같은 게시판에 작성해야 합니다.");
                 }
                 if (!hasAdminAuth(bbsMaster)) {
-                    throw new UnauthorizedAccessException("답변 작성 권한이 없습니다.");
+                    throw new CrudPermissionDeniedException("답변 작성 권한이 없습니다.");
                 }
             } else {
                 if (!parentArticle.getBbsMaster().getBbsId().equals(bbsMaster.getBbsId())) {
@@ -273,7 +273,7 @@ public class BbsArticleServiceImpl implements BbsArticleService {
         boolean isAdmin = auth != null && auth.getAuthorities().stream()
                 .anyMatch(ga -> ga.getAuthority().equals("ROLE_ADMIN"));
         if (!isAdmin && (currentUsername == null || !article.getWriter().equals(currentUsername))) {
-            throw new UnauthorizedAccessException("게시글 수정 권한이 없습니다.");
+            throw new CrudPermissionDeniedException("게시글 수정 권한이 없습니다.");
         }
 
         if (attachments != null && !attachments.isEmpty()) {

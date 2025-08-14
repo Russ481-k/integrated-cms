@@ -3,7 +3,7 @@ package api.v2.cms.admin.user.service.impl;
 import lombok.RequiredArgsConstructor;
 import api.v2.cms.admin.user.dto.UserMemoDto;
 import api.v2.cms.admin.user.service.UserAdminService;
-import api.v2.cms.common.exception.ResourceNotFoundException;
+import api.v2.common.crud.exception.CrudResourceNotFoundException;
 import api.v2.cms.user.domain.User;
 import api.v2.cms.user.repository.UserRepository;
 
@@ -20,7 +20,7 @@ public class UserAdminServiceImpl implements UserAdminService {
     @Override
     public UserMemoDto getUserMemo(String userUuid) {
         User user = userRepository.findByUuid(userUuid)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with UUID: " + userUuid));
+                .orElseThrow(() -> new CrudResourceNotFoundException("User not found with UUID: " + userUuid));
         // Real implementation:
         return new UserMemoDto(userUuid, user.getMemo(), user.getMemoUpdatedAt(), user.getMemoUpdatedBy());
     }
@@ -29,7 +29,7 @@ public class UserAdminServiceImpl implements UserAdminService {
     @Transactional
     public UserMemoDto updateUserMemo(String userUuid, String memoContent, String adminId) {
         User user = userRepository.findByUuid(userUuid)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with UUID: " + userUuid));
+                .orElseThrow(() -> new CrudResourceNotFoundException("User not found with UUID: " + userUuid));
 
         // Real implementation:
         user.setMemo(memoContent);
@@ -44,7 +44,7 @@ public class UserAdminServiceImpl implements UserAdminService {
     @Transactional
     public void deleteUserMemo(String userUuid, String adminId) {
         User user = userRepository.findByUuid(userUuid)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with UUID: " + userUuid));
+                .orElseThrow(() -> new CrudResourceNotFoundException("User not found with UUID: " + userUuid));
 
         // Real implementation:
         user.setMemo(null);

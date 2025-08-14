@@ -2,8 +2,8 @@ package api.v2.cms.enterprise.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import api.v2.common.crud.exception.CrudResourceNotFoundException;
 import api.v2.cms.common.exception.DuplicateResourceException;
-import api.v2.cms.common.exception.ResourceNotFoundException;
 import api.v2.cms.enterprise.domain.EnterpriseDomain;
 import api.v2.cms.enterprise.dto.CreateEnterpriseRequest;
 import api.v2.cms.enterprise.dto.EnterpriseDto;
@@ -47,7 +47,7 @@ public class EnterpriseServiceImpl implements EnterpriseService {
     @Transactional(readOnly = true)
     public EnterpriseDto getEnterpriseById(Long id) {
         EnterpriseDomain enterprise = enterpriseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Enterprise not found with id: " + id));
+                .orElseThrow(() -> new CrudResourceNotFoundException("Enterprise not found with id: " + id));
         return convertToDto(enterprise);
     }
 
@@ -92,7 +92,7 @@ public class EnterpriseServiceImpl implements EnterpriseService {
     public EnterpriseDto updateEnterprise(Long id, UpdateEnterpriseRequest updateRequest, MultipartFile imageFile,
             String updatedBy, String updatedIp) {
         EnterpriseDomain enterprise = enterpriseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Enterprise not found with id: " + id));
+                .orElseThrow(() -> new CrudResourceNotFoundException("Enterprise not found with id: " + id));
 
         // 이름과 연도가 변경되는 경우에만 중복 체크
         String checkName = updateRequest.getName() != null ? updateRequest.getName() : enterprise.getName();
@@ -132,7 +132,7 @@ public class EnterpriseServiceImpl implements EnterpriseService {
     @Override
     public void deleteEnterprise(Long id) {
         if (!enterpriseRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Enterprise not found with id: " + id);
+            throw new CrudResourceNotFoundException("Enterprise not found with id: " + id);
         }
 
         // 관련 이미지 파일 삭제

@@ -1,7 +1,7 @@
 package api.v2.cms.auth.service;
 
 import api.v2.cms.auth.dto.LoginRequest;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import org.springframework.http.ResponseEntity;
 
 import javax.servlet.http.HttpServletRequest;

@@ -18,7 +18,7 @@ import api.v2.cms.auth.service.AdminAuthService;
 import api.v2.cms.user.domain.AdminUser;
 import api.v2.cms.user.repository.AdminUserRepository;
 import api.v2.cms.auth.provider.JwtTokenProvider;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.cms.auth.dto.LoginRequest;
 
 /**

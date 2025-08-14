@@ -2,8 +2,8 @@ package api.v2.cms.nice.service;
 
 import NiceID.Check.CPClient;
 import lombok.RequiredArgsConstructor;
-import api.v2.cms.common.exception.EmailSendingException;
-import api.v2.cms.common.service.EmailService;
+import api.v2.common.exception.EmailSendingException;
+import api.v2.common.service.EmailService;
 import api.v2.cms.nice.dto.NiceCallbackResultDto;
 import api.v2.cms.nice.dto.NiceErrorDataDto;
 import api.v2.cms.nice.dto.NiceReqSeqDataDto;

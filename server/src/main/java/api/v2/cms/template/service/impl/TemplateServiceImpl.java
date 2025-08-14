@@ -1,7 +1,7 @@
 package api.v2.cms.template.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.cms.template.domain.Template;
 import api.v2.cms.template.dto.TemplateDto;
 import api.v2.cms.template.exception.TemplateNotFoundException;

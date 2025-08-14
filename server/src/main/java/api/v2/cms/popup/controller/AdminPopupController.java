@@ -3,7 +3,7 @@ package api.v2.cms.popup.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.cms.popup.dto.*;
 import api.v2.cms.popup.service.PopupService;
 

@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import api.v2.cms.auth.dto.LoginRequest;
 import api.v2.cms.auth.service.AuthService;
 import api.v2.cms.auth.service.AdminAuthService;
-import api.v2.cms.common.dto.ApiResponseSchema;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.cms.user.domain.User;
 import api.v2.common.auth.dto.AuthContext;
 import api.v2.common.auth.service.CommonAuthService;
