@@ -97,58 +97,38 @@ public class DynamicDataSourceConfiguration {
         return new HikariDataSource(config);
     }
 
-        // 동적 데이터소스 라우팅
-    public static class DynamicRoutingDataSource extends AbstractRoutingDataSource {
+        // Enhanced 동적 데이터소스 라우팅 (환경변수 + DB 기반)
+    public static class EnhancedContextRoutingDataSource extends AbstractRoutingDataSource {
 
-        private final Map<String, DataSource> dataSourceCache = new ConcurrentHashMap<>();
-        private final ServiceRepository serviceRepository;
-        private final DatabaseConnectionService connectionService;
+        private DynamicServiceDataSourceManager dataSourceManager;
+
+        public void setDataSourceManager(DynamicServiceDataSourceManager dataSourceManager) {
+            this.dataSourceManager = dataSourceManager;
+        }
 
         @Override
         protected Object determineCurrentLookupKey() {
-            return ServiceContextHolder.getCurrentServiceId();
+            String serviceId = ServiceContextHolder.getCurrentServiceId();
+            if (serviceId == null || serviceId.trim().isEmpty()) {
+                return "integrated_cms";
+            }
+            return serviceId;
         }
 
         @Override
         protected DataSource determineTargetDataSource() {
-            String serviceId = ServiceContextHolder.getCurrentServiceId();
-
-            if ("integrated_cms".equals(serviceId) || serviceId == null) {
-                return getResolvedDataSource("integrated_cms");
+            String serviceId = (String) determineCurrentLookupKey();
+            
+            if (dataSourceManager != null) {
+                // 1. 동적 데이터소스 관리자에서 조회 (환경변수 기반 자동 생성 포함)
+                DataSource dataSource = dataSourceManager.getServiceDataSource(serviceId);
+                if (dataSource != null) {
+                    return dataSource;
+                }
             }
 
-            // 서비스별 DB 연결 정보 조회 및 DataSource 생성
-            return getOrCreateServiceDataSource(serviceId);
-        }
-
-        private DataSource getOrCreateServiceDataSource(String serviceId) {
-            // 캐시에서 DataSource 확인
-            DataSource cachedDataSource = dataSourceCache.get(serviceId);
-            if (cachedDataSource != null) {
-                return cachedDataSource;
-            }
-
-            // integrated_cms에서 서비스 정보 조회
-            ServiceEntity service = serviceRepository.findByServiceId(serviceId);
-            if (service == null) {
-                throw new ServiceNotFoundException("Service not found: " + serviceId);
-            }
-
-            // 암호화된 연결 정보 복호화
-            DatabaseConnectionInfo connectionInfo = connectionService.decryptConnectionInfo(service.getDbConnectionInfo());
-
-            // 새 DataSource 생성
-            HikariConfig config = new HikariConfig();
-            config.setJdbcUrl(connectionInfo.getJdbcUrl());
-            config.setUsername(connectionInfo.getUsername());
-            config.setPassword(connectionInfo.getPassword());
-            config.setMaximumPoolSize(10);
-            config.setMinimumIdle(2);
-
-            DataSource dataSource = new HikariDataSource(config);
-            dataSourceCache.put(serviceId, dataSource);
-
-            return dataSource;
+            // 2. 기본 라우팅 로직으로 폴백
+            return super.determineTargetDataSource();
         }
     }
 }
@@ -173,25 +153,30 @@ public final class ServiceContextHolder {
     }
 }
 
-// URL 프리픽스 기반 서비스 컨텍스트 주입
+// Enhanced ServiceContext 인터셉터 (정규식 기반 동적 매칭)
 @Component
 public class ServiceContextInterceptor implements HandlerInterceptor {
+
+    // 서비스별 CMS API 패턴: /api/v2/cms/{serviceId}/...
+    private static final Pattern SERVICE_CMS_PATTERN = Pattern.compile("/api/v2/cms/([^/]+)/.*");
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         String path = request.getRequestURI();
 
+        // 1. 통합 관리 API 패턴 확인
         if (path.startsWith("/api/v2/integrated-cms/")) {
             ServiceContextHolder.setCurrentServiceId("integrated_cms");
-        } else if (path.startsWith("/api/v2/cms/douzone/")) {
-            ServiceContextHolder.setCurrentServiceId("douzone");
-        } else if (path.startsWith("/api/v2/cms/service1/")) {
-            ServiceContextHolder.setCurrentServiceId("service1");
-        } else if (path.startsWith("/api/v2/cms/service2/")) {
-            ServiceContextHolder.setCurrentServiceId("service2");
+            return true;
         }
-        // Note: /api/v2/integrated-cms/** 는 "integrated_cms" DB로 라우팅
-        // /api/v2/cms/{serviceId}/** 는 각 서비스별 DB로 동적 라우팅
+
+        // 2. 서비스별 CMS API 패턴 확인 (동적 매칭)
+        Matcher matcher = SERVICE_CMS_PATTERN.matcher(path);
+        if (matcher.matches()) {
+            String serviceId = matcher.group(1);
+            ServiceContextHolder.setCurrentServiceId(serviceId);
+            return true;
+        }
 
         return true;
     }

@@ -76,44 +76,8 @@ public class IntegratedCmsController {
         return ResponseEntity.ok(ApiResponseSchema.success(response, "하이브리드 인증 시스템 적용됨"));
     }
 
-    /**
-     * 서비스 목록 조회
-     * 3계층: SERVICE_ADMIN도 조회 가능
-     */
-    @GetMapping("/services")
-    @PreAuthorize("@integratedCmsAccessChecker.hasAccess(authentication)")
-    public ResponseEntity<ApiResponseSchema<Map<String, Object>>> getServices() {
-        log.info("Services list requested with hybrid authentication");
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "서비스 목록 조회 기능 (하이브리드 인증 적용)");
-        response.put("serviceContext", ServiceContextHolder.getCurrentServiceId());
-        response.put("endpoint", "/integrated-cms/services");
-        response.put("table", "integrated_cms.SERVICE");
-        response.put("authenticationLayers", "SecurityConfig + @RequireIntegratedCmsAccess + @PreAuthorize");
-
-        return ResponseEntity.ok(ApiResponseSchema.success(response, "하이브리드 인증 시스템 적용됨"));
-    }
-
-    /**
-     * 새 서비스 생성
-     * 3계층: SUPER_ADMIN만 서비스 생성 가능
-     */
-    @PostMapping("/services")
-    @PreAuthorize("@integratedCmsAccessChecker.canManageServices(authentication)")
-    public ResponseEntity<ApiResponseSchema<Map<String, Object>>> createService(
-            @RequestBody Map<String, Object> request) {
-        log.info("Service creation requested with hybrid authentication: {}", request);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "서비스 생성 기능 (하이브리드 인증 적용)");
-        response.put("serviceContext", ServiceContextHolder.getCurrentServiceId());
-        response.put("endpoint", "/integrated-cms/services");
-        response.put("requestData", request);
-        response.put("authenticationLayers", "SecurityConfig + @RequireIntegratedCmsAccess + @PreAuthorize");
-
-        return ResponseEntity.ok(ApiResponseSchema.success(response, "서비스 생성 권한 확인됨"));
-    }
+    // 서비스 관리 기능은 ServiceManagementController에서 처리
+    // /api/v2/integrated-cms/services/** 경로는 ServiceManagementController가 담당
 
     /**
      * 시스템 권한 목록 조회 (임시 구현)

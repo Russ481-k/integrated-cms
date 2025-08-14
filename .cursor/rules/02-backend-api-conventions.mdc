@@ -64,19 +64,38 @@ src/main/java/api/v2/cms/
 
 ## 🔗 통합 백엔드 라우팅 구현
 
-### 1. 서비스 컨텍스트 관리
+### 1. Enhanced ServiceContext 시스템 (v2.1)
+
+**핵심 컴포넌트**:
+- **DynamicServiceDataSourceManager**: 서비스별 데이터소스 동적 생성 및 관리
+- **EnhancedContextRoutingDataSource**: ServiceContext 기반 동적 DB 라우팅 + 동적 데이터소스 지원
+- **ServiceContextInterceptor**: URL 패턴 → 서비스 ID 매핑 (정규식 기반)
+
+**동적 서비스 지원**:
+- 환경변수 기반 서비스 자동 감지 (`{SERVICE_ID}_DATASOURCE_URL` 패턴)
+- 런타임 서비스 추가/제거 API 제공
+- 서비스별 독립 커넥션 풀 관리
+
+### 2. 서비스 컨텍스트 관리
 
 - **ServiceContextHolder**: ThreadLocal로 요청별 서비스 ID 보관
 - **ServiceContextInterceptor**: URL 패턴 → 서비스 ID 매핑
 - **RoutingDataSourceConfig**: 서비스 ID 기반 동적 DB 연결
 
-### 2. URL 패턴 및 라우팅 규칙
+### 3. URL 패턴 및 라우팅 규칙
 
+**통합 CMS (메타 관리)**:
 - `/api/v2/integrated-cms/**` → `integrated_cms` DB 접근
-- `/api/v2/cms/{serviceId}/**` → 해당 서비스 DB 접근
-- 인터셉터에서 자동 서비스 컨텍스트 설정 및 해제
+- 관리 대상: 서비스 목록, 통합 관리자, 권한 체계
 
-### 3. WebConfig 설정
+**개별 서비스 CMS (실제 콘텐츠)**:
+- `/api/v2/cms/{serviceId}/**` → 해당 서비스 DB 접근
+- 관리 대상: 콘텐츠, 메뉴, 사용자 등 실제 비즈니스 데이터
+
+**동적 서비스 관리**:
+- `/api/v2/integrated-cms/services/**` → 서비스 메타데이터 관리 API
+
+### 4. WebConfig 설정
 
 - 모든 `@RestController`에 `/api/v2` 프리픽스 자동 적용
 - 컨트롤러는 상대 경로만 사용: `@RequestMapping("/integrated-cms")`
@@ -191,11 +210,31 @@ src/main/java/api/v2/cms/
 - **integrated.admin 계정**: 통합 DB + 모든 서비스 DB (SUPER_ADMIN/SERVICE_ADMIN 사용)
 - **admin 계정**: 서비스별 DB만 접근 (SITE_ADMIN/ADMIN 사용)
 
-### 동적 DataSource 설정
+### Enhanced 동적 DataSource 설정
 
-- Primary: `integrated_cms` (기본값)
-- Secondary: 서비스별 DB (ServiceContext 기반 라우팅)
-- Connection Pool: HikariCP (서비스별 독립 풀)
+- **Primary**: `integrated_cms` (기본값)
+- **Secondary**: 서비스별 DB (ServiceContext 기반 라우팅)
+- **Connection Pool**: HikariCP (서비스별 독립 풀)
+- **동적 생성**: 환경변수 기반 런타임 데이터소스 생성
+- **관리 API**: `/api/v2/integrated-cms/services/**`로 서비스 추가/제거
+
+### 환경변수 패턴
+
+```bash
+# 기본 서비스
+INTEGRATED_CMS_DATASOURCE_URL=jdbc:mariadb://db:3306/integrated_cms
+INTEGRATED_DB_USERNAME=integrated_admin
+INTEGRATED_DB_PASSWORD=integrated123!
+
+# 개별 서비스 (패턴: {SERVICE_ID_UPPERCASE}_*)
+DOUZONE_DATASOURCE_URL=jdbc:mariadb://db:3306/douzone
+DOUZONE_DB_USERNAME=admin
+DOUZONE_DB_PASSWORD=admin123!
+
+SERVICE1_DATASOURCE_URL=jdbc:mariadb://db:3306/service1
+SERVICE1_DB_USERNAME=service1_user
+SERVICE1_DB_PASSWORD=service1_pass
+```
 
 ## 🧪 테스트 전략
 

@@ -1,0 +1,42 @@
+# 텍스트 파일 기본 설정
+* text=auto
+
+# 스크립트 파일은 항상 LF 사용 (Unix 스타일)
+*.sh text eol=lf
+*.bash text eol=lf
+
+# SQL 파일도 LF 사용
+*.sql text eol=lf
+
+# 소스 코드 파일들
+*.java text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.properties text eol=lf
+
+# 마크다운 및 문서 파일
+*.md text eol=lf
+*.txt text eol=lf
+
+# Docker 관련 파일
+Dockerfile* text eol=lf
+docker-compose*.yml text eol=lf
+
+# 바이너리 파일은 변경하지 않음
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.jar binary
+*.war binary
+*.ear binary
+*.zip binary
+*.tar.gz binary

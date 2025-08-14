@@ -48,7 +48,16 @@ public class CommonAuthServiceImpl implements CommonAuthService {
                 response = authService.loginUser(request);
             }
 
-            log.info("{} 로그인 성공: {}", context.getLogContext(), request.getUsername());
+            // 실제 응답 상태에 따라 로그 출력
+            if (response.getStatusCode().is2xxSuccessful() && 
+                response.getBody() != null && 
+                response.getBody().isSuccess()) {
+                log.info("{} 로그인 성공: {}", context.getLogContext(), request.getUsername());
+            } else {
+                log.warn("{} 로그인 실패: {} - {}", context.getLogContext(), request.getUsername(), 
+                    response.getBody() != null ? response.getBody().getMessage() : "Unknown error");
+            }
+            
             return response;
 
         } catch (Exception e) {

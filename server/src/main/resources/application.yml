@@ -50,21 +50,7 @@ spring:
         prepStmtCacheSqlLimit: 2048
         useServerPrepStmts: true
 
-    # 동적 테넌트 데이터소스 템플릿 설정
-    tenant-defaults:
-      driver-class-name: org.mariadb.jdbc.Driver
-      hikari:
-        maximum-pool-size: 30
-        minimum-idle: 3
-        connection-timeout: 30000
-        idle-timeout: 600000
-        max-lifetime: 1800000
-        leak-detection-threshold: 60000
-        data-source-properties:
-          cachePrepStmts: true
-          prepStmtCacheSize: 200
-          prepStmtCacheSqlLimit: 2048
-          useServerPrepStmts: true
+
 
   config:
     use-legacy-processing: true
@@ -241,102 +227,7 @@ app:
     enable-metrics: true
     slow-query-threshold: 1000
 
-  # 동적 멀티 테넌트 설정
-  multi-tenant:
-    enabled: true
-    strategy: SCHEMA # SCHEMA | DATABASE | DISCRIMINATOR
-    default-tenant: integrated
 
-    # 테넌트 식별 전략
-    tenant-resolution:
-      strategy: SUBDOMAIN # SUBDOMAIN | HEADER | PATH | CUSTOM
-      header-name: X-Tenant-ID
-      path-prefix: /tenant
-      default-tenant: integrated
-
-    # 동적 테넌트 데이터소스 설정
-    tenants:
-      # 예시 테넌트들 - 런타임에 동적 추가/수정 가능
-      integrated:
-        description: "통합 CMS - 모든 기능 접근 가능"
-        database: integrated_cms
-        schema: public
-        datasource:
-          url: ${INTEGRATED_CMS_DATASOURCE_URL:jdbc:mariadb://db:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true}
-          username: ${INTEGRATED_DB_USERNAME}
-          password: ${INTEGRATED_DB_PASSWORD}
-        features:
-          [
-            "admin",
-            "user-management",
-            "content-management",
-            "file-management",
-            "analytics",
-          ]
-      douzone:
-        description: "더존 CMS"
-        database: douzone
-        schema: public
-        datasource:
-          url: ${DOUZONE_DATASOURCE_URL:jdbc:mariadb://db:3306/douzone?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true}
-          username: ${DOUZONE_DB_USERNAME}
-          password: ${DOUZONE_DB_PASSWORD}
-        features: ["content-management"]
-
-    # 새 테넌트 자동 생성 설정
-    auto-provisioning:
-      enabled: true
-      database-template: "cms_template"
-      schema-template: "public"
-      default-features: ["content-management"]
-
-    # 테넌트별 캐시 설정
-    cache:
-      enabled: true
-      ttl: 3600 # 1시간
-      max-size: 1000
-
-  # 멀티 프론트엔드 설정
-  frontend:
-    # 동적 프론트엔드 도메인 매핑
-    domains:
-      # 통합 관리자 프론트엔드
-      admin:
-        url: ${ADMIN_FRONTEND_URL:http://localhost:3000}
-        tenant: integrated
-        features:
-          [
-            "admin",
-            "user-management",
-            "content-management",
-            "file-management",
-            "analytics",
-          ]
-        auth-required: true
-        roles: ["ADMIN", "SUPER_ADMIN"]
-
-      # 아피나 프론트엔드
-      arpina:
-        url: ${ARPINA_FRONTEND_URL:https://arpina-cms.vercel.app}
-        tenant: arpina
-        features: ["content-management", "file-management"]
-        auth-required: true
-        roles: ["USER", "EDITOR"]
-
-      # 더존 프론트엔드
-      douzone:
-        url: ${DOUZONE_FRONTEND_URL:https://douzone-cms.vercel.app}
-        tenant: douzone
-        features: ["content-management"]
-        auth-required: true
-        roles: ["USER"]
-
-    # 동적 도메인 추가 설정
-    auto-registration:
-      enabled: true
-      default-tenant: integrated
-      default-features: ["content-management"]
-      approval-required: true
 
 nice:
   checkplus:

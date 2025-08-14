@@ -104,28 +104,27 @@ public class RoutingDataSourceConfig {
     }
 
     /**
-     * 동적 라우팅 DataSource 설정
+     * 동적 라우팅 DataSource 설정 (Enhanced 버전)
      */
     @Bean
     @Primary
-    public DataSource routingDataSource() {
-        ContextRoutingDataSource routingDataSource = new ContextRoutingDataSource();
+    public DataSource routingDataSource(api.v2.common.config.DynamicServiceDataSourceManager dataSourceManager) {
+        EnhancedContextRoutingDataSource routingDataSource = new EnhancedContextRoutingDataSource();
+        
+        // 동적 데이터소스 관리자 설정
+        routingDataSource.setDataSourceManager(dataSourceManager);
 
-        // Target DataSources 설정
+        // 기본 정적 DataSources 설정 (폴백용)
         Map<Object, Object> targetDataSources = new HashMap<>();
         targetDataSources.put("integrated_cms", createIntegratedCmsDataSource());
         targetDataSources.put("douzone", createDouzoneDataSource());
-
-        // 추가 서비스 DataSource는 여기에 추가
-        // targetDataSources.put("service1", createService1DataSource());
-        // targetDataSources.put("service2", createService2DataSource());
 
         routingDataSource.setTargetDataSources(targetDataSources);
 
         // 기본 DataSource 설정 (서비스 컨텍스트가 없을 때 사용)
         routingDataSource.setDefaultTargetDataSource(createIntegratedCmsDataSource());
 
-        log.info("RoutingDataSource configured with {} target data sources",
+        log.info("🚀 Enhanced RoutingDataSource configured with {} static data sources + dynamic support",
                 targetDataSources.size());
 
         return routingDataSource;
