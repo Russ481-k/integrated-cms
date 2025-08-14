@@ -146,10 +146,61 @@ public class IntegratedCmsAccessChecker {
         // CustomUserDetails 등 다른 타입 처리
         if (principal instanceof UserDetails) {
             UserDetails userDetails = (UserDetails) principal;
-            // TODO: UserDetails에서 User 객체로 변환하는 로직 구현
             log.debug("Extracting user from UserDetails: {}", userDetails.getUsername());
+
+            // UserDetails에서 User 객체로 변환
+            return convertUserDetailsToUser(userDetails);
         }
 
         return null;
+    }
+
+    /**
+     * UserDetails에서 User 객체로 변환
+     */
+    private User convertUserDetailsToUser(UserDetails userDetails) {
+        // UserDetails의 권한에서 역할 추출
+        UserRoleType role = extractRoleFromAuthorities(userDetails.getAuthorities());
+
+        // 기본 User 객체 생성 (실제 프로덕션에서는 DB에서 조회해야 함)
+        return User.builder()
+                .uuid("extracted-" + userDetails.getUsername())
+                .username(userDetails.getUsername())
+                .password(userDetails.getPassword())
+                .name(userDetails.getUsername()) // 기본값으로 username 사용
+                .email(userDetails.getUsername() + "@extracted.com") // 기본 이메일
+                .role(role)
+                .status(userDetails.isEnabled() ? "ACTIVE" : "INACTIVE")
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * Spring Security 권한에서 UserRoleType 추출
+     */
+    private UserRoleType extractRoleFromAuthorities(
+            java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> authorities) {
+        if (authorities == null || authorities.isEmpty()) {
+            return UserRoleType.GUEST;
+        }
+
+        for (org.springframework.security.core.GrantedAuthority authority : authorities) {
+            String authorityName = authority.getAuthority();
+
+            // ROLE_ 프리픽스 제거
+            if (authorityName.startsWith("ROLE_")) {
+                authorityName = authorityName.substring(5);
+            }
+
+            // UserRoleType과 매칭
+            try {
+                return UserRoleType.valueOf(authorityName);
+            } catch (IllegalArgumentException e) {
+                log.debug("Unknown authority: {}, defaulting to USER", authorityName);
+            }
+        }
+
+        return UserRoleType.USER; // 기본값
     }
 }

@@ -259,7 +259,7 @@ public class AuthServiceImpl implements AuthService {
                 {
                     put("uuid", user.getUuid());
                     put("username", user.getUsername());
-                    put("role", user.getRole());
+                    put("role", user.getRole().name());
                 }
             });
 

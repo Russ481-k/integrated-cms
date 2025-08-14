@@ -99,7 +99,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         try {
             // Stateless JWT 기반이므로 서버에서 별도 처리할 내용 없음
             // 클라이언트에서 토큰을 삭제하면 인증이 해제됨
-            
+
             // 필요시 로그아웃 감사 로그 기록
             String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -127,9 +127,9 @@ public class AdminAuthServiceImpl implements AdminAuthService {
             boolean isAvailable = !adminUserRepository.existsByUsername(username);
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("isAvailable", isAvailable);
-            
-            return ResponseEntity.ok(ApiResponseSchema.success(responseData, 
-                isAvailable ? "사용 가능한 사용자명입니다." : "이미 사용 중인 사용자명입니다."));
+
+            return ResponseEntity.ok(ApiResponseSchema.success(responseData,
+                    isAvailable ? "사용 가능한 사용자명입니다." : "이미 사용 중인 사용자명입니다."));
         } catch (Exception e) {
             log.error("Error checking username availability for admin: {}", username, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -146,7 +146,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         userData.put("username", adminUser.getUsername());
         userData.put("name", adminUser.getName());
         userData.put("email", adminUser.getEmail());
-        userData.put("role", adminUser.getRole());
+        userData.put("role", adminUser.getRole().name());
         userData.put("status", adminUser.getStatus());
         userData.put("organizationId", adminUser.getOrganizationId());
         userData.put("groupId", adminUser.getGroupId());

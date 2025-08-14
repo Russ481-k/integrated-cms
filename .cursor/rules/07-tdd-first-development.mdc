@@ -1,0 +1,453 @@
+---
+description: TDD 심화 가이드 및 고급 테스트 패턴 (.cursorrules의 보완 문서)
+---
+
+# TDD 심화 가이드 및 고급 테스트 패턴
+
+> **참고**: 기본 TDD 규칙과 로깅 컨벤션은 `.cursorrules`에서 관리됩니다.
+> 이 문서는 고급 패턴과 심화 내용을 다룹니다.
+
+## 🧪 고급 TDD 패턴
+
+### Test Doubles 전략
+
+**Stub vs Mock vs Spy 선택 기준:**
+
+- **Stub**: 상태 기반 테스트, 간단한 반환값
+- **Mock**: 행위 검증이 중요한 경우
+- **Spy**: 부분적 모킹이 필요한 경우
+
+### 경계값 테스트 패턴
+
+**Boundary Value Analysis:**
+
+- 최솟값, 최댓값, 경계값 ±1
+- null, empty, 특수문자 처리
+- 비즈니스 규칙의 경계 조건
+
+## 📊 프로젝트별 테스트 매트릭스 (현재 상태)
+
+### ✅ **완료된 테스트**
+
+| 모듈                 | 테스트 유형 | 상태    | 커버리지    |
+| -------------------- | ----------- | ------- | ----------- |
+| ServiceContextHolder | Unit        | ✅ 완료 | 13/13 통과  |
+| 모던 로깅 시스템     | Template    | ✅ 완료 | 컨벤션 확립 |
+
+### 🔄 **진행 중인 테스트**
+
+| 모듈                            | 테스트 유형        | 우선순위 | 예상 완료 |
+| ------------------------------- | ------------------ | -------- | --------- |
+| DynamicServiceDataSourceManager | Unit + Integration | P0       | 이번 주   |
+| ServiceContextInterceptor       | Unit               | P0       | 이번 주   |
+| 권한 검증 어노테이션            | Unit               | P0       | 다음 주   |
+
+### 📋 **대기 중인 테스트**
+
+| 도메인/모듈            | 테스트 유형        | 우선순위 | 당면성 |
+| ---------------------- | ------------------ | -------- | ------ |
+| **통합 백엔드 라우팅** | Unit + Integration | P0       | 당면   |
+| **인증/인가 플로우**   | Unit + E2E         | P1       | 중기   |
+| **콘텐츠 관리 API**    | Unit + Integration | P1       | 중기   |
+| **파일 업로드 플로우** | Unit + Integration | P1       | 중기   |
+| **실시간 알림 시스템** | Unit + E2E         | P2       | 원거리 |
+| **통합 대시보드**      | E2E                | P2       | 원거리 |
+
+## 🔧 고급 테스트 패턴
+
+### Parameterized Tests 활용
+
+```java
+@ParameterizedTest
+@ValueSource(strings = {"douzone", "service1", "integrated_cms"})
+@DisplayName("다양한 서비스 ID에 대해 컨텍스트가 올바르게 설정된다")
+void 다양한_서비스_ID에_대해_컨텍스트가_올바르게_설정된다(String serviceId) {
+    // Given-When-Then with parameter
+    ServiceContextHolder.setCurrentServiceId(serviceId);
+    assertThat(ServiceContextHolder.getCurrentServiceId()).isEqualTo(serviceId);
+}
+
+@ParameterizedTest
+@CsvSource({
+    "douzone, false",
+    "service1, false",
+    "integrated_cms, true"
+})
+@DisplayName("서비스별 통합 CMS 컨텍스트 여부를 정확히 판단한다")
+void 서비스별_통합_CMS_컨텍스트_여부를_정확히_판단한다(String serviceId, boolean expected) {
+    ServiceContextHolder.setCurrentServiceId(serviceId);
+    assertThat(ServiceContextHolder.isIntegratedCmsContext()).isEqualTo(expected);
+}
+```
+
+### Custom Assertions 생성
+
+```java
+public class ServiceContextAssertions {
+    public static ServiceContextAssert assertThat(String serviceId) {
+        return new ServiceContextAssert(serviceId);
+    }
+
+    public static class ServiceContextAssert {
+        private final String actual;
+
+        public ServiceContextAssert(String actual) {
+            this.actual = actual;
+        }
+
+        public ServiceContextAssert isIntegratedCms() {
+            if (!"integrated_cms".equals(actual)) {
+                throw new AssertionError("Expected integrated_cms but was: " + actual);
+            }
+            return this;
+        }
+
+        public ServiceContextAssert isRegularService() {
+            if ("integrated_cms".equals(actual)) {
+                throw new AssertionError("Expected regular service but was integrated_cms");
+            }
+            return this;
+        }
+    }
+}
+```
+
+### Testcontainers 고급 패턴
+
+```java
+@Testcontainers
+class AdvancedIntegrationTest {
+
+    @Container
+    static GenericContainer<?> redis = new GenericContainer<>("redis:7-alpine")
+            .withExposedPorts(6379);
+
+    @Container
+    static MariaDBContainer<?> database = new MariaDBContainer<>("mariadb:10.6")
+            .withDatabaseName("test_db");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.redis.host", redis::getHost);
+        registry.add("spring.redis.port", redis::getFirstMappedPort);
+        registry.add("spring.datasource.url", database::getJdbcUrl);
+    }
+
+    @Test
+    @DisplayName("다중 컨테이너 환경에서 통합 테스트가 동작한다")
+    void 다중_컨테이너_환경에서_통합_테스트가_동작한다() {
+        // 실제 컨테이너를 사용한 통합 테스트
+        assertThat(redis.isRunning()).isTrue();
+        assertThat(database.isRunning()).isTrue();
+    }
+}
+```
+
+### Performance Testing 패턴
+
+```java
+@Test
+@Timeout(value = 2, unit = TimeUnit.SECONDS)
+@DisplayName("서비스 컨텍스트 전환이 2초 이내에 완료된다")
+void 서비스_컨텍스트_전환이_2초_이내에_완료된다() {
+    // 성능 계약 테스트
+    StopWatch stopWatch = new StopWatch();
+    stopWatch.start();
+
+    ServiceContextHolder.setCurrentServiceId("performance-test");
+    String result = ServiceContextHolder.getCurrentServiceId();
+
+    stopWatch.stop();
+    assertThat(result).isEqualTo("performance-test");
+    assertThat(stopWatch.getTotalTimeMillis()).isLessThan(100);
+}
+```
+
+### Property-Based Testing
+
+```java
+@Test
+@DisplayName("서비스 ID는 항상 설정한 값과 동일하게 조회된다")
+void 서비스_ID는_항상_설정한_값과_동일하게_조회된다() {
+    // Property: set과 get의 일관성
+    Arbitrary<String> serviceIds = Arbitraries.strings()
+            .withCharRange('a', 'z')
+            .ofMinLength(3)
+            .ofMaxLength(20);
+
+    Property.def("set된 serviceId는 항상 get으로 조회 가능")
+            .forAll(serviceIds)
+            .check(serviceId -> {
+                ServiceContextHolder.setCurrentServiceId(serviceId);
+                return ServiceContextHolder.getCurrentServiceId().equals(serviceId);
+            });
+}
+```
+
+## 🚫 TDD 가드레일 (금지 사항)
+
+### 코드 작성 전 체크리스트
+
+**새로운 기능/변경 시 필수 확인사항:**
+
+1. **실패하는 테스트가 존재하는가?**
+
+   - [ ] 핵심 happy path 테스트 최소 1개
+   - [ ] 주요 예외 케이스 테스트 최소 1개
+   - [ ] 테스트가 실제로 실패하는 것을 확인했는가?
+
+2. **테스트 이름이 업무 언어로 작성되었는가?**
+
+   - [ ] 한국어로 명확한 의도 표현
+   - [ ] 비즈니스 규칙이나 사용자 스토리 반영
+   - [ ] 기술적 세부사항보다 업무적 의미 중심
+
+3. **외부 의존성이 격리되었는가?**
+   - [ ] 시계/랜덤/UUID 등 비결정적 요소 제어
+   - [ ] 네트워크 호출 모킹 또는 Testcontainers 사용
+   - [ ] 파일시스템 접근 모킹 또는 임시 디렉토리 사용
+
+### 금지되는 패턴들
+
+```java
+// ❌ 금지: 테스트 없이 프로덕션 코드 작성
+public class NewFeatureService {
+    public void doSomething() {
+        // 구현 코드
+    }
+}
+
+// ❌ 금지: 기술적 세부사항 중심 테스트 이름
+@Test
+void testMethod1() { }
+
+@Test
+void shouldReturnString() { }
+
+// ❌ 금지: 모킹 남용 (구현 세부에 고착)
+@Test
+void test() {
+    verify(repository, times(1)).findById(anyLong());
+    verify(mapper, times(1)).toDto(any());
+    // 너무 많은 구현 세부 검증
+}
+
+// ❌ 금지: 비결정적 테스트
+@Test
+void test() {
+    String id = UUID.randomUUID().toString(); // 매번 다른 값
+    LocalDateTime now = LocalDateTime.now(); // 시간 의존
+}
+```
+
+## ✅ 권장되는 패턴들
+
+### 도메인 이벤트 테스트
+
+```java
+@Test
+@DisplayName("서비스가 비활성화되면 관련 모든 세션이 종료된다")
+void 서비스가_비활성화되면_관련_모든_세션이_종료된다() {
+    // Given
+    Service service = serviceRepository.save(activeService("douzone"));
+    List<Session> activeSessions = createActiveSessions(service, 3);
+
+    // When
+    service.deactivate();
+    serviceRepository.save(service);
+
+    // Then
+    List<Session> sessions = sessionRepository.findByServiceId("douzone");
+    assertThat(sessions).allMatch(Session::isTerminated);
+}
+```
+
+### 불변조건 테스트
+
+```java
+@Test
+@DisplayName("이미 확정된 예약은 수정할 수 없다")
+void 이미_확정된_예약은_수정할_수_없다() {
+    // Given
+    Reservation confirmedReservation = reservationRepository.save(
+        confirmedReservation()
+    );
+
+    // When & Then
+    assertThatThrownBy(() ->
+        confirmedReservation.changeDate(LocalDate.now().plusDays(1))
+    ).isInstanceOf(ReservationConfirmedException.class)
+     .hasMessage("확정된 예약은 수정할 수 없습니다.");
+}
+```
+
+### 계약 테스트 (포트/어댑터)
+
+```java
+@Test
+@DisplayName("외부 결제 시스템 연동 시 올바른 요청 형식을 전송한다")
+void 외부_결제_시스템_연동_시_올바른_요청_형식을_전송한다() {
+    // Given
+    PaymentRequest paymentRequest = validPaymentRequest();
+    PaymentGateway mockGateway = mock(PaymentGateway.class);
+
+    // When
+    paymentService.processPayment(paymentRequest);
+
+    // Then
+    ArgumentCaptor<ExternalPaymentRequest> captor =
+        ArgumentCaptor.forClass(ExternalPaymentRequest.class);
+    verify(mockGateway).charge(captor.capture());
+
+    ExternalPaymentRequest captured = captor.getValue();
+    assertThat(captured.getAmount()).isEqualTo(paymentRequest.getAmount());
+    assertThat(captured.getCurrency()).isEqualTo("KRW");
+}
+```
+
+## 🔄 백로그 → 테스트 시드 자동화
+
+### 당면 과제 (P0) - 세분화된 테스트
+
+**통합 백엔드 라우팅 시스템:**
+
+```java
+// 1. URL 패턴 매칭 테스트
+@Test
+@DisplayName("/api/v2/cms/douzone/content 요청 시 douzone 서비스 컨텍스트가 설정된다")
+void douzone_콘텐츠_API_요청_시_올바른_서비스_컨텍스트가_설정된다() {
+    // 구현 필요
+}
+
+// 2. 서비스 존재 여부 검증 테스트
+@Test
+@DisplayName("존재하지_않는_서비스_요청_시_404_에러가_반환된다")
+void 존재하지_않는_서비스_요청_시_404_에러가_반환된다() {
+    // 구현 필요
+}
+
+// 3. 데이터소스 전환 테스트
+@Test
+@DisplayName("서비스_컨텍스트_변경_시_적절한_데이터소스로_전환된다")
+void 서비스_컨텍스트_변경_시_적절한_데이터소스로_전환된다() {
+    // 구현 필요
+}
+```
+
+### 중기 과제 (P1) - 통합 테스트 중심
+
+**통합 대시보드:**
+
+```typescript
+// 인수 테스트 (E2E)
+describe("통합 대시보드 기능", () => {
+  test("통합 관리자가 로그인하면 모든 서비스의 현황을 볼 수 있다", async () => {
+    // 구현 필요
+  });
+
+  test("서비스별 관리자는 할당된 서비스의 현황만 볼 수 있다", async () => {
+    // 구현 필요
+  });
+});
+```
+
+### 원거리 과제 (P2) - 계약 테스트 중심
+
+**성능 모니터링:**
+
+```java
+// 계약 테스트
+@Test
+@DisplayName("API_응답_시간은_300ms_이내여야_한다")
+void API_응답_시간은_300ms_이내여야_한다() {
+    // 성능 계약 테스트 구현 필요
+}
+```
+
+## 🛠️ 실행 및 CI 통합
+
+### 로컬 개발 환경
+
+```bash
+# 백엔드 테스트 실행
+./mvnw test -Dtest="*Test" -q
+
+# 프론트엔드 테스트 실행
+npm test -- --watchAll=false
+
+# 통합 테스트 (Testcontainers)
+./mvnw test -Dtest="*IntegrationTest" -q
+
+# 커버리지 리포트
+./mvnw jacoco:report
+npm test -- --coverage
+```
+
+### GitHub Actions CI 설정
+
+```yaml
+name: TDD Quality Gate
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: "17"
+
+      - name: Run Tests
+        run: |
+          ./mvnw test -q
+
+      - name: Check Coverage
+        run: |
+          ./mvnw jacoco:check -Dcoverage.minimum=80
+
+      - name: Post Test Summary
+        uses: dorny/test-reporter@v1
+        with:
+          name: Test Results
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
+```
+
+## 📊 TDD 성숙도 측정
+
+### 메트릭 기준
+
+- **테스트 커버리지**: 라인 80% / 브랜치 70% (최소 기준)
+- **테스트 실행 시간**: 단위 테스트 < 10초, 통합 테스트 < 2분
+- **테스트 안정성**: Flaky 테스트 0%
+- **도메인 규칙 커버리지**: 핵심 비즈니스 규칙 100%
+
+### 정기 검토사항
+
+- 주간: 새로 추가된 테스트 리뷰
+- 월간: 테스트 성능 및 안정성 검토
+- 분기: TDD 프로세스 개선점 도출
+
+## 🎯 심화 학습 리소스
+
+### 추천 도서 및 자료
+
+- **Growing Object-Oriented Software, Guided by Tests** - Steve Freeman & Nat Pryce
+- **Test Driven Development: By Example** - Kent Beck
+- **Effective Unit Testing** - Lasse Koskela
+- **Spring Boot Testing Guide** - Official Documentation
+
+### 온라인 리소스
+
+- **JUnit 5 User Guide**: https://junit.org/junit5/docs/current/user-guide/
+- **AssertJ Documentation**: https://assertj.github.io/doc/
+- **Testcontainers Guides**: https://www.testcontainers.org/
+
+---
+
+> **참고**: 기본 TDD 실행 규칙과 템플릿은 `.cursorrules` 파일에서 관리됩니다.
+> 이 문서는 고급 패턴과 심화 내용만 포함합니다.

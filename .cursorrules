@@ -1,0 +1,529 @@
+# 통합 CMS v2 TDD-First 개발 규칙
+
+## 🚨 핵심 강제 규칙 (MANDATORY)
+
+### 테스트 우선 개발 (Test-First Development)
+- **모든 새로운 기능/변경사항은 실패하는 테스트부터 시작해야 합니다**
+- 프로덕션 코드 제안 전에 반드시 다음을 먼저 생성하세요:
+  1. 핵심 happy path 테스트 최소 1개
+  2. 주요 예외 케이스 테스트 최소 1개
+  3. 테스트가 실제로 실패하는 것을 확인
+
+### 대화 패턴 강제
+모든 코드 변경 제안 시 다음 순서를 반드시 따르세요:
+1. **"이 변경을 위한 테스트를 먼저 작성하겠습니다"**
+2. 실패하는 테스트 코드 생성
+3. 사용자 확인 후 최소 구현 제안
+4. 테스트 통과 확인 후 리팩토링 제안
+
+## 📋 프로젝트별 테스트 설정
+
+### 기술 스택 자동 매핑
+- **백엔드 (Spring Boot 3.x)**: JUnit 5, AssertJ, Spring Boot Test, Testcontainers, Mockito, RestAssured
+- **프론트엔드 (Next.js + TypeScript)**: Jest, React Testing Library, MSW, Playwright
+- **패키지 중요**: `javax.*` 사용 (jakarta 금지)
+
+### 테스트 파일 구조
+```
+백엔드: src/test/java/api/v2/...
+프론트엔드: src/__tests__/... 또는 *.test.ts/tsx
+```
+
+## 🎯 현재 우선순위 매트릭스
+
+### P0 (즉시/당면) - 세분화된 단위 테스트
+1. **통합 백엔드 라우팅** (진행중)
+   - ServiceContextHolder 테스트 ✅ **완료 (13/13 통과)**
+   - URL 패턴 매칭 테스트 🔄
+   - 데이터소스 전환 테스트 🔄
+
+2. **서비스 컨텍스트 관리** (진행중)
+   - ThreadLocal 격리 테스트 ✅ **완료**
+   - 동시성 안전성 테스트 ✅ **완료**
+   - 인터셉터 동작 테스트 🔄 **다음 작업**
+   - 생명주기 관리 테스트 ✅ **완료**
+
+3. **권한 검증 시스템** (대기)
+   - 어노테이션 기반 권한 테스트 ⏳ **예정**
+   - RBAC 계층 구조 테스트 ⏳ **예정**
+   - 인증 실패 시나리오 테스트 ⏳ **예정**
+
+### P1 (중기) - 통합 테스트 중심
+- 인증/인가 플로우 E2E 테스트
+- 콘텐츠 관리 API 통합 테스트
+- 파일 업로드 플로우 테스트
+
+### P2 (원거리) - 계약/인수 테스트
+- 통합 대시보드 E2E 테스트
+- 성능 계약 테스트 (API 응답 < 300ms)
+- 실시간 알림 시스템 테스트
+
+## 📝 테스트 작성 템플릿
+
+### 백엔드 단위 테스트 (필수 템플릿)
+```java
+@ExtendWith(MockitoExtension.class)
+class {ClassName}Test {
+    
+    // Java 8 호환 문자열 반복 유틸리티
+    private String repeat(String str, int count) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+    
+    @Test
+    @DisplayName("{한국어로 업무 의미 설명}")
+    void {한국어_메서드명}() {
+        System.out.println("\n\033[1;96m🧪 TEST #N\033[0m \033[90m│\033[0m \033[1m{English Test Description}\033[0m");
+        
+        // Given
+        System.out.println("  \033[2m🔍 Setup:\033[0m {준비 상황 설명}");
+        
+        // When
+        System.out.println("  \033[2m⚡ Action:\033[0m {실행 동작 설명}");
+        System.out.println("    \033[90m→\033[0m methodCall(\033[36m\"parameter\"\033[0m)");
+        
+        // Then
+        System.out.println("  \033[2m✨ Verify:\033[0m {검증 내용 설명}");
+        assertThat(result).isEqualTo(expected);
+        System.out.println("    \033[32m✓\033[0m \033[90mAssertion passed:\033[0m \033[32m{result}\033[0m\n");
+    }
+}
+```
+
+### 모던 테스트 로깅 컨벤션 (완전한 가이드)
+
+**📋 로깅 스타일 가이드:**
+
+1. **클래스 및 파일 구조**
+   ```java
+   // Java 8 호환 문자열 반복 유틸리티 (필수 포함)
+   private String repeat(String str, int count) {
+       StringBuilder sb = new StringBuilder();
+       for (int i = 0; i < count; i++) {
+           sb.append(str);
+       }
+       return sb.toString();
+   }
+   
+   @AfterEach
+   void tearDown() {
+       // 각 테스트 후 컨텍스트 정리 (메모리 누수 방지)
+       ServiceContextHolder.clear(); // 예시
+   }
+   ```
+
+2. **기본 테스트 헤더 패턴**
+   ```java
+   System.out.println("\n\033[1;96m🧪 TEST #N\033[0m \033[90m│\033[0m \033[1m{English Description}\033[0m");
+   ```
+
+3. **Given-When-Then 표준 구조**
+   ```java
+   // Given
+   System.out.println("  \033[2m🔍 Setup:\033[0m {상황 설명 - 한국어}");
+   String expected = "douzone";
+   System.out.println("  \033[2m🔍 Setup:\033[0m Expected service ID = \033[36m'" + expected + "'\033[0m");
+   
+   // When
+   System.out.println("  \033[2m⚡ Action:\033[0m {동작 설명 - 한국어}");
+   String actual = methodCall(expected);
+   System.out.println("    \033[90m→\033[0m methodCall(\033[36m\"" + expected + "\"\033[0m)");
+   System.out.println("    \033[90m→\033[0m result \033[90m=\033[0m \033[32m'" + actual + "'\033[0m");
+   
+   // Then
+   System.out.println("  \033[2m✨ Verify:\033[0m {검증 설명 - 한국어}");
+   assertEquals(expected, actual);
+   System.out.println("    \033[32m✓\033[0m \033[90mAssertion passed:\033[0m \033[32m" + expected + "\033[0m \033[90m==\033[0m \033[32m" + actual + "\033[0m\n");
+   ```
+
+4. **다중 시나리오 테스트 패턴**
+   ```java
+   System.out.println("  \033[2m🎯 Scenario 1:\033[0m \033[35mintegrated_cms\033[0m service");
+   // 테스트 로직
+   System.out.println("    \033[32m✓\033[0m \033[90mAssertion passed:\033[0m \033[35mintegrated_cms\033[0m \033[90mis recognized as integrated CMS\033[0m");
+   
+   System.out.println(); // 시나리오 간 구분선
+   
+   System.out.println("  \033[2m🎯 Scenario 2:\033[0m \033[36mdouzone\033[0m service");
+   // 다음 시나리오
+   ```
+
+5. **예외 처리 테스트 패턴**
+   ```java
+   System.out.println("  \033[2m⚡ Action:\033[0m Calling validateServiceContext() without context");
+   System.out.println("  \033[2m✨ Verify:\033[0m Should throw IllegalStateException");
+   
+   IllegalStateException exception = assertThrows(IllegalStateException.class, ServiceContextHolder::validateServiceContext);
+   
+   System.out.println("    \033[31m⚠️\033[0m Exception thrown: \033[31mIllegalStateException\033[0m");
+   System.out.println("    \033[90m📝\033[0m Message: \033[31m'" + exception.getMessage() + "'\033[0m");
+   System.out.println("    \033[32m✓\033[0m \033[90mAssertion passed:\033[0m \033[32mExpected exception and message match\033[0m\n");
+   ```
+
+6. **동시성 테스트 특별 패턴**
+   ```java
+   System.out.println("\n" + repeat("=", 80));
+   System.out.println("🧪  TEST #N │ \033[1;36m동시성 안전성 검증 - ThreadLocal 독립성\033[0m");
+   System.out.println(repeat("=", 80));
+   
+   // Given
+   System.out.println("📋 GIVEN    │ ExecutorService(3 threads) 생성");
+   
+   // When
+   System.out.println("⚡ WHEN     │ 각 쓰레드에서 서로 다른 서비스 ID 설정");
+   System.out.println("           │");
+   
+   // 쓰레드별 로그
+   System.out.println("           │ \033[34m🧵 Thread-1\033[0m: setCurrentServiceId(\"\033[36mdouzone\033[0m\")");
+   System.out.println("           │ \033[35m🧵 Thread-2\033[0m: setCurrentServiceId(\"\033[33mservice1\033[0m\")");
+   System.out.println("           │ \033[31m🧵 Thread-3\033[0m: setCurrentServiceId(\"\033[95mintegrated_cms\033[0m\")");
+   
+   // Then
+   System.out.println("           │");
+   System.out.println("✅ THEN     │ 각 쓰레드의 결과가 독립적으로 유지되는지 검증");
+   System.out.println("🎯 RESULT   │ \033[1;32m동시성 테스트 성공! ThreadLocal이 쓰레드별로 완전히 독립적으로 동작\033[0m");
+   System.out.println(repeat("=", 80) + "\n");
+   ```
+
+7. **간단한 테스트 (로깅 최소화)**
+   ```java
+   // 로깅이 없는 간단한 테스트도 허용 (Given-When-Then 주석만)
+   @Test
+   void simple_test() {
+       // Given
+       ServiceContextHolder.setCurrentServiceId("douzone");
+       
+       // When
+       ServiceContextHolder.clear();
+       String result = ServiceContextHolder.getCurrentServiceId();
+       
+       // Then
+       assertNull(result);
+   }
+   ```
+
+**🎨 컬러 팔레트 (정확한 사용법):**
+- **🔵 Header**: `\033[1;96m` (Bright Cyan, Bold) - 테스트 헤더
+- **🔍 Dimmed**: `\033[2m` (Setup/Action/Verify 레이블)
+- **🟢 Success**: `\033[32m` (결과값, 성공 상태, assertion passed)
+- **🟡 Neutral**: `\033[33m` (null, false, 중립적 값)
+- **🔴 Error**: `\033[31m` (예외, 에러 메시지)
+- **🟣 Integrated**: `\033[35m` (integrated_cms 서비스)
+- **🔵 Service**: `\033[36m` (douzone, service1 등 일반 서비스)
+- **⚫ Gray**: `\033[90m` (구분자, 연산자, 설명 텍스트)
+- **🔄 Reset**: `\033[0m` (색상 초기화 - 모든 색상 후 필수)
+- **🧵 Thread Colors**: 
+  - Thread-1: `\033[34m` (Blue)
+  - Thread-2: `\033[35m` (Magenta) 
+  - Thread-3: `\033[31m` (Red)
+
+**📐 들여쓰기 규칙:**
+- **2칸**: 주요 단계 (Setup/Action/Verify)
+- **4칸**: 세부 동작 (→ method calls, assertion results)
+- **빈 줄**: 시나리오 구분, 테스트 종료
+
+**🚨 필수 적용 규칙:**
+1. **모든 테스트 클래스에 `repeat` 유틸리티 메서드 포함**
+2. **`@AfterEach`로 컨텍스트 정리** (ServiceContextHolder.clear() 등)
+3. **테스트 번호 순차적 증가** (TEST #1, TEST #2, ...)
+4. **영어 설명은 CamelCase** (ServiceContext Basic Operations)
+5. **한국어 설명은 자연스러운 문장** (서비스 컨텍스트를 설정하면...)
+6. **메서드 호출 시 파라미터 색상 적용** (\033[36m"parameter"\033[0m)
+7. **결과값은 따옴표 포함** ('\033[32mresult\033[0m')
+8. **모든 색상 코드 뒤에 \033[0m 리셋 코드 필수**
+
+**📝 완전한 백엔드 테스트 템플릿:**
+```java
+@ExtendWith(MockitoExtension.class)
+class {ClassName}Test {
+    
+    // Java 8 호환 문자열 반복 유틸리티 (필수)
+    private String repeat(String str, int count) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            sb.append(str);
+        }
+        return sb.toString();
+    }
+    
+    private {ServiceClass} service;
+    
+    @AfterEach
+    void tearDown() {
+        // 각 테스트 후 컨텍스트 정리
+        ServiceContextHolder.clear();
+    }
+    
+    @Test
+    @DisplayName("{한국어로 업무 의미 설명}")
+    void {한국어_메서드명}() {
+        System.out.println("\n\033[1;96m🧪 TEST #N\033[0m \033[90m│\033[0m \033[1m{English Test Description}\033[0m");
+        
+        // Given
+        System.out.println("  \033[2m🔍 Setup:\033[0m {준비 상황 설명}");
+        String expected = "douzone";
+        service = new {ServiceClass}();
+        
+        // When
+        System.out.println("  \033[2m⚡ Action:\033[0m {실행 동작 설명}");
+        String result = service.methodCall(expected);
+        System.out.println("    \033[90m→\033[0m methodCall(\033[36m\"" + expected + "\"\033[0m)");
+        System.out.println("    \033[90m→\033[0m result \033[90m=\033[0m \033[32m'" + result + "'\033[0m");
+        
+        // Then
+        System.out.println("  \033[2m✨ Verify:\033[0m {검증 내용 설명}");
+        assertEquals(expected, result);
+        System.out.println("    \033[32m✓\033[0m \033[90mAssertion passed:\033[0m \033[32m" + expected + "\033[0m \033[90m==\033[0m \033[32m" + result + "\033[0m\n");
+    }
+}
+```
+- **🔄 Reset**: `\033[0m` (색상 초기화)
+
+**📐 들여쓰기 규칙:**
+- 2칸: 주요 단계 (Setup/Action/Verify)
+- 4칸: 세부 동작 (→ method calls)
+- 빈 줄: 시나리오 구분, 테스트 종료
+
+### API 테스트 (필수 템플릿)
+```java
+@WebMvcTest({ControllerClass}.class)
+class {ControllerClass}Test {
+    
+    @Autowired
+    private MockMvc mockMvc;
+    
+    @MockBean
+    private {ServiceClass} service;
+    
+    @Test
+    @DisplayName("{역할}은 {행동}을 할 수 있다")
+    @WithMockUser(authorities = "{ROLE}")
+    void {역할}_은_{행동}_을_할_수_있다() throws Exception {
+        System.out.println("\n\033[1;96m🧪 API TEST\033[0m \033[90m│\033[0m \033[1m{Role} Can {Action}\033[0m");
+        
+        // Given
+        System.out.println("  \033[2m🔍 Setup:\033[0m Mock user with {ROLE} authority");
+        
+        // When & Then
+        System.out.println("  \033[2m⚡ Action:\033[0m Perform API request and verify response");
+        mockMvc.perform(get("/api/v2/..."))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").exists());
+        System.out.println("    \033[32m✓\033[0m \033[90mAPI test passed:\033[0m \033[32m200 OK\033[0m with expected data\n");
+    }
+}
+```
+
+### 프론트엔드 컴포넌트 테스트 (필수 템플릿)
+```typescript
+describe('{컴포넌트명} 컴포넌트', () => {
+  test('{업무 행동}이 올바르게 동작한다', async () => {
+    console.log('\n🧪 COMPONENT TEST │ {Component} {Behavior}');
+    
+    // Given
+    console.log('  🔍 Setup: Component with {initial state}');
+    
+    // When
+    console.log('  ⚡ Action: Render component and trigger {action}');
+    render(<Component />);
+    
+    // Then
+    console.log('  ✨ Verify: Component should display expected content');
+    await waitFor(() => {
+      expect(screen.getByText('기대값')).toBeInTheDocument();
+    });
+    console.log('    ✓ Test passed: Expected element found\n');
+  });
+});
+```
+
+### 통합/E2E 테스트 로깅 컨벤션
+```java
+// 통합 테스트용 간소화된 로깅
+@Test
+@DisplayName("전체 플로우 통합 테스트")
+void 전체_플로우_통합_테스트() {
+    System.out.println("\n\033[1;93m🔗 INTEGRATION TEST\033[0m \033[90m│\033[0m \033[1m{End-to-End Flow}\033[0m");
+    
+    // 주요 단계만 로깅 (너무 상세하지 않게)
+    System.out.println("  \033[2m📊 Flow:\033[0m Step1 → Step2 → Step3");
+    
+    // 최종 결과만 확인
+    System.out.println("    \033[32m✓\033[0m \033[90mIntegration test passed:\033[0m \033[32m{result}\033[0m\n");
+}
+```
+
+## 🚫 금지 패턴
+
+### 절대 하지 말 것
+```java
+// ❌ 테스트 없이 구현 제안
+public class NewService {
+    public void newFeature() {
+        // 구현
+    }
+}
+
+// ❌ 기술적 테스트 이름
+@Test
+void testMethod1() { }
+
+// ❌ 로깅 없는 테스트 (디버깅 어려움)
+@Test
+void 테스트_메서드() {
+    // 로깅 없이 검증만
+    assertEquals(expected, actual);
+}
+
+// ❌ 과도한 로깅 (가독성 저하)
+System.out.println("변수 x = " + x);
+System.out.println("변수 y = " + y);
+System.out.println("계산 시작");
+// ... 너무 많은 로그
+
+// ❌ 일관성 없는 색상 사용
+System.out.println("\033[31m성공\033[0m"); // 빨간색으로 성공 표시
+System.out.println("\033[32m실패\033[0m"); // 초록색으로 실패 표시
+
+// ❌ 비결정적 테스트
+LocalDateTime.now() // 시간 의존
+UUID.randomUUID() // 랜덤 의존
+```
+
+### 로깅 품질 가이드라인
+
+**✅ 권장사항:**
+- 테스트 의도가 명확히 드러나는 로깅
+- Given-When-Then 구조를 시각적으로 구분
+- 일관된 색상과 이모지 사용
+- 적절한 들여쓰기로 계층 구조 표현
+
+**❌ 금지사항:**
+- 과도하게 상세한 변수 로깅
+- 일관성 없는 색상 사용
+- 구분자 없는 평면적 로깅
+- 영어/한국어 혼재 없는 명확한 구분
+
+### 외부 의존성 격리 필수
+- 시계: `Clock.fixed()` 또는 `@MockBean Clock`
+- 랜덴: 고정 시드 또는 모킹
+- 네트워크: MSW, MockWebServer, Testcontainers
+- 파일시스템: `@TempDir` 또는 모킹
+
+## 🔧 실행 명령어
+
+### 개발 중 실행
+```bash
+# 백엔드 - 빠른 단위 테스트
+./mvnw test -Dtest="*Test" -q
+
+# 백엔드 - 통합 테스트 (Testcontainers)
+./mvnw test -Dtest="*IntegrationTest" -q
+
+# 프론트엔드 - 워치 모드
+npm test -- --watch
+
+# 전체 테스트 + 커버리지
+./mvnw clean test jacoco:report
+npm test -- --coverage
+```
+
+## 🎯 작업 시작 가드레일
+
+새로운 작업 시작 시 반드시 확인:
+
+1. **현재 우선순위 확인**
+   - P0 항목 먼저 완료했는가?
+   - 현재 작업이 테스트 매트릭스에 있는가?
+
+2. **테스트 준비 확인**
+   - [ ] 실패하는 테스트 작성됨
+   - [ ] 테스트 이름이 한국어 업무 용어로 작성됨
+   - [ ] 외부 의존성 격리됨
+   - [ ] 테스트가 실제로 실패하는 것 확인됨
+
+3. **구현 전 질문**
+   - 이 변경사항을 정당화하는 테스트가 있는가?
+   - 테스트가 비즈니스 요구사항을 반영하는가?
+   - 최소한의 구현으로 테스트를 통과시킬 수 있는가?
+
+## 🏗️ 도메인별 테스트 우선순위
+
+### 통합 백엔드 라우팅 (최우선)
+```java
+// 즉시 필요한 테스트들
+@Test @DisplayName("douzone 서비스 요청 시 올바른 데이터소스로 라우팅된다")
+@Test @DisplayName("존재하지 않는 서비스 요청 시 404 에러가 반환된다")
+@Test @DisplayName("서비스 컨텍스트가 요청 완료 후 정리된다")
+```
+
+### 권한 시스템 (최우선)
+```java
+// 즉시 필요한 테스트들
+@Test @DisplayName("SUPER_ADMIN은 모든 서비스에 접근할 수 있다")
+@Test @DisplayName("SERVICE_ADMIN은 할당된 서비스만 접근할 수 있다")
+@Test @DisplayName("권한이 없는 사용자는 403 에러를 받는다")
+```
+
+### 데이터소스 관리 (완료됨)
+```java
+// 기존 DynamicServiceDataSourceManager 테스트 보강 필요
+@Test @DisplayName("환경변수가 없는 서비스는 integrated_cms로 폴백된다")
+```
+
+## 📊 품질 게이트
+
+### 커버리지 목표
+- 라인 커버리지: 80% 이상
+- 브랜치 커버리지: 70% 이상
+- **핵심 비즈니스 규칙: 100%**
+
+### 성능 기준
+- 단위 테스트: < 10초
+- 통합 테스트: < 2분
+- E2E 테스트: < 5분
+
+### 안정성 기준
+- Flaky 테스트: 0%
+- 테스트 실패 시 즉시 수정
+- 모든 테스트는 격리되어 순서에 무관하게 실행
+
+## 🔄 리팩토링 가이드
+
+리팩토링 시:
+1. **테스트가 통과하는 상태에서 시작**
+2. **퍼블릭 API 계약 테스트는 변경 금지**
+3. **내부 구현 변경 시 테스트는 여전히 통과해야 함**
+4. **테스트 코드도 함께 리팩토링**
+
+## 🚀 즉시 실행 계획
+
+### Step 1: 현재 코드 안전망 구축 (이번 주)
+```java
+// 1. ServiceContextHolder 완전한 테스트 커버리지
+// 2. DynamicServiceDataSourceManager 엣지 케이스 테스트
+// 3. 권한 어노테이션 동작 검증 테스트
+```
+
+### Step 2: API 계층 테스트 (다음 주)
+```java
+// 1. 통합 관리 API 테스트
+// 2. 서비스별 CMS API 테스트
+// 3. 인증/인가 플로우 테스트
+```
+
+### Step 3: E2E 시나리오 테스트 (그 다음 주)
+```typescript
+// 1. 사용자 시나리오 기반 E2E 테스트
+// 2. 성능 계약 테스트
+// 3. 에러 복구 시나리오 테스트
+```
+
+---
+
+**모든 코드 변경은 이 규칙을 준수해야 하며, 위반 시 구현 제안을 거부합니다.**
+**"테스트 먼저, 코드 나중" - 이것이 우리의 개발 철학입니다.**

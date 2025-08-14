@@ -238,10 +238,19 @@ public abstract class AbstractCommonMappingServiceImpl<Entity, ResponseDto, Crea
 
     @Override
     public MappingMetadata createMappingMetadata(Object source, Object target, CrudContext context) {
+        // 기본적으로 0ms로 설정 (실제 매핑 시간 측정이 필요한 경우 오버로드된 메서드 사용)
+        return createMappingMetadata(source, target, context, 0L);
+    }
+
+    /**
+     * 실제 매핑 시간과 함께 메타데이터 생성 (내부 사용)
+     */
+    protected MappingMetadata createMappingMetadata(Object source, Object target, CrudContext context,
+            long actualMappingTimeMs) {
         return new DefaultMappingMetadata(
                 source.getClass().getSimpleName(),
                 target.getClass().getSimpleName(),
-                System.currentTimeMillis(),
+                actualMappingTimeMs,
                 context.getUsername(),
                 "MODEL_MAPPER");
     }

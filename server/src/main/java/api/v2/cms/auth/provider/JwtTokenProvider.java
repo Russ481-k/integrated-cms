@@ -33,6 +33,11 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secretKey;
 
+    // For testing purposes only
+    String getSecretKey() {
+        return secretKey;
+    }
+
     @Value("${jwt.access-token.validity-in-milliseconds:3600000}")
     private long accessTokenValidityInMilliseconds;
 
@@ -41,9 +46,9 @@ public class JwtTokenProvider {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
-    private static final String TOKEN_TYPE_CLAIM = "type";
-    private static final String TOKEN_TYPE_ACCESS = "ACCESS";
-    private static final String TOKEN_TYPE_REFRESH = "REFRESH";
+    static final String TOKEN_TYPE_CLAIM = "type";
+    static final String TOKEN_TYPE_ACCESS = "ACCESS";
+    static final String TOKEN_TYPE_REFRESH = "REFRESH";
 
     public String createAccessToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getUsername());
@@ -188,7 +193,8 @@ public class JwtTokenProvider {
      */
     public String getUsernameFromToken(String token) {
         try {
-            Key key = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), SignatureAlgorithm.HS256.getJcaName());
+            Key key = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8),
+                    SignatureAlgorithm.HS256.getJcaName());
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
@@ -232,14 +238,14 @@ public class JwtTokenProvider {
             logger.debug("Issued at: {}", claims.getIssuedAt());
             logger.debug("Expiration: {}", claims.getExpiration());
 
-            // Validate token type (case-insensitive)
+            // Validate token type first (case-insensitive)
             String tokenType = claims.get(TOKEN_TYPE_CLAIM, String.class);
             if (tokenType == null || !TOKEN_TYPE_ACCESS.equalsIgnoreCase(tokenType)) {
                 logger.error("Invalid token type: {}", tokenType);
                 throw new JwtException("잘못된 토큰 타입입니다.");
             }
 
-            // Validate required claims
+            // Then validate required claims
             if (claims.get("userId") == null || claims.get("role") == null) {
                 logger.error("Missing required claims in token (userId or role)");
                 throw new JwtException("토큰에 필수 정보가 없습니다.");
@@ -257,7 +263,15 @@ public class JwtTokenProvider {
         } catch (SignatureException e) {
             logger.error("JWT signature validation failed: {}", e.getMessage());
             throw new JwtException("토큰 서명이 유효하지 않습니다.");
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (JwtException e) {
+            // 이미 처리된 예외는 그대로 전파
+            if (e.getMessage().equals("토큰에 필수 정보가 없습니다.") ||
+                    e.getMessage().equals("잘못된 토큰 타입입니다.")) {
+                throw e;
+            }
+            logger.error("JWT Token validation failed: {}", e.getMessage());
+            throw new JwtException("유효하지 않은 토큰입니다.");
+        } catch (IllegalArgumentException e) {
             logger.error("JWT Token validation failed: {}", e.getMessage());
             throw new JwtException("유효하지 않은 토큰입니다.");
         }
@@ -284,5 +298,68 @@ public class JwtTokenProvider {
 
     public boolean isAccessToken(String token) {
         return TOKEN_TYPE_ACCESS.equals(getTokenType(token));
+    }
+
+    /**
+     * 리프레시 토큰 검증
+     * 액세스 토큰과 달리 필수 클레임 검증을 하지 않음
+     */
+    public boolean validateRefreshToken(String token) {
+        logger.debug("=== JwtTokenProvider.validateRefreshToken Start ===");
+        logger.debug("Token to validate: {}", token);
+
+        if (token == null || token.trim().isEmpty()) {
+            logger.error("Token is null or empty");
+            throw new JwtException("토큰이 비어있습니다.");
+        }
+
+        try {
+            Key key = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8),
+                    SignatureAlgorithm.HS256.getJcaName());
+            logger.debug("Using secret key for validation");
+
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token.trim())
+                    .getBody();
+
+            logger.debug("Token validation successful");
+            logger.debug("Subject: {}", claims.getSubject());
+            logger.debug("User ID: {}", claims.get("userId"));
+            logger.debug("Token type: {}", claims.get(TOKEN_TYPE_CLAIM));
+            logger.debug("Issued at: {}", claims.getIssuedAt());
+            logger.debug("Expiration: {}", claims.getExpiration());
+
+            // Validate token type (case-insensitive)
+            String tokenType = claims.get(TOKEN_TYPE_CLAIM, String.class);
+            if (tokenType == null || !TOKEN_TYPE_REFRESH.equalsIgnoreCase(tokenType)) {
+                logger.error("Invalid token type: {}", tokenType);
+                throw new JwtException("잘못된 토큰 타입입니다.");
+            }
+
+            logger.debug("=== JwtTokenProvider.validateRefreshToken End ===");
+            return true;
+        } catch (ExpiredJwtException e) {
+            logger.error("JWT Token has expired: {}", e.getMessage());
+            logger.error("Expiration time: {}", e.getClaims().getExpiration());
+            throw new JwtException("토큰이 만료되었습니다.");
+        } catch (MalformedJwtException e) {
+            logger.error("Invalid JWT token format: {}", e.getMessage());
+            throw new JwtException("잘못된 형식의 토큰입니다.");
+        } catch (SignatureException e) {
+            logger.error("JWT signature validation failed: {}", e.getMessage());
+            throw new JwtException("토큰 서명이 유효하지 않습니다.");
+        } catch (JwtException e) {
+            // 이미 처리된 예외는 그대로 전파
+            if (e.getMessage().equals("잘못된 토큰 타입입니다.")) {
+                throw e;
+            }
+            logger.error("JWT Token validation failed: {}", e.getMessage());
+            throw new JwtException("유효하지 않은 토큰입니다.");
+        } catch (IllegalArgumentException e) {
+            logger.error("JWT Token validation failed: {}", e.getMessage());
+            throw new JwtException("유효하지 않은 토큰입니다.");
+        }
     }
 }
