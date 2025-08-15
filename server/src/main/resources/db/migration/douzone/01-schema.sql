@@ -5,9 +5,9 @@
 -- Server version	5.5.5-10.6.18-MariaDB
 
 -- 데이터베이스 생성 및 선택
-CREATE DATABASE IF NOT EXISTS integrated_cms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS douzone CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE integrated_cms;
+USE douzone;
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */
 ;
@@ -914,7 +914,7 @@ SET MESSAGE_TEXT = 'public_yn must be Y or N';
 END IF;
 END */
 $$
-DELIMITER ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -951,7 +951,7 @@ SET MESSAGE_TEXT = 'file_order must be greater than or equal to 0';
 END IF;
 END */
 $$
-DELIMITER ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -988,7 +988,7 @@ SET MESSAGE_TEXT = 'public_yn must be Y or N';
 END IF;
 END */
 $$
-DELIMITER ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -1025,7 +1025,7 @@ SET MESSAGE_TEXT = 'file_order must be greater than or equal to 0';
 END IF;
 END */
 $$
-DELIMITER ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -1490,7 +1490,7 @@ SET MESSAGE_TEXT = '시작 시간은 종료 시간보다 빨라야 합니다.';
 END IF;
 END */
 $$
-DELIMITER ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -1528,7 +1528,7 @@ SET MESSAGE_TEXT = '시작 시간은 종료 시간보다 빨라야 합니다.';
 END IF;
 END */
 $$
-DELIMITER ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -2363,7 +2363,7 @@ BEGIN
 
 END$$
 
-DELIMITER ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */

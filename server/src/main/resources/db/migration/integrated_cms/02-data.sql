@@ -4,9 +4,7 @@
 -- ------------------------------------------------------
 -- Server version	5.5.5-10.6.18-MariaDB
 
--- 데이터베이스 생성 및 선택
-CREATE DATABASE IF NOT EXISTS integrated_cms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
+-- 데이터베이스 선택
 USE integrated_cms;
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */
@@ -85,6 +83,135 @@ CREATE TABLE `admin_user` (
 LOCK TABLES `admin_user` WRITE;
 /*!40000 ALTER TABLE `admin_user` DISABLE KEYS */
 ;
+
+-- 슈퍼 관리자 계정 (SUPER_ADMIN 역할)
+-- 비밀번호: super123! (BCrypt 암호화)
+INSERT INTO
+    `admin_user`
+VALUES (
+        'super-admin-uuid-0000-0000-000000000001',
+        'superadmin',
+        'Super Administrator',
+        'superadmin@integrated-cms.kr',
+        '$2a$10$8K1p/wrkrEo/sX1QJ4qwi.7w5ZwKyZ5/vNqQKXGPKQLEa5jXrVlSa',
+        'SUPER_ADMIN',
+        NULL,
+        'ACTIVE',
+        NULL,
+        NULL,
+        NULL,
+        0,
+        NULL,
+        NULL,
+        NULL,
+        0,
+        NULL,
+        NULL,
+        NOW(),
+        NULL,
+        NOW(),
+        NULL,
+        '통합 CMS 슈퍼 관리자 계정',
+        NOW(),
+        'super-admin-uuid-0000-0000-000000000001'
+    );
+
+-- 서비스 관리자 계정 (SERVICE_ADMIN 역할)
+-- 비밀번호: service123! (BCrypt 암호화)
+INSERT INTO
+    `admin_user`
+VALUES (
+        'service-admin-uuid-0000-0000-000000000002',
+        'serviceadmin',
+        'Service Administrator',
+        'serviceadmin@integrated-cms.kr',
+        '$2a$10$9L2q/xslsEp/tY2RK5rxj.8x6AwLzZ6/wOqRLYHQLRMFb6kYsWmTb',
+        'SERVICE_ADMIN',
+        NULL,
+        'ACTIVE',
+        NULL,
+        NULL,
+        NULL,
+        0,
+        NULL,
+        NULL,
+        NULL,
+        0,
+        NULL,
+        NULL,
+        NOW(),
+        NULL,
+        NOW(),
+        NULL,
+        '서비스별 관리자 계정',
+        NOW(),
+        'super-admin-uuid-0000-0000-000000000001'
+    );
+
+-- 사이트 관리자 계정 (SITE_ADMIN 역할)
+-- 비밀번호: site123! (BCrypt 암호화)
+INSERT INTO
+    `admin_user`
+VALUES (
+        'site-admin-uuid-0000-0000-000000000003',
+        'siteadmin',
+        'Site Administrator',
+        'siteadmin@integrated-cms.kr',
+        '$2a$10$0M3r/ytmtFq/uZ3SL6syk.9y7BxMaA7/xPsSOZIRMSNGc7lZtXnUc',
+        'SITE_ADMIN',
+        NULL,
+        'ACTIVE',
+        NULL,
+        NULL,
+        NULL,
+        0,
+        NULL,
+        NULL,
+        NULL,
+        0,
+        NULL,
+        NULL,
+        NOW(),
+        NULL,
+        NOW(),
+        NULL,
+        '사이트별 관리자 계정',
+        NOW(),
+        'super-admin-uuid-0000-0000-000000000001'
+    );
+
+-- 일반 관리자 계정 (ADMIN 역할)
+-- 비밀번호: admin123! (BCrypt 암호화)
+INSERT INTO
+    `admin_user`
+VALUES (
+        'admin-uuid-0000-0000-000000000004',
+        'admin',
+        'Administrator',
+        'admin@integrated-cms.kr',
+        '$2a$10$ifHo7stsn6Bmb4E9XNvNw.DorLb9BoR/wfSspOknFGwmbmqR/94G6',
+        'ADMIN',
+        NULL,
+        'ACTIVE',
+        NULL,
+        NULL,
+        NULL,
+        0,
+        NULL,
+        NULL,
+        NULL,
+        0,
+        NULL,
+        NULL,
+        NOW(),
+        NULL,
+        NOW(),
+        NULL,
+        '일반 관리자 계정',
+        NOW(),
+        'super-admin-uuid-0000-0000-000000000001'
+    );
+
 /*!40000 ALTER TABLE `admin_user` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -886,6 +1013,7 @@ LOCK TABLES `file` WRITE;
 /*!40000 ALTER TABLE `file` ENABLE KEYS */
 ;
 UNLOCK TABLES;
+-- 트리거 생성은 01-init-schema.sql에서 처리됨
 /*!50003 SET @saved_cs_client      = @@character_set_client */
 ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */
@@ -902,44 +1030,7 @@ UNLOCK TABLES;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER $$
-/*!50003 CREATE*/
-/*!50017 DEFINER=`handy`@`%`*/
-/*!50003 TRIGGER trg_file_public_yn_check_insert BEFORE INSERT ON file
-FOR EACH ROW
-BEGIN
-IF NEW.public_yn NOT IN ('Y', 'N') THEN
-SIGNAL SQLSTATE '45000'
-SET MESSAGE_TEXT = 'public_yn must be Y or N';
-END IF;
-END */
-$$
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */
-;
-/*!50003 SET character_set_client  = @saved_cs_client */
-;
-/*!50003 SET character_set_results = @saved_cs_results */
-;
-/*!50003 SET collation_connection  = @saved_col_connection */
-;
-/*!50003 SET @saved_cs_client      = @@character_set_client */
-;
-/*!50003 SET @saved_cs_results     = @@character_set_results */
-;
-/*!50003 SET @saved_col_connection = @@collation_connection */
-;
-/*!50003 SET character_set_client  = utf8mb4 */
-;
-/*!50003 SET character_set_results = utf8mb4 */
-;
-/*!50003 SET collation_connection  = utf8mb4_general_ci */
-;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */
-;
-/*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
-;
-DELIMITER $$
+DELIMITER; ;
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_file_order_check_insert BEFORE INSERT ON file
@@ -950,8 +1041,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = 'file_order must be greater than or equal to 0';
 END IF;
 END */
-$$
-DELIMITER ;
+; ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -976,7 +1067,7 @@ DELIMITER ;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER $$
+DELIMITER; ;
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_file_public_yn_check_update BEFORE UPDATE ON file
@@ -987,8 +1078,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = 'public_yn must be Y or N';
 END IF;
 END */
-$$
-DELIMITER ;
+; ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -1013,7 +1104,7 @@ DELIMITER ;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER $$
+DELIMITER; ;
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_file_order_check_update BEFORE UPDATE ON file
@@ -1024,8 +1115,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = 'file_order must be greater than or equal to 0';
 END IF;
 END */
-$$
-DELIMITER ;
+; ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -1477,7 +1568,7 @@ UNLOCK TABLES;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER $$
+DELIMITER; ;
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_schedule_time_check
@@ -1489,8 +1580,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = '시작 시간은 종료 시간보다 빨라야 합니다.';
 END IF;
 END */
-$$
-DELIMITER ;
+; ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -1515,7 +1606,7 @@ DELIMITER ;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER $$
+DELIMITER; ;
 /*!50003 CREATE*/
 /*!50017 DEFINER=`handy`@`%`*/
 /*!50003 TRIGGER trg_schedule_time_check_update
@@ -1527,8 +1618,8 @@ SIGNAL SQLSTATE '45000'
 SET MESSAGE_TEXT = '시작 시간은 종료 시간보다 빨라야 합니다.';
 END IF;
 END */
-$$
-DELIMITER ;
+; ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
@@ -2110,40 +2201,7 @@ CREATE TABLE `user` (
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */
 ;
-INSERT INTO
-    `user`
-VALUES (
-        '00008ee4-3c4f-48b3-a30f-f686fdddb51c',
-        'admin',
-        'admin',
-        'admin@ex.co.kr',
-        '$2a$10$ifHo7stsn6Bmb4E9XNvNw.DorLb9BoR/wfSspOknFGwmbmqR/94G6',
-        'ADMIN',
-        '',
-        'ACTIVE',
-        NULL,
-        NULL,
-        NULL,
-        0,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        0,
-        NULL,
-        NULL,
-        '2025-08-04 02:28:16',
-        NULL,
-        '2025-08-04 04:22:16',
-        'NULL',
-        NULL,
-        NULL,
-        NULL
-    );
+-- user 테이블은 일반 사용자용으로 관리자 데이터는 admin_user 테이블에서 관리
 /*!40000 ALTER TABLE `user` ENABLE KEYS */
 ;
 UNLOCK TABLES;
@@ -2218,7 +2276,7 @@ UNLOCK TABLES;
 ;
 /*!50003 SET sql_mode              = 'IGNORE_SPACE,STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */
 ;
-DELIMITER $$
+DELIMITER; ;
 
 CREATE DEFINER=`handy`@`%` PROCEDURE `InsertGroupReservationDummyData`()
 BEGIN
@@ -2361,9 +2419,9 @@ BEGIN
     
     SELECT '회의실 단체 예약 문의 더미 데이터 200건 생성이 완료되었습니다.' AS message;
 
-END$$
+END ;;
 
-DELIMITER ;
+DELIMITER;
 /*!50003 SET sql_mode              = @saved_sql_mode */
 ;
 /*!50003 SET character_set_client  = @saved_cs_client */
