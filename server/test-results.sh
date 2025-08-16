@@ -1,21 +1,27 @@
 #!/bin/bash
 
-# 통합 CMS v2 테스트 결과 상세 표시 스크립트
-# 성공/실패/에러/스킵 모든 정보를 보여줍니다.
+# Unified CMS v2 Test Results Analysis Script
+# Displays comprehensive test results with modern visual elements
 
-echo "🧪 통합 CMS v2 테스트 실행 중..."
-echo "================================="
+echo ""
+echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+echo "║                           UNIFIED CMS v2 TEST SUITE                          ║"
+echo "╚══════════════════════════════════════════════════════════════════════════════╝"
+echo ""
 
-# Maven 테스트 실행 및 결과 파싱
+# Maven test execution with result parsing
 mvn test 2>&1 | tee /tmp/test_output.log
 
 echo ""
-echo "📊 테스트 결과 요약"
-echo "================================="
+echo "┌─────────────────────────────────────────────────────────────────────────────┐"
+echo "│                              TEST RESULTS SUMMARY                           │"
+echo "└─────────────────────────────────────────────────────────────────────────────┘"
+echo ""
+printf "  \033[1m%-37s\033[0m │ \033[1;92mPASS\033[0m │ \033[1;91mFAIL\033[0m │ \033[1;93mERR\033[0m │ \033[1;96mSKIP\033[0m │ \033[1mSTATUS\033[0m\n"
+echo "  ─────────────────────────────────────┼──────┼──────┼─────┼──────┼────────"
 
-# 전체 테스트 수행 결과 추출
+# Parse individual test class results
 grep "Tests run:" /tmp/test_output.log | while IFS= read -r line; do
-    # 각 테스트 클래스별 결과 파싱
     if [[ $line =~ Tests\ run:\ ([0-9]+),\ Failures:\ ([0-9]+),\ Errors:\ ([0-9]+),\ Skipped:\ ([0-9]+).*in\ ([a-zA-Z0-9_.]+) ]]; then
         tests_run=${BASH_REMATCH[1]}
         failures=${BASH_REMATCH[2]}
@@ -23,49 +29,55 @@ grep "Tests run:" /tmp/test_output.log | while IFS= read -r line; do
         skipped=${BASH_REMATCH[4]}
         class_name=${BASH_REMATCH[5]}
         
-        # 성공한 테스트 수 계산
+        # Calculate successful tests
         success=$((tests_run - failures - errors - skipped))
         
-        # 결과에 따른 색상 적용
+        # Determine status with modern indicators
         if [ $failures -eq 0 ] && [ $errors -eq 0 ]; then
-            status_color="\033[32m" # 초록색 (성공)
-            status_emoji="✅"
+            status_indicator="●"
+            status_color="\033[1;92m" # Bright green
+            status_text="PASS"
         else
-            status_color="\033[31m" # 빨간색 (실패)
-            status_emoji="❌"
+            status_indicator="●"
+            status_color="\033[1;91m" # Bright red  
+            status_text="FAIL"
         fi
         
-        # 클래스 이름 단축 (패키지 제거)
+        # Extract class name (remove package)
         short_class=$(echo $class_name | sed 's/.*\.//')
         
-        printf "%s %s%-40s\033[0m | " "$status_emoji" "$status_color" "$short_class"
-        printf "\033[32m성공: %2d\033[0m | " "$success"
+        # Display result with modern formatting aligned to header
+        printf "  %s%s\033[0m \033[1m%-35s\033[0m │ " "$status_color" "$status_indicator" "$short_class"
+        printf "\033[92m %3d\033[0m │ " "$success"
         
         if [ $failures -gt 0 ]; then
-            printf "\033[31m실패: %2d\033[0m | " "$failures"
+            printf "\033[91m %3d\033[0m │ " "$failures"
         else
-            printf "실패: %2d | " "$failures"
+            printf "\033[90m %3d\033[0m │ " "$failures"
         fi
         
         if [ $errors -gt 0 ]; then
-            printf "\033[33m에러: %2d\033[0m | " "$errors"
+            printf "\033[93m %2d\033[0m │ " "$errors"
         else
-            printf "에러: %2d | " "$errors"
+            printf "\033[90m %2d\033[0m │ " "$errors"
         fi
         
         if [ $skipped -gt 0 ]; then
-            printf "\033[36m스킵: %2d\033[0m\n" "$skipped"
+            printf "\033[96m %3d\033[0m │ " "$skipped"
         else
-            printf "스킵: %2d\n" "$skipped"
+            printf "\033[90m %3d\033[0m │ " "$skipped"
         fi
+        
+        printf "%s%s\033[0m\n" "$status_color" "$status_text"
     fi
 done
 
 echo ""
-echo "🎯 전체 결과 집계"
-echo "================================="
+echo "┌─────────────────────────────────────────────────────────────────────────────┐"
+echo "│                              OVERALL STATISTICS                             │"
+echo "└─────────────────────────────────────────────────────────────────────────────┘"
 
-# 전체 결과 집계
+# Aggregate total results
 total_tests=$(grep "Tests run:" /tmp/test_output.log | tail -1 | grep -o "Tests run: [0-9]*" | grep -o "[0-9]*")
 total_failures=$(grep "Tests run:" /tmp/test_output.log | tail -1 | grep -o "Failures: [0-9]*" | grep -o "[0-9]*")
 total_errors=$(grep "Tests run:" /tmp/test_output.log | tail -1 | grep -o "Errors: [0-9]*" | grep -o "[0-9]*")
@@ -75,32 +87,40 @@ if [ -n "$total_tests" ]; then
     total_success=$((total_tests - total_failures - total_errors - total_skipped))
     success_rate=$(echo "scale=1; $total_success * 100 / $total_tests" | bc -l)
     
-    echo "총 테스트 수: $total_tests"
-    echo "✅ 성공: $total_success ($success_rate%)"
-    echo "❌ 실패: $total_failures"
-    echo "⚠️  에러: $total_errors"
-    echo "⏭️  스킵: $total_skipped"
+    # Modern metrics display
+    echo ""
+    printf "  \033[1;96m◆\033[0m Total Tests      : \033[1m%s\033[0m\n" "$total_tests"
+    printf "  \033[1;92m◆\033[0m Passed          : \033[1;92m%s\033[0m \033[90m(%s%%)\033[0m\n" "$total_success" "$success_rate"
+    printf "  \033[1;91m◆\033[0m Failed          : \033[1;91m%s\033[0m\n" "$total_failures"
+    printf "  \033[1;93m◆\033[0m Errors          : \033[1;93m%s\033[0m\n" "$total_errors"
+    printf "  \033[1;96m◆\033[0m Skipped         : \033[1;96m%s\033[0m\n" "$total_skipped"
+    echo ""
     
     if [ $total_failures -eq 0 ] && [ $total_errors -eq 0 ]; then
-        echo ""
-        echo "🎉 모든 테스트 성공!"
-        echo "================================="
+        echo "╔══════════════════════════════════════════════════════════════════════════════╗"
+        echo "║                          ✓ ALL TESTS PASSED                                  ║"
+        echo "╚══════════════════════════════════════════════════════════════════════════════╝"
     else
-        echo ""
-        echo "🔍 실패/에러 상세 정보:"
-        echo "================================="
-        grep -A 3 "FAILURE\|ERROR" /tmp/test_output.log || echo "상세 정보 없음"
+        echo "┌─────────────────────────────────────────────────────────────────────────────┐"
+        echo "│                            FAILURE DETAILS                                  │"
+        echo "└─────────────────────────────────────────────────────────────────────────────┘"
+        grep -A 3 "FAILURE\|ERROR" /tmp/test_output.log || echo "  No detailed information available"
     fi
 fi
 
-# 빌드 결과 확인
+# Build status check
+echo ""
 if grep -q "BUILD SUCCESS" /tmp/test_output.log; then
-    echo ""
-    echo "🏆 BUILD SUCCESS"
+    echo "┌─────────────────────────────────────────────────────────────────────────────┐"
+    echo "│                         ⬢ BUILD SUCCESSFUL                                  │"
+    echo "└─────────────────────────────────────────────────────────────────────────────┘"
 elif grep -q "BUILD FAILURE" /tmp/test_output.log; then
-    echo ""
-    echo "💥 BUILD FAILURE"
+    echo "┌─────────────────────────────────────────────────────────────────────────────┐"
+    echo "│                           ⬢ BUILD FAILED                                    │"
+    echo "└─────────────────────────────────────────────────────────────────────────────┘"
 fi
 
-# 임시 파일 정리
+echo ""
+
+# Cleanup temporary files
 rm -f /tmp/test_output.log

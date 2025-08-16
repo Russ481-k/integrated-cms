@@ -96,6 +96,16 @@ public final class TestLoggingUtils {
     }
 
     /**
+     * 성공 메시지 출력
+     * 
+     * @param message 성공 메시지
+     */
+    public static void printSuccess(String message) {
+        System.out.println("    " + SUCCESS + SUCCESS_EMOJI + RESET + " " + GRAY + "Success:" + RESET +
+                " " + SUCCESS + message + RESET);
+    }
+
+    /**
      * 성공한 assertion 출력
      * 
      * @param message 성공 메시지
