@@ -368,19 +368,157 @@ void API_응답_시간은_300ms_이내여야_한다() {
 
 ### 로컬 개발 환경
 
+#### 🚨 **중요: 도커 환경에서 테스트 실행 필수**
+
+**실제 프로젝트 환경:**
+- **컨테이너**: `unitedcms-integrated-backend-1` (백엔드)
+- **빌드 도구**: Maven (Maven wrapper 없이 직접 `mvn` 사용)
+- **성공 확인**: 모던 로깅 스타일로 테스트 결과 출력
+
+**모든 테스트는 반드시 도커 컨테이너 내부에서 실행해야 합니다.**
+
 ```bash
-# 백엔드 테스트 실행
-./mvnw test -Dtest="*Test" -q
+# 🚨 실제 컨테이너 이름 확인 필수
+docker ps --filter "name=unitedcms"
 
-# 프론트엔드 테스트 실행
-npm test -- --watchAll=false
+# 🐳 백엔드 테스트 실행 (도커 환경) - Maven wrapper 없이 직접 mvn 사용
+docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="*Test" -q
 
-# 통합 테스트 (Testcontainers)
-./mvnw test -Dtest="*IntegrationTest" -q
+# 🐳 특정 테스트 클래스 실행 (도커 환경)
+docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="ServiceEntityTest" -q
 
-# 커버리지 리포트
-./mvnw jacoco:report
-npm test -- --coverage
+# 🐳 특정 패키지의 모든 테스트 실행 (도커 환경)
+docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="api.v2.integrated_cms.**.*Test" -q
+
+# 🐳 Repository 테스트 실행 (JPA 데이터 계층)
+docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="*Repository*Test" -q
+
+# 🐳 통합 테스트 (Testcontainers + 도커 환경)
+docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="*IntegrationTest" -q
+
+# 🐳 커버리지 리포트 (도커 환경)
+docker exec -it unitedcms-integrated-backend-1 mvn jacoco:report
+
+# 🐳 프론트엔드 테스트 실행 (도커 환경)
+docker exec -it unitedcms-integrated-frontend-1 npm test -- --watchAll=false
+
+# 🐳 프론트엔드 커버리지 (도커 환경)
+docker exec -it unitedcms-integrated-frontend-1 npm test -- --coverage
+
+# 🐳 douzone 클라이언트 테스트 (별도 컨테이너)
+docker exec -it unitedcms-douzone-frontend-1 npm test -- --watchAll=false
+```
+
+#### 📋 **도커 컨테이너 확인 명령어**
+
+```bash
+# 실행 중인 컨테이너 확인
+docker ps
+
+# 컨테이너 이름 확인 (unitedcms 관련)
+docker ps --filter "name=unitedcms"
+
+# 현재 프로젝트 컨테이너 이름들:
+# - unitedcms-integrated-backend-1   (백엔드 Spring Boot)
+# - unitedcms-integrated-frontend-1  (통합 클라이언트 Next.js)
+# - unitedcms-douzone-frontend-1     (더존 클라이언트 Next.js)
+# - unitedcms-db-1                   (MariaDB 데이터베이스)
+
+# 컨테이너 접속 (인터랙티브 모드)
+docker exec -it unitedcms-integrated-backend-1 /bin/bash
+docker exec -it unitedcms-integrated-frontend-1 /bin/bash
+docker exec -it unitedcms-douzone-frontend-1 /bin/bash
+```
+
+#### ⚠️ **로컬 환경 직접 실행 금지**
+
+```bash
+# ❌ 금지: 로컬에서 직접 테스트 실행
+./mvnw test  # Maven wrapper 없음, 환경 차이로 테스트 실패 가능
+mvn test     # 로컬 Maven 설정과 도커 환경 차이
+npm test     # 의존성 이슈 발생 가능
+
+# ✅ 필수: 도커 환경에서만 테스트 실행
+docker exec -it unitedcms-integrated-backend-1 mvn test
+docker exec -it unitedcms-integrated-frontend-1 npm test
+docker exec -it unitedcms-douzone-frontend-1 npm test
+```
+
+#### 🔧 **도커 환경 문제 해결**
+
+```bash
+# 컨테이너가 실행되지 않은 경우
+docker-compose up -d
+
+# 특정 컨테이너 재시작이 필요한 경우
+docker-compose restart integrated-backend
+docker-compose restart integrated-frontend
+docker-compose restart douzone-frontend
+docker-compose restart db
+
+# 로그 확인 (문제 진단)
+docker logs unitedcms-integrated-backend-1
+docker logs unitedcms-integrated-frontend-1
+docker logs unitedcms-douzone-frontend-1
+docker logs unitedcms-db-1
+
+# 컨테이너 내부 파일 시스템 확인 (디버깅)
+docker exec -it unitedcms-integrated-backend-1 ls -la
+docker exec -it unitedcms-integrated-backend-1 pwd
+
+# 테스트 실행 중 실시간 로그 확인
+docker logs -f unitedcms-integrated-backend-1
+```
+
+#### 🎯 **실제 테스트 시나리오 및 예시**
+
+**성공적인 테스트 실행 예시:**
+```bash
+# 서비스 엔티티 테스트 실행
+$ docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="ServiceEntityTest" -q
+
+🧪 TEST #1 │ Service Entity Creation with Valid Data
+  🔍 Setup: 올바른 서비스 정보 준비
+  ⚡ Action: ServiceEntity 생성
+  ✨ Verify: 서비스 엔티티 필드 값 검증
+    ✓ Assertion passed: 모든 필드가 올바르게 설정됨
+
+🧪 TEST #2 │ Service Entity Update Operations
+  🔍 Setup: 기존 서비스 엔티티 생성
+  ⚡ Action: 서비스 정보 업데이트
+  ✨ Verify: 업데이트된 정보 검증
+    ✓ Assertion passed: 서비스 정보가 올바르게 업데이트됨
+
+# ... (총 6개 테스트 성공)
+```
+
+**TDD 개발 사이클 예시:**
+```bash
+# 1. 실패하는 테스트 작성 후 실행
+$ docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="ServiceRepositoryTest" -q
+# → 컴파일 에러 또는 테스트 실패 확인
+
+# 2. 최소 구현으로 테스트 통과
+$ docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="ServiceRepositoryTest" -q
+# → 모든 테스트 통과 확인
+
+# 3. 전체 관련 테스트 실행으로 리그레션 확인
+$ docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="api.v2.integrated_cms.service.**.*Test" -q
+```
+
+**패키지별 테스트 실행 가이드:**
+```bash
+# 서비스 도메인 관련 모든 테스트
+docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="api.v2.integrated_cms.service.**.*Test" -q
+
+# Repository 계층 테스트만
+docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="*Repository*Test" -q
+
+# Controller 계층 테스트만  
+docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="*Controller*Test" -q
+
+# Service 계층 테스트만
+docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="*Service*Test" -q
 ```
 
 ### GitHub Actions CI 설정
