@@ -52,6 +52,9 @@ public class Menu {
     @Column(name = "parent_id")
     private Long parentId;
 
+    @Column(name = "service_id", length = 50)
+    private String serviceId;
+
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     @Builder.Default
@@ -81,7 +84,7 @@ public class Menu {
 
     public void update(String name, MenuType type, String url, Long targetId,
             String displayPosition, Boolean visible, Integer sortOrder,
-            Long parentId) {
+            Long parentId, String serviceId) {
         if (name != null)
             this.name = name;
         if (type != null)
@@ -98,6 +101,8 @@ public class Menu {
             this.sortOrder = sortOrder;
         if (parentId != null)
             this.parentId = parentId;
+        if (serviceId != null)
+            this.serviceId = serviceId;
     }
 
     public void setVisible(boolean visible) {

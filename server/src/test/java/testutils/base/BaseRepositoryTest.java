@@ -4,7 +4,6 @@ import testutils.config.TestMailConfiguration;
 import testutils.logging.TestLoggingUtils;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 /**
@@ -20,7 +19,7 @@ import org.springframework.test.context.TestPropertySource;
 @TestPropertySource(properties = {
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration",
         "logging.level.org.springframework=WARN",
-        "logging.level.org.hibernate=WARN", 
+        "logging.level.org.hibernate=WARN",
         "logging.level.com.zaxxer.hikari=WARN"
 })
 @Import(TestMailConfiguration.class)

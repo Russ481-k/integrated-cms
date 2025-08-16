@@ -143,4 +143,37 @@ public class MenuController {
         PageDetailsDto pageDetails = menuService.getPageDetailsByMenuId(id);
         return ResponseEntity.ok(ApiResponseSchema.success(pageDetails, "페이지 상세 정보가 성공적으로 조회되었습니다."));
     }
+
+    @Operation(summary = "서비스별 메뉴 트리 조회", description = "특정 서비스의 메뉴 트리 구조를 조회합니다.")
+    @GetMapping("/service/{serviceId}/tree")
+    public ResponseEntity<ApiResponseSchema<List<MenuDto>>> getMenuTreeByService(
+            @Parameter(description = "서비스 ID") @PathVariable String serviceId) {
+        List<MenuDto> menuTree = menuService.getMenuTreeByService(serviceId);
+        return ResponseEntity.ok(ApiResponseSchema.success(menuTree, "서비스별 메뉴 트리를 성공적으로 조회했습니다."));
+    }
+
+    @Operation(summary = "서비스별 전체 메뉴 조회", description = "특정 서비스의 전체 메뉴 목록을 조회합니다.")
+    @GetMapping("/service/{serviceId}")
+    public ResponseEntity<ApiResponseSchema<List<MenuDto>>> getMenusByService(
+            @Parameter(description = "서비스 ID") @PathVariable String serviceId) {
+        List<MenuDto> menus = menuService.getMenusByService(serviceId);
+        return ResponseEntity.ok(ApiResponseSchema.success(menus, "서비스별 메뉴 목록을 성공적으로 조회했습니다."));
+    }
+
+    @Operation(summary = "서비스별 활성화된 메뉴 조회", description = "특정 서비스의 활성화된 메뉴만 조회합니다.")
+    @GetMapping("/service/{serviceId}/active")
+    public ResponseEntity<ApiResponseSchema<List<MenuDto>>> getActiveMenusByService(
+            @Parameter(description = "서비스 ID") @PathVariable String serviceId) {
+        List<MenuDto> activeMenus = menuService.getActiveMenusByService(serviceId);
+        return ResponseEntity.ok(ApiResponseSchema.success(activeMenus, "서비스별 활성화된 메뉴 목록을 성공적으로 조회했습니다."));
+    }
+
+    @Operation(summary = "서비스별 타입별 메뉴 조회", description = "특정 서비스의 특정 타입 메뉴를 조회합니다.")
+    @GetMapping("/service/{serviceId}/type/{type}")
+    public ResponseEntity<ApiResponseSchema<List<MenuDto>>> getMenusByServiceAndType(
+            @Parameter(description = "서비스 ID") @PathVariable String serviceId,
+            @Parameter(description = "메뉴 타입") @PathVariable String type) {
+        List<MenuDto> menus = menuService.getMenusByServiceAndType(serviceId, type);
+        return ResponseEntity.ok(ApiResponseSchema.success(menus, "서비스별 타입별 메뉴 목록을 성공적으로 조회했습니다."));
+    }
 }

@@ -27,4 +27,38 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
 
     // Find the first menu linked to a specific target type (enum) and ID
     Optional<Menu> findFirstByTypeAndTargetId(MenuType type, Long targetId);
+
+    /**
+     * 특정 서비스의 메뉴 목록을 조회합니다.
+     * 
+     * @param serviceId 서비스 ID
+     * @return 메뉴 목록
+     */
+    List<Menu> findByServiceId(String serviceId);
+
+    /**
+     * 특정 서비스의 활성화된 메뉴 목록을 조회합니다.
+     * 
+     * @param serviceId 서비스 ID
+     * @return 활성화된 메뉴 목록
+     */
+    List<Menu> findByServiceIdAndVisibleTrue(String serviceId);
+
+    /**
+     * 특정 서비스의 특정 타입 메뉴를 조회합니다.
+     * 
+     * @param serviceId 서비스 ID
+     * @param type      메뉴 타입
+     * @return 메뉴 목록
+     */
+    List<Menu> findByServiceIdAndType(String serviceId, MenuType type);
+
+    /**
+     * 특정 서비스의 특정 타입 활성화 메뉴를 조회합니다.
+     * 
+     * @param serviceId 서비스 ID
+     * @param type      메뉴 타입
+     * @return 활성화된 메뉴 목록
+     */
+    List<Menu> findByServiceIdAndTypeAndVisibleTrue(String serviceId, MenuType type);
 }

@@ -30,6 +30,9 @@ public class MenuDto {
     private Long targetId;
     private String displayPosition;
 
+    // 서비스 정보
+    private String serviceId;
+
     // 메타 정보
     private String createdBy;
     private String updatedBy;

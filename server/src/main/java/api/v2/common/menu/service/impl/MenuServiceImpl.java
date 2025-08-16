@@ -54,6 +54,7 @@ public class MenuServiceImpl implements MenuService {
                 .visible(menuDto.getVisible())
                 .sortOrder(menuDto.getSortOrder())
                 .parentId(parentId)
+                .serviceId(menuDto.getServiceId())
                 .build();
 
         Menu savedMenu = menuRepository.save(menu);
@@ -74,6 +75,7 @@ public class MenuServiceImpl implements MenuService {
         menu.setSortOrder(menuDto.getSortOrder());
         menu.setDisplayPosition(menuDto.getDisplayPosition());
         menu.setTargetId(menuDto.getTargetId());
+        menu.setServiceId(menuDto.getServiceId());
 
         // 부모 ID 유효성 검사
         Long parentId = menuDto.getParentId();
@@ -315,5 +317,45 @@ public class MenuServiceImpl implements MenuService {
         }
 
         return dtoBuilder.build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MenuDto> getMenuTreeByService(String serviceId) {
+        List<Menu> menus = menuRepository.findByServiceId(serviceId);
+        return buildMenuTree(menus);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MenuDto> getActiveMenusByService(String serviceId) {
+        List<Menu> menus = menuRepository.findByServiceIdAndVisibleTrue(serviceId);
+        return menus.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MenuDto> getMenusByService(String serviceId) {
+        List<Menu> menus = menuRepository.findByServiceId(serviceId);
+        return menus.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MenuDto> getMenusByServiceAndType(String serviceId, String type) {
+        try {
+            MenuType menuType = MenuType.valueOf(type.toUpperCase());
+            List<Menu> menus = menuRepository.findByServiceIdAndTypeAndVisibleTrue(serviceId, menuType);
+            return menus.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid menu type: {}", type);
+            return new ArrayList<>();
+        }
     }
 }

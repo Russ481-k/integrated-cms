@@ -106,4 +106,37 @@ public interface MenuService {
      * @return 페이지 상세 정보 DTO
      */
     PageDetailsDto getPageDetailsByMenuId(Long menuId);
+
+    /**
+     * 특정 서비스의 메뉴 트리를 조회한다.
+     * 
+     * @param serviceId 서비스 ID
+     * @return 서비스별 메뉴 트리 목록
+     */
+    List<MenuDto> getMenuTreeByService(String serviceId);
+
+    /**
+     * 특정 서비스의 활성화된 메뉴를 조회한다.
+     * 
+     * @param serviceId 서비스 ID
+     * @return 서비스별 활성화된 메뉴 목록
+     */
+    List<MenuDto> getActiveMenusByService(String serviceId);
+
+    /**
+     * 특정 서비스의 전체 메뉴를 조회한다.
+     * 
+     * @param serviceId 서비스 ID
+     * @return 서비스별 전체 메뉴 목록
+     */
+    List<MenuDto> getMenusByService(String serviceId);
+
+    /**
+     * 특정 서비스의 특정 타입 메뉴를 조회한다.
+     * 
+     * @param serviceId 서비스 ID
+     * @param type      메뉴 타입
+     * @return 서비스별 타입별 메뉴 목록
+     */
+    List<MenuDto> getMenusByServiceAndType(String serviceId, String type);
 }
