@@ -182,10 +182,10 @@ export const serviceUtils = {
     return [...services].sort((a, b) => {
       // 상태 우선순위: ACTIVE > MAINTENANCE > INACTIVE
       const statusPriority = { ACTIVE: 3, MAINTENANCE: 2, INACTIVE: 1 };
-      const statusDiff = statusPriority[b.status] - statusPriority[a.status];
+      const statusDiff = statusPriority[a.status] - statusPriority[b.status];
       
       if (statusDiff !== 0) {
-        return statusDiff;
+        return -statusDiff; // 내림차순으로 정렬 (높은 우선순위가 앞으로)
       }
       
       // 같은 상태라면 이름 순 정렬

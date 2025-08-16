@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toaster } from "@/components/ui/toaster";
 import { serviceApi, serviceKeys } from "@/lib/api/service";
@@ -36,6 +36,15 @@ export const useServiceManagement = (filters?: ServiceFilters) => {
   });
 
   const services = servicesResponse?.data || [];
+
+  // 페이지 최초 진입 시 첫 번째 서비스 자동 선택
+  useEffect(() => {
+    // 서비스 목록이 로드되고, 현재 선택된 서비스가 없으며, 임시 서비스도 없는 경우
+    if (services.length > 0 && !selectedService && !tempService && !isServicesLoading) {
+      const firstService = services[0];
+      setSelectedService(firstService);
+    }
+  }, [services, selectedService, tempService, isServicesLoading]);
 
   // 서비스 생성 뮤테이션
   const createServiceMutation = useMutation({
@@ -84,9 +93,19 @@ export const useServiceManagement = (filters?: ServiceFilters) => {
   // 서비스 삭제 뮤테이션
   const deleteServiceMutation = useMutation({
     mutationFn: serviceApi.deleteService,
-    onSuccess: () => {
+    onSuccess: (_, deletedServiceId) => {
       queryClient.invalidateQueries({ queryKey: serviceKeys.lists() });
-      setSelectedService(null);
+      
+      // 삭제된 서비스가 현재 선택된 서비스인 경우, 다른 서비스를 자동 선택
+      if (selectedService?.serviceId === deletedServiceId) {
+        const remainingServices = services.filter(s => s.serviceId !== deletedServiceId);
+        if (remainingServices.length > 0) {
+          setSelectedService(remainingServices[0]);
+        } else {
+          setSelectedService(null);
+        }
+      }
+      
       toaster.create({
         title: "서비스가 성공적으로 삭제되었습니다.",
         type: "success",

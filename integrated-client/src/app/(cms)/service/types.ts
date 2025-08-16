@@ -65,6 +65,7 @@ export interface ServiceListProps {
   onAddService: () => void;
   isLoading: boolean;
   selectedServiceId?: string;
+  onServiceFilter?: (filteredServices: Service[]) => void;
 }
 
 // 서비스 에디터 컴포넌트 props

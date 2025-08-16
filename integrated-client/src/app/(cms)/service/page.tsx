@@ -10,6 +10,7 @@ import { Main } from "@/components/layout/view/Main";
 import { ServiceList } from "./components/ServiceList";
 import { ServiceEditor } from "./components/ServiceEditor";
 import { useServiceManagement } from "./hooks/useServiceManagement";
+import { Service } from "./types";
 
 export default function ServiceManagementPage() {
   const colors = useColors();
@@ -26,6 +27,7 @@ export default function ServiceManagementPage() {
     handleDeleteService,
     handleSubmitService,
     handleCloseEditor,
+    setSelectedService,
   } = useServiceManagement();
 
   // 서비스 순서 변경 핸들러 (현재는 구현하지 않음)
@@ -41,6 +43,22 @@ export default function ServiceManagementPage() {
     });
     // TODO: 서비스 순서 변경 API 구현 후 연결
   };
+
+  // 필터링된 서비스에서 첫 번째 항목 자동 선택 핸들러
+  const handleServiceFilter = React.useCallback((filteredServices: Service[]) => {
+    // 현재 선택된 서비스가 필터링된 목록에 없는 경우에만 첫 번째 서비스 선택
+    if (filteredServices.length > 0) {
+      const currentSelectedExists = selectedService && 
+        filteredServices.some(service => service.serviceId === selectedService.serviceId);
+      
+      if (!currentSelectedExists && !tempService) {
+        setSelectedService(filteredServices[0]);
+      }
+    } else if (!tempService) {
+      // 필터링 결과가 없는 경우 선택 해제
+      setSelectedService(null);
+    }
+  }, [selectedService, tempService, setSelectedService]);
 
   // 서비스 관리 페이지 레이아웃 정의
   const serviceLayout = [
@@ -129,6 +147,7 @@ export default function ServiceManagementPage() {
               onAddService={handleAddService}
               isLoading={isLoading}
               selectedServiceId={selectedService?.serviceId}
+              onServiceFilter={handleServiceFilter}
             />
           </Box>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Box,
   Button,
@@ -28,6 +28,7 @@ export const ServiceList: React.FC<ServiceListProps> = ({
   onAddService,
   isLoading,
   selectedServiceId,
+  onServiceFilter,
 }) => {
   const [filters, setFilters] = useState<ServiceFilters>({
     search: "",
@@ -60,6 +61,13 @@ export const ServiceList: React.FC<ServiceListProps> = ({
     // 정렬 (활성 상태 우선, 이름 순)
     return serviceUtils.sortServices(filtered);
   }, [services, filters]);
+
+  // 필터링된 서비스 목록 변경 시 콜백 호출
+  useEffect(() => {
+    if (onServiceFilter) {
+      onServiceFilter(filteredServices);
+    }
+  }, [filteredServices, onServiceFilter]);
 
   // 검색어 변경 처리
   const handleSearchChange = useCallback(
