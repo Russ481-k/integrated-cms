@@ -45,20 +45,33 @@ export default function ServiceManagementPage() {
   };
 
   // 필터링된 서비스에서 첫 번째 항목 자동 선택 핸들러
-  const handleServiceFilter = React.useCallback((filteredServices: Service[]) => {
-    // 현재 선택된 서비스가 필터링된 목록에 없는 경우에만 첫 번째 서비스 선택
-    if (filteredServices.length > 0) {
-      const currentSelectedExists = selectedService && 
-        filteredServices.some(service => service.serviceId === selectedService.serviceId);
-      
-      if (!currentSelectedExists && !tempService) {
-        setSelectedService(filteredServices[0]);
-      }
-    } else if (!tempService) {
-      // 필터링 결과가 없는 경우 선택 해제
-      setSelectedService(null);
-    }
-  }, [selectedService, tempService, setSelectedService]);
+  const handleServiceFilter = React.useCallback(
+    (filteredServices: Service[]) => {
+      // setSelectedService를 함수형 업데이트로 변경하여 상태를 직접 참조
+      setSelectedService((currentSelected) => {
+        // 임시 서비스가 있는 경우 변경하지 않음
+        if (tempService) return currentSelected;
+
+        if (filteredServices.length > 0) {
+          const currentSelectedExists =
+            currentSelected &&
+            filteredServices.some(
+              (service) => service.serviceId === currentSelected.serviceId
+            );
+
+          // 현재 선택된 서비스가 필터링된 목록에 없는 경우에만 첫 번째 서비스 선택
+          if (!currentSelectedExists) {
+            return filteredServices[0];
+          }
+          return currentSelected;
+        }
+
+        // 필터링 결과가 없는 경우: 현재 선택 상태 유지 (강제로 null 설정하지 않음)
+        return currentSelected;
+      });
+    },
+    [tempService]
+  ); // tempService만 의존성으로 유지
 
   // 서비스 관리 페이지 레이아웃 정의
   const serviceLayout = [
@@ -125,15 +138,6 @@ export default function ServiceManagementPage() {
               >
                 통합 관리자
               </Badge>
-            </Flex>
-            <Flex>
-              <NativeSelect.Root>
-                <NativeSelect.Field>
-                  <option value="all">전체 서비스</option>
-                  <option value="active">활성 서비스</option>
-                  <option value="inactive">비활성 서비스</option>
-                </NativeSelect.Field>
-              </NativeSelect.Root>
             </Flex>
           </Flex>
 

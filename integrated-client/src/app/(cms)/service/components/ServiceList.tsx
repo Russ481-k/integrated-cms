@@ -67,7 +67,7 @@ export const ServiceList: React.FC<ServiceListProps> = ({
     if (onServiceFilter) {
       onServiceFilter(filteredServices);
     }
-  }, [filteredServices, onServiceFilter]);
+  }, [filteredServices]); // onServiceFilter 의존성 제거로 무한루프 방지
 
   // 검색어 변경 처리
   const handleSearchChange = useCallback(

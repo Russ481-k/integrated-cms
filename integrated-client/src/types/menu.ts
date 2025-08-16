@@ -8,6 +8,7 @@ export interface Menu {
   visible: boolean;
   sortOrder: number;
   parentId: number | null;
+  serviceId?: string; // 서비스 ID 필드 추가
   createdAt?: string;
   updatedAt?: string;
 }

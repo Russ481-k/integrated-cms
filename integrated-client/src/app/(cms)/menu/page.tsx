@@ -21,6 +21,10 @@ import { Menu } from "@/types/api";
 import { MainMediaDialog } from "./components/MainMediaDialog";
 import MainSection from "@/components/main/MainSection";
 
+// 서비스 관리 관련 import 추가
+import { serviceApi, serviceKeys } from "@/lib/api/service";
+import { Service } from "../service/types";
+
 export default function MenuManagementPage() {
   const renderCount = React.useRef(0);
   renderCount.current += 1;
@@ -35,7 +39,22 @@ export default function MenuManagementPage() {
   );
   const [isMediaDialogOpen, setIsMediaDialogOpen] = useState(false);
 
+  // 서비스 선택 상태 추가
+  const [selectedServiceId, setSelectedServiceId] = useState<string>("all");
+
   const colors = useColors();
+
+  // 서비스 목록 조회
+  const { data: servicesResponse, isLoading: isServicesLoading } = useQuery({
+    queryKey: serviceKeys.list(),
+    queryFn: async () => {
+      const response = await serviceApi.getServices();
+      return response;
+    },
+    staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
+  });
+
+  const services = servicesResponse?.data || [];
 
   const findParentMenu = useCallback(
     (menus: Menu[], targetId: number): Menu | null => {
@@ -69,13 +88,21 @@ export default function MenuManagementPage() {
     []
   );
 
-  // 메뉴 목록 가져오기
+  // 서비스별 메뉴 목록 가져오기
   const { data: menuResponse, isLoading: isMenusLoading } = useQuery<Menu[]>({
-    queryKey: menuKeys.list(""),
+    queryKey:
+      selectedServiceId === "all"
+        ? menuKeys.list("")
+        : menuKeys.serviceMenuTree(selectedServiceId),
     queryFn: async () => {
-      const response = await menuApi.getMenus();
-      return response.data.data;
+      if (selectedServiceId === "all") {
+        const response = await menuApi.getMenus();
+        return response.data.data;
+      } else {
+        return await menuApi.getMenuTreeByService(selectedServiceId);
+      }
     },
+    enabled: selectedServiceId !== "", // 서비스가 선택되었을 때만 실행
   });
 
   const menus = React.useMemo(() => {
@@ -281,6 +308,7 @@ export default function MenuManagementPage() {
         visible: true,
         sortOrder: 0,
         parentId: parentMenu.id,
+        serviceId: selectedServiceId === "all" ? undefined : selectedServiceId, // 선택된 서비스 ID 설정
         children: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -413,8 +441,27 @@ export default function MenuManagementPage() {
       else if (tempMenu) {
         setSelectedMenu(tempMenu);
       }
+    } else if (menus?.length === 0 && selectedServiceId !== "all") {
+      // 선택된 서비스에 메뉴가 없는 경우 선택 해제
+      setSelectedMenu(null);
     }
-  }, [menus, tempMenu, selectedMenu]);
+  }, [menus, tempMenu, selectedMenu, selectedServiceId]);
+
+  // 서비스가 변경될 때 첫 번째 서비스를 자동 선택 (초기 로드 시에만)
+  useEffect(() => {
+    if (services.length > 0 && selectedServiceId === "all") {
+      // 첫 번째 활성 서비스를 자동 선택
+      const firstActiveService = services.find(
+        (service) => service.status === "ACTIVE"
+      );
+      if (firstActiveService) {
+        setSelectedServiceId(firstActiveService.serviceId);
+      }
+    } else if (services.length === 0 && selectedServiceId !== "all") {
+      // 서비스가 없는 경우 "전체 서비스"로 되돌리기
+      setSelectedServiceId("all");
+    }
+  }, [services.length]); // selectedServiceId 의존성 제거로 무한 루프 방지
 
   return (
     <Box bg={colors.bg} minH="100vh" w="full" position="relative">
@@ -443,9 +490,20 @@ export default function MenuManagementPage() {
             </Flex>
             <Flex>
               <NativeSelect.Root>
-                <NativeSelect.Field>
-                  <option value="1">Option 1</option>
-                  <option value="2">Option 2</option>
+                <NativeSelect.Field
+                  value={selectedServiceId}
+                  onChange={(e) => {
+                    setSelectedServiceId(e.target.value);
+                    setSelectedMenu(null); // 서비스 변경 시 선택된 메뉴 초기화
+                    setTempMenu(null); // 임시 메뉴 초기화
+                  }}
+                >
+                  <option value="all">전체 서비스</option>
+                  {services.map((service) => (
+                    <option key={service.serviceId} value={service.serviceId}>
+                      {service.serviceName}
+                    </option>
+                  ))}
                 </NativeSelect.Field>
                 <NativeSelect.Indicator />
               </NativeSelect.Root>

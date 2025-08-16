@@ -103,6 +103,12 @@ export interface MenuApi {
       position: "before" | "after" | "inside";
     }>
   ) => Promise<void>;
+  
+  // 서비스별 메뉴 관리 API
+  getMenusByService: (serviceId: string) => Promise<Menu[]>;
+  getMenuTreeByService: (serviceId: string) => Promise<Menu[]>;
+  getActiveMenusByService: (serviceId: string) => Promise<Menu[]>;
+  getMenusByServiceAndType: (serviceId: string, type: string) => Promise<Menu[]>;
 }
 
 export interface UpdateMenuOrderRequest {
@@ -172,6 +178,39 @@ export const menuApi = {
     // API 응답에서 data 필드를 반환
     return response.data.data;
   },
+
+  // 서비스별 메뉴 관리 API 구현
+  getMenusByService: async (serviceId: string) => {
+    const response = await privateApi.get<{
+      data: Menu[];
+      status: number;
+    }>(`${API_CONFIG.INTEGRATED_CMS.MENU}/service/${serviceId}`);
+    return response.data.data;
+  },
+
+  getMenuTreeByService: async (serviceId: string) => {
+    const response = await privateApi.get<{
+      data: Menu[];
+      status: number;
+    }>(`${API_CONFIG.INTEGRATED_CMS.MENU}/service/${serviceId}/tree`);
+    return response.data.data;
+  },
+
+  getActiveMenusByService: async (serviceId: string) => {
+    const response = await privateApi.get<{
+      data: Menu[];
+      status: number;
+    }>(`${API_CONFIG.INTEGRATED_CMS.MENU}/service/${serviceId}/active`);
+    return response.data.data;
+  },
+
+  getMenusByServiceAndType: async (serviceId: string, type: string) => {
+    const response = await privateApi.get<{
+      data: Menu[];
+      status: number;
+    }>(`${API_CONFIG.INTEGRATED_CMS.MENU}/service/${serviceId}/type/${type}`);
+    return response.data.data;
+  },
 };
 
 // React Query 키 정의
@@ -184,4 +223,11 @@ export const menuKeys = {
   detail: (id: number) => [...menuKeys.details(), id] as const,
   // New key for page details
   pageDetails: (id: number) => [...menuKeys.all, "pageDetail", id] as const,
+  
+  // 서비스별 메뉴 키
+  byService: () => [...menuKeys.all, "service"] as const,
+  serviceMenus: (serviceId: string) => [...menuKeys.byService(), serviceId] as const,
+  serviceMenuTree: (serviceId: string) => [...menuKeys.byService(), serviceId, "tree"] as const,
+  serviceActiveMenus: (serviceId: string) => [...menuKeys.byService(), serviceId, "active"] as const,
+  serviceMenusByType: (serviceId: string, type: string) => [...menuKeys.byService(), serviceId, "type", type] as const,
 };
