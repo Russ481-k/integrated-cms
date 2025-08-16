@@ -39,6 +39,7 @@ export const API_CONFIG = {
     MAIN_MEDIA: "/main-media",
     BBS: "/bbs",
     ENROLLMENTS: "/enrollments",
+    SERVICES: "/service-metadata", // 서비스 메타데이터 관리 API
   },
   
   // 서비스별 CMS API

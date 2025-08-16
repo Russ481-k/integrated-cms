@@ -1,8 +1,7 @@
 "use client";
 
-import { Badge, Box, Flex, Heading } from "@chakra-ui/react";
-import type { Swiper as SwiperType } from "swiper";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Badge, Box, Flex, Heading, NativeSelect } from "@chakra-ui/react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MenuList } from "./components/MenuList";
 import { MenuEditor } from "./components/MenuEditor";
 import { GridSection } from "@/components/ui/grid-section";
@@ -20,7 +19,6 @@ import { sortMenus } from "@/lib/api/menu";
 import { Menu } from "@/types/api";
 
 import { MainMediaDialog } from "./components/MainMediaDialog";
-import { useRouter } from "next/navigation";
 import MainSection from "@/components/main/MainSection";
 
 export default function MenuManagementPage() {
@@ -443,13 +441,15 @@ export default function MenuManagementPage() {
                 관리자
               </Badge>
             </Flex>
-            {/* <Button
-              variant="outline"
-              colorPalette="purple"
-              onClick={() => setIsMediaDialogOpen(true)}
-            >
-              메인 미디어 관리
-            </Button> */}
+            <Flex>
+              <NativeSelect.Root>
+                <NativeSelect.Field>
+                  <option value="1">Option 1</option>
+                  <option value="2">Option 2</option>
+                </NativeSelect.Field>
+                <NativeSelect.Indicator />
+              </NativeSelect.Root>
+            </Flex>
           </Flex>
 
           <Box>
