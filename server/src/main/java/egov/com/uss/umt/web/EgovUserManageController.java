@@ -5,10 +5,10 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import api.v2.common.user.domain.User;
 import egov.com.uss.umt.service.EgovUserManageService;
 import egov.com.uss.umt.dto.UserSearchDto;
 import lombok.RequiredArgsConstructor;
-import api.v2.cms.user.domain.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController

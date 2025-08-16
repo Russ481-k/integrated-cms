@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.extern.slf4j.Slf4j;
-import api.v2.cms.auth.dto.LoginRequest;
+import api.v2.common.auth.dto.LoginRequest;
 import api.v2.common.dto.ApiResponseSchema;
 import api.v2.common.auth.dto.AuthContext;
 import api.v2.common.auth.service.CommonAuthService;

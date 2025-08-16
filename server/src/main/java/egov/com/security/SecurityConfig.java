@@ -3,7 +3,7 @@ package egov.com.security;
 import egov.com.jwt.JwtAuthenticationEntryPoint;
 import egov.com.jwt.JwtRequestFilter;
 import lombok.RequiredArgsConstructor;
-import api.v2.cms.auth.service.CustomUserDetailsService;
+import api.v2.common.auth.service.CustomUserDetailsService;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.MultipartConfigFactory;

@@ -2,8 +2,8 @@ package egov.com.uss.umt.service;
 
 import java.util.List;
 
+import api.v2.common.user.domain.User;
 import egov.com.uss.umt.dto.UserSearchDto;
-import api.v2.cms.user.domain.User;
 
 public interface EgovUserManageService {
     /**

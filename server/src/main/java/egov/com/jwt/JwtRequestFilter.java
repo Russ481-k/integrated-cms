@@ -12,7 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
-import api.v2.cms.auth.provider.JwtTokenProvider;
+import api.v2.common.auth.provider.JwtTokenProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;

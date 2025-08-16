@@ -21,24 +21,25 @@ import java.util.Properties;
  * @Description : JPA 설정
  *
  * @author : 윤주호
- * @since  : 2024. 4. 23
+ * @since : 2024. 4. 23
  * @version : 1.0
  *
- * <pre>
+ *          <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일              수정자               수정내용
  *  -------------  ------------   ---------------------
  *   2024. 4. 23    윤주호               최초 생성
- * </pre>
+ *          </pre>
  *
  */
 @Configuration
 @EnableJpaRepositories(basePackages = {
-    "egov.**.repository",
-    "cms.**.repository",
-    "feature.**.repository",
-    "api.v2.cms.**.repository"
+        "egov.**.repository",
+        "cms.**.repository",
+        "feature.**.repository",
+        "api.v2.cms.**.repository",
+        "api.v2.common.**.repository"
 })
 @EnableTransactionManagement
 public class EgovConfigAppJpa {
@@ -51,47 +52,48 @@ public class EgovConfigAppJpa {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
         em.setPackagesToScan(
-            "egov.**.domain",
-            "egov.**.entity",
-            "cms.**.domain",
-            "cms.**.entity", 
-            "feature.**.domain",
-            "feature.**.entity",
-            "api.v2.cms.**.domain",
-            "api.v2.cms.**.entity"
-        );
-        
+                "egov.**.domain",
+                "egov.**.entity",
+                "cms.**.domain",
+                "cms.**.entity",
+                "feature.**.domain",
+                "feature.**.entity",
+                "api.v2.cms.**.domain",
+                "api.v2.cms.**.entity",
+                "api.v2.common.**.domain",
+                "api.v2.common.**.entity");
+
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         vendorAdapter.setShowSql(true);
         // Let application.yml control DDL generation
         vendorAdapter.setGenerateDdl(false);
         em.setJpaVendorAdapter(vendorAdapter);
-        
+
         Properties properties = new Properties();
         // Basic Hibernate Properties
         properties.setProperty("hibernate.format_sql", "true");
         properties.setProperty("hibernate.jdbc.time_zone", "Asia/Seoul");
         properties.setProperty("hibernate.dialect", "org.hibernate.dialect.MariaDBDialect");
-        
+
         // Physical Naming Strategy
-        properties.setProperty("hibernate.physical_naming_strategy", 
-            "org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy");
-        
+        properties.setProperty("hibernate.physical_naming_strategy",
+                "org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy");
+
         // Batch Size Configurations
         properties.setProperty("hibernate.jdbc.batch_size", "50");
         properties.setProperty("hibernate.order_inserts", "true");
         properties.setProperty("hibernate.order_updates", "true");
         properties.setProperty("hibernate.batch_versioned_data", "true");
-        
+
         // Query Cache Settings
         properties.setProperty("hibernate.cache.use_second_level_cache", "false");
         properties.setProperty("hibernate.cache.use_query_cache", "false");
-        
+
         // Statement Logging
         properties.setProperty("hibernate.generate_statistics", "true");
-        
+
         em.setJpaProperties(properties);
-        
+
         return em;
     }
 
@@ -102,4 +104,4 @@ public class EgovConfigAppJpa {
         transactionManager.setEntityManagerFactory(entityManagerFactory);
         return transactionManager;
     }
-} 
+}

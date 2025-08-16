@@ -11,9 +11,9 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-import api.v2.cms.user.domain.User;
-import api.v2.cms.user.domain.UserRoleType;
-import api.v2.cms.user.dto.CustomUserDetails;
+import api.v2.common.user.domain.User;
+import api.v2.common.user.domain.UserRoleType;
+import api.v2.common.user.dto.CustomUserDetails;
 
 /**
  * fileName : CustomAuthenticationPrincipalResolver

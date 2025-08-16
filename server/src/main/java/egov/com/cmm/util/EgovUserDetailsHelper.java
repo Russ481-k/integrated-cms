@@ -4,7 +4,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import api.v2.cms.user.dto.CustomUserDetails;
+import api.v2.common.user.dto.CustomUserDetails;
 
 import java.util.Collections;
 import java.util.List;

@@ -5,10 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import api.v2.common.crud.dto.CrudContext;
 import api.v2.common.crud.dto.CrudPermissionResponse;
 import api.v2.common.crud.service.CommonPermissionService;
-import api.v2.cms.user.domain.UserRoleType;
-import api.v2.cms.auth.service.IntegratedCmsAccessChecker;
-import api.v2.cms.auth.service.ServiceAccessChecker;
-import api.v2.cms.auth.service.ContentPermissionChecker;
+import api.v2.common.user.domain.UserRoleType;
+import api.v2.common.auth.service.IntegratedCmsAccessChecker;
+import api.v2.common.auth.service.ServiceAccessChecker;
+import api.v2.common.auth.service.ContentPermissionChecker;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

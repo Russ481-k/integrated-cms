@@ -25,21 +25,21 @@ import org.springframework.jdbc.support.lob.DefaultLobHandler;
  * @Description : Mapper 설정
  *
  * @author : 윤주호
- * @since  : 2021. 7. 20
+ * @since : 2021. 7. 20
  * @version : 1.0
  *
- * <pre>
+ *          <pre>
  * << 개정이력(Modification Information) >>
  *
  *   수정일              수정자               수정내용
  *  -------------  ------------   ---------------------
  *   2021. 7. 20    윤주호               최초 생성
- * </pre>
+ *          </pre>
  *
  */
 @Configuration
 @PropertySources({
-	@PropertySource("classpath:/application.yml")
+		@PropertySource("classpath:/application.yml")
 })
 @MapperScan(basePackages = "cms.cop.bbs.service")
 public class EgovConfigAppMapper {
@@ -62,7 +62,7 @@ public class EgovConfigAppMapper {
 		return new DefaultLobHandler();
 	}
 
-	@Bean(name = {"sqlSession", "egov.sqlSession"})
+	@Bean(name = { "sqlSession", "egov.sqlSession" })
 	public SqlSessionFactoryBean sqlSession() {
 		SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
 		sqlSessionFactoryBean.setDataSource(dataSource);
@@ -70,13 +70,13 @@ public class EgovConfigAppMapper {
 		PathMatchingResourcePatternResolver pathMatchingResourcePatternResolver = new PathMatchingResourcePatternResolver();
 
 		sqlSessionFactoryBean.setConfigLocation(
-			pathMatchingResourcePatternResolver
-				.getResource("classpath:/egovframework/mapper/config/mapper-config.xml"));
+				pathMatchingResourcePatternResolver
+						.getResource("classpath:/egovframework/mapper/config/mapper-config.xml"));
 
 		try {
 			sqlSessionFactoryBean.setMapperLocations(
-				pathMatchingResourcePatternResolver
-					.getResources("classpath:/egovframework/mapper/let/**/*_" + dbType + ".xml"));
+					pathMatchingResourcePatternResolver
+							.getResources("classpath:/egovframework/mapper/let/**/*_" + dbType + ".xml"));
 		} catch (IOException e) {
 			// TODO Exception 처리 필요
 		}

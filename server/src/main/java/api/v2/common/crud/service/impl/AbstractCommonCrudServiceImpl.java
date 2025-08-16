@@ -3,7 +3,7 @@ package api.v2.common.crud.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import api.v2.common.crud.dto.CrudContext;
 import api.v2.common.crud.service.CommonCrudService;
-import api.v2.cms.user.domain.UserRoleType;
+import api.v2.common.user.domain.UserRoleType;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;

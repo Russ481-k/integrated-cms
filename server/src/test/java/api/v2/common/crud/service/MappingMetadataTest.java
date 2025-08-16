@@ -2,7 +2,8 @@ package api.v2.common.crud.service;
 
 import api.v2.common.crud.dto.CrudContext;
 import api.v2.common.crud.service.impl.AbstractCommonMappingServiceImpl;
-import api.v2.cms.user.domain.UserRoleType;
+import api.v2.common.user.domain.UserRoleType;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

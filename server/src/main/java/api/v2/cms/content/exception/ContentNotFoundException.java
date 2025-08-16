@@ -1,7 +1,0 @@
-package api.v2.cms.content.exception;
-
-public class ContentNotFoundException extends RuntimeException {
-    public ContentNotFoundException(Long contentId) {
-        super("Content not found with id: " + contentId);
-    }
-}

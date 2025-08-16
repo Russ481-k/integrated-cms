@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import api.v2.common.crud.dto.CrudContext;
 import api.v2.common.crud.service.CommonMappingService;
-import api.v2.cms.user.domain.UserRoleType;
+import api.v2.common.user.domain.UserRoleType;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;

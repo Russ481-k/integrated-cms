@@ -2,11 +2,11 @@ package api.v2.common.auth.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import api.v2.cms.auth.dto.LoginRequest;
-import api.v2.cms.auth.service.AuthService;
-import api.v2.cms.auth.service.AdminAuthService;
+import api.v2.common.auth.dto.LoginRequest;
+import api.v2.common.auth.service.AuthService;
+import api.v2.common.auth.service.AdminAuthService;
 import api.v2.common.dto.ApiResponseSchema;
-import api.v2.cms.user.domain.User;
+import api.v2.common.user.domain.User;
 import api.v2.common.auth.dto.AuthContext;
 import api.v2.common.auth.service.CommonAuthService;
 
@@ -49,15 +49,15 @@ public class CommonAuthServiceImpl implements CommonAuthService {
             }
 
             // 실제 응답 상태에 따라 로그 출력
-            if (response.getStatusCode().is2xxSuccessful() && 
-                response.getBody() != null && 
-                response.getBody().isSuccess()) {
+            if (response.getStatusCode().is2xxSuccessful() &&
+                    response.getBody() != null &&
+                    response.getBody().isSuccess()) {
                 log.info("{} 로그인 성공: {}", context.getLogContext(), request.getUsername());
             } else {
-                log.warn("{} 로그인 실패: {} - {}", context.getLogContext(), request.getUsername(), 
-                    response.getBody() != null ? response.getBody().getMessage() : "Unknown error");
+                log.warn("{} 로그인 실패: {} - {}", context.getLogContext(), request.getUsername(),
+                        response.getBody() != null ? response.getBody().getMessage() : "Unknown error");
             }
-            
+
             return response;
 
         } catch (Exception e) {

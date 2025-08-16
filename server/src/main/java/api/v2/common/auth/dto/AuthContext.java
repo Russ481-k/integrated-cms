@@ -1,8 +1,8 @@
 package api.v2.common.auth.dto;
 
+import api.v2.common.user.domain.UserRoleType;
 import lombok.Builder;
 import lombok.Data;
-import api.v2.cms.user.domain.UserRoleType;
 
 /**
  * 인증 컨텍스트 정보

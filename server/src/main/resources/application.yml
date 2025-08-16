@@ -50,8 +50,6 @@ spring:
         prepStmtCacheSqlLimit: 2048
         useServerPrepStmts: true
 
-
-
   config:
     use-legacy-processing: true
     import: optional:file:.env
@@ -226,8 +224,6 @@ app:
   performance:
     enable-metrics: true
     slow-query-threshold: 1000
-
-
 
 nice:
   checkplus:

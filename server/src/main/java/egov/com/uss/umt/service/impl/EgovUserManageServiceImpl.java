@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import api.v2.common.user.domain.User;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import egov.com.cmm.util.EgovFileScrty;
 
 import egov.com.uss.umt.service.EgovUserManageService;
-import api.v2.cms.user.domain.User;
 import egov.com.uss.umt.dto.UserSearchDto;
 import egov.com.uss.umt.repository.UserManageRepository;
 

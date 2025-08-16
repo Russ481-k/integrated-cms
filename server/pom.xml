@@ -516,7 +516,7 @@
 						<groupId>org.springframework.boot</groupId>
 						<artifactId>spring-boot-maven-plugin</artifactId>
 						<configuration>
-							<mainClass>api.v2.cms.CmsApplication</mainClass>
+							<mainClass>api.v2.Application</mainClass>
 							<includeSystemScope>true</includeSystemScope>
 							<jvmArguments>-Dspring.profiles.active=dev</jvmArguments>
 						</configuration>
@@ -536,7 +536,7 @@
 						<groupId>org.springframework.boot</groupId>
 						<artifactId>spring-boot-maven-plugin</artifactId>
 						<configuration>
-							<mainClass>api.v2.cms.CmsApplication</mainClass>
+							<mainClass>api.v2.Application</mainClass>
 							<includeSystemScope>true</includeSystemScope>
 							<jvmArguments>-Dspring.profiles.active=prod</jvmArguments>
 						</configuration>
@@ -607,7 +607,7 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<executable>true</executable>
-					<mainClass>api.v2.cms.CmsApplication</mainClass>
+					<mainClass>api.v2.Application</mainClass>
 					<includeSystemScope>true</includeSystemScope>
 					<excludes>
 						<exclude>

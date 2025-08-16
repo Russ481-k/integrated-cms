@@ -2,7 +2,7 @@ package api.v2.common.crud.service;
 
 import api.v2.common.crud.dto.CrudContext;
 import api.v2.common.crud.dto.CrudPermissionResponse;
-import api.v2.cms.user.domain.UserRoleType;
+import api.v2.common.user.domain.UserRoleType;
 
 /**
  * 공통 권한 검증 서비스 인터페이스

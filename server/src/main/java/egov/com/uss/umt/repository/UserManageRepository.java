@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import api.v2.cms.user.domain.User;
+import api.v2.common.user.domain.User;
 
 @Repository
 public interface UserManageRepository extends JpaRepository<User, String> {

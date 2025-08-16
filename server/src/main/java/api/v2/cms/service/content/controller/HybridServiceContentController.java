@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import api.v2.common.dto.ApiResponseSchema;
 import api.v2.common.config.ServiceContextHolder;
-import api.v2.cms.auth.annotation.RequireServiceAccess;
-import api.v2.cms.auth.annotation.RequireContentPermission;
+import api.v2.common.auth.annotation.RequireServiceAccess;
+import api.v2.common.auth.annotation.RequireContentPermission;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
