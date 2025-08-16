@@ -288,6 +288,103 @@ ps aux --sort=-%mem | head
 - **기술 문의**: dev@company.com
 - **시스템 관리**: sysadmin@company.com
 
+## 🧪 **테스트 실행**
+
+### 전체 테스트 실행
+
+```bash
+# Docker 컨테이너에서 전체 테스트 실행 + 상세 결과 리포트
+docker exec unitedcms-integrated-backend-1 bash -c "cd /app && mvn test -q && ./test-results.sh"
+
+# 컨테이너가 중지된 경우 재시작
+docker-compose up -d integrated-backend
+
+# 개별 테스트 클래스 실행 (단위 테스트)
+docker exec unitedcms-integrated-backend-1 mvn test -Dtest="ServiceContextHolderStandardTest" -q
+
+# 여러 테스트 클래스 실행
+docker exec unitedcms-integrated-backend-1 mvn test -Dtest="ServiceContextHolderStandardTest,ServiceRepositoryStandardTest" -q
+
+# 특정 패키지 테스트 실행
+docker exec unitedcms-integrated-backend-1 mvn test -Dtest="api.v2.integrated_cms.**" -q
+
+# 통합 테스트만 실행
+docker exec unitedcms-integrated-backend-1 mvn test -Dtest="*IntegrationTest" -q
+
+# 테스트 커버리지 포함 실행
+docker exec unitedcms-integrated-backend-1 mvn clean test jacoco:report -q
+```
+
+### 테스트 디버깅 명령어
+
+```bash
+# 상세 로그와 함께 테스트 실행
+docker exec unitedcms-integrated-backend-1 mvn test -Dtest="ServiceContextHolderStandardTest" -X
+
+# 특정 프로파일로 테스트 실행
+docker exec unitedcms-integrated-backend-1 mvn test -Ptest -q
+
+# 실패한 테스트만 재실행
+docker exec unitedcms-integrated-backend-1 mvn surefire:test -q
+
+# 테스트 결과 XML 파일 확인
+docker exec unitedcms-integrated-backend-1 ls -la target/surefire-reports/
+```
+
+### 테스트 결과 해석
+
+- ✅ **성공**: 테스트가 정상적으로 통과됨
+- ❌ **실패**: assertion 실패로 인한 테스트 실패
+- 🚨 **에러**: 런타임 예외로 인한 테스트 중단
+- ⏭️ **스킵**: 조건에 의해 건너뛴 테스트
+
+### 테스트 구조
+
+```
+server/src/test/java/
+├── testutils/           # 테스트 유틸리티
+│   ├── logging/         # 표준화된 로깅 유틸리티 (TestLoggingUtils)
+│   ├── base/           # 기본 테스트 클래스들
+│   │   ├── BaseTestCase.java      # 공통 테스트 설정
+│   │   ├── BaseUnitTest.java      # 단위 테스트 기본 클래스
+│   │   ├── BaseRepositoryTest.java # Repository 테스트 기본 클래스
+│   │   └── BaseIntegrationTest.java # 통합 테스트 기본 클래스
+│   └── config/         # 테스트 설정 (Mock Bean 등)
+└── api/v2/             # 실제 테스트 코드
+    ├── common/         # 공통 기능 테스트
+    ├── integrated_cms/ # 통합 CMS 테스트
+    └── cms/           # 서비스별 CMS 테스트
+```
+
+### 테스트 리포트 스크립트
+
+`test-results.sh` 스크립트는 Maven Surefire 보고서를 파싱하여 종합적인 테스트 결과를 제공합니다:
+
+```bash
+# 스크립트 직접 실행
+docker exec unitedcms-integrated-backend-1 ./test-results.sh
+
+# 테스트 후 자동 리포트 생성
+docker exec unitedcms-integrated-backend-1 bash -c "mvn test -q && ./test-results.sh"
+```
+
+**리포트 예시:**
+
+```
+======================================================================
+                     🧪 Maven Test Results Summary
+======================================================================
+📊 Overall Test Statistics:
+------------------------------------------------------------------------
+  Total Tests:    25
+  ✅ Successes:    23
+  ❌ Failures:     1
+  🚨 Errors:       1
+  ⏭️ Skipped:      0
+------------------------------------------------------------------------
+🎉 BUILD SUCCESS: 92% success rate (23/25)
+```
+
 ## 📝 **변경 이력**
 
 | 버전     | 날짜           | 주요 변경사항                    |
