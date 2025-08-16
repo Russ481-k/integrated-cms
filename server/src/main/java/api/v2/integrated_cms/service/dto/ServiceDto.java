@@ -147,6 +147,7 @@ public class ServiceDto {
         private String serviceName;
         private ServiceStatus status;
         private String serviceDomain;
+        private String description;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
     }

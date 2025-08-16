@@ -45,7 +45,7 @@ public class ServiceMapper {
      * @return Response DTO
      */
     public ServiceDto.Response toResponse(ServiceEntity entity) {
-        return ServiceDto.Response.builder()
+        ServiceDto.Response response = ServiceDto.Response.builder()
                 .serviceId(entity.getServiceId())
                 .serviceCode(entity.getServiceCode())
                 .serviceName(entity.getServiceName())
@@ -62,6 +62,7 @@ public class ServiceMapper {
                 .updatedBy(entity.getUpdatedBy())
                 .updatedIp(entity.getUpdatedIp())
                 .build();
+        return response;
     }
 
     /**
@@ -77,6 +78,7 @@ public class ServiceMapper {
                 .serviceName(entity.getServiceName())
                 .status(entity.getStatus())
                 .serviceDomain(entity.getServiceDomain())
+                .description(entity.getDescription())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
