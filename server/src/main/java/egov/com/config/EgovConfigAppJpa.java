@@ -39,7 +39,8 @@ import java.util.Properties;
         "cms.**.repository",
         "feature.**.repository",
         "api.v2.cms.**.repository",
-        "api.v2.common.**.repository"
+        "api.v2.common.**.repository",
+        "api.v2.integrated_cms.**.repository"
 })
 @EnableTransactionManagement
 public class EgovConfigAppJpa {
@@ -61,7 +62,9 @@ public class EgovConfigAppJpa {
                 "api.v2.cms.**.domain",
                 "api.v2.cms.**.entity",
                 "api.v2.common.**.domain",
-                "api.v2.common.**.entity");
+                "api.v2.common.**.entity",
+                "api.v2.integrated_cms.**.domain",
+                "api.v2.integrated_cms.**.entity");
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         vendorAdapter.setShowSql(true);

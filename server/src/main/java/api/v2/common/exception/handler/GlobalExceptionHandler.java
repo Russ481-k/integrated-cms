@@ -16,6 +16,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import api.v2.common.dto.ErrorResponse;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.common.exception.CustomBaseException;
 import api.v2.common.exception.DuplicateDiException;
 import api.v2.common.exception.DuplicateEmailException;
@@ -212,15 +213,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         // Fallback for any other unhandled exceptions: returns a generic 500 Internal
         // Server Error
         @ExceptionHandler(Exception.class)
-        public ResponseEntity<ErrorResponse> handleAllUncaughtException(Exception ex, WebRequest request) {
+        public ResponseEntity<ApiResponseSchema<Void>> handleAllUncaughtException(Exception ex, WebRequest request) {
                 log.error("Unhandled Internal Server Error. URI: {}", request.getDescription(false), ex);
-                ErrorResponse errorResponse = new ErrorResponse(
-                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+
+                // ApiResponseSchema 형식으로 통일
+                ApiResponseSchema<Void> response = ApiResponseSchema.error(
                                 ErrorCode.INTERNAL_SERVER_ERROR.getDefaultMessage(),
-                                request.getDescription(false).replace("uri=", ""),
                                 ErrorCode.INTERNAL_SERVER_ERROR.getCode());
-                return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         // --- CRUD Exception Handlers ---
