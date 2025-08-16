@@ -2,15 +2,13 @@ package api.v2.integrated_cms;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import api.v2.common.dto.ApiResponseSchema;
 import api.v2.common.config.ServiceContextHolder;
+import api.v2.common.dto.ApiResponseSchema;
 import api.v2.common.auth.annotation.RequireIntegratedCmsAccess;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 

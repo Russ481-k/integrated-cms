@@ -18,7 +18,14 @@ public final class ServiceContextHolder {
      * @param serviceId 서비스 식별자 (integrated_cms, douzone, service1 등)
      */
     public static void setCurrentServiceId(String serviceId) {
-        if (serviceId == null || serviceId.trim().isEmpty()) {
+        // null은 명시적 정리로 처리
+        if (serviceId == null) {
+            CURRENT_SERVICE_ID.remove();
+            return;
+        }
+        
+        // 빈 문자열이나 공백만 있는 문자열도 정리로 처리
+        if (serviceId.trim().isEmpty()) {
             CURRENT_SERVICE_ID.remove();
             return;
         }

@@ -91,9 +91,9 @@ class DynamicServiceDataSourceManagerTest {
         // Given
         System.out.println("  \033[2m🔍 Setup:\033[0m integrated_cms 데이터소스 설정");
         String serviceId = "integrated_cms";
-        String url = "jdbc:mariadb://db:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul";
+        String url = "jdbc:mariadb://172.30.1.23:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul";
         String username = "root";
-        String password = "root123!";
+        String password = "root";
 
         // When
         System.out.println("  \033[2m⚡ Action:\033[0m 실제 DB 연결로 데이터소스 생성");
@@ -123,8 +123,8 @@ class DynamicServiceDataSourceManagerTest {
         System.out.println("  \033[2m🔍 Setup:\033[0m integrated_cms 데이터소스 먼저 생성");
         try {
             dataSourceManager.createServiceDataSource("integrated_cms",
-                    "jdbc:mariadb://db:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul",
-                    "root", "root123!");
+                    "jdbc:mariadb://172.30.1.23:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul",
+                    "root", "root");
 
             // When
             System.out.println("  \033[2m⚡ Action:\033[0m 존재하지 않는 서비스 요청");
@@ -156,14 +156,14 @@ class DynamicServiceDataSourceManagerTest {
         String serviceId = "duplicate_test";
         try {
             DataSource firstDataSource = dataSourceManager.createServiceDataSource(serviceId,
-                    "jdbc:mariadb://db:3306/test1?useSSL=false&serverTimezone=Asia/Seoul",
-                    "root", "root123!");
+                    "jdbc:mariadb://172.30.1.23:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul",
+                    "root", "root");
 
             // When
             System.out.println("  \033[2m⚡ Action:\033[0m 같은 ID로 두 번째 데이터소스 생성 시도");
             DataSource secondDataSource = dataSourceManager.createServiceDataSource(serviceId,
-                    "jdbc:mariadb://db:3306/test2?useSSL=false&serverTimezone=Asia/Seoul",
-                    "root", "root123!");
+                    "jdbc:mariadb://172.30.1.23:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul",
+                    "root", "root");
 
             // Then
             System.out.println("  \033[2m✨ Verify:\033[0m 첫 번째 데이터소스와 동일한 인스턴스 반환");
@@ -189,8 +189,8 @@ class DynamicServiceDataSourceManagerTest {
         System.out.println("  \033[2m🔍 Setup:\033[0m integrated_cms 데이터소스 생성");
         try {
             dataSourceManager.createServiceDataSource("integrated_cms",
-                    "jdbc:mariadb://db:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul",
-                    "root", "root123!");
+                    "jdbc:mariadb://172.30.1.23:3306/integrated_cms?useSSL=false&serverTimezone=Asia/Seoul",
+                    "root", "root");
 
             // When
             System.out.println("  \033[2m⚡ Action:\033[0m integrated_cms 데이터소스 제거 시도");

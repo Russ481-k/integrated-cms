@@ -61,8 +61,8 @@ class ServiceContextHolderTest {
     }
 
     @Test
-    @DisplayName("null 서비스 ID를 설정하려고 하면 무시된다")
-    void null_서비스_ID를_설정하려고_하면_무시된다() {
+    @DisplayName("null 서비스 ID를 설정하면 컨텍스트가 정리된다")
+    void null_서비스_ID를_설정하면_컨텍스트가_정리된다() {
         // Given
         ServiceContextHolder.setCurrentServiceId("initial");
 
@@ -71,12 +71,12 @@ class ServiceContextHolderTest {
         String result = ServiceContextHolder.getCurrentServiceId();
 
         // Then
-        assertThat(result).isEqualTo("initial");
+        assertThat(result).isNull();
     }
 
     @Test
-    @DisplayName("빈 문자열 서비스 ID를 설정하려고 하면 무시된다")
-    void 빈_문자열_서비스_ID를_설정하려고_하면_무시된다() {
+    @DisplayName("빈 문자열 서비스 ID를 설정하면 컨텍스트가 정리된다")
+    void 빈_문자열_서비스_ID를_설정하면_컨텍스트가_정리된다() {
         // Given
         ServiceContextHolder.setCurrentServiceId("initial");
 
@@ -85,12 +85,12 @@ class ServiceContextHolderTest {
         String result = ServiceContextHolder.getCurrentServiceId();
 
         // Then
-        assertThat(result).isEqualTo("initial");
+        assertThat(result).isNull();
     }
 
     @Test
-    @DisplayName("공백만 있는 서비스 ID를 설정하려고 하면 무시된다")
-    void 공백만_있는_서비스_ID를_설정하려고_하면_무시된다() {
+    @DisplayName("공백만 있는 서비스 ID를 설정하면 컨텍스트가 정리된다")
+    void 공백만_있는_서비스_ID를_설정하면_컨텍스트가_정리된다() {
         // Given
         ServiceContextHolder.setCurrentServiceId("initial");
 
@@ -99,7 +99,7 @@ class ServiceContextHolderTest {
         String result = ServiceContextHolder.getCurrentServiceId();
 
         // Then
-        assertThat(result).isEqualTo("initial");
+        assertThat(result).isNull();
     }
 
     @Test

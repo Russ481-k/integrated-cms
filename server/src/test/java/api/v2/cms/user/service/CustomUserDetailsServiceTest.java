@@ -37,15 +37,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CustomUserDetailsServiceTest {
 
-        // Java 8 호환 문자열 반복 유틸리티
-        private String repeat(String str, int count) {
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < count; i++) {
-                        sb.append(str);
-                }
-                return sb.toString();
-        }
-
         @Mock
         private UserRepository userRepository;
 

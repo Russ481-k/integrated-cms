@@ -26,15 +26,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ServiceContextInterceptorTest {
 
-    // Java 8 호환 문자열 반복 유틸리티 (필수)
-    private String repeat(String str, int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(str);
-        }
-        return sb.toString();
-    }
-
     private ServiceContextInterceptor interceptor;
 
     @Mock

@@ -2,7 +2,6 @@ package api.v2.common.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import api.v2.common.auth.service.CustomUserDetailsService;
 import egov.com.jwt.JwtAuthenticationEntryPoint;
 import egov.com.jwt.JwtRequestFilter;
 

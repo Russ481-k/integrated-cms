@@ -6,8 +6,10 @@ import api.v2.common.service.EmailService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
+import java.util.Optional;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -19,16 +21,23 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.MimeMessage;
 
 @Service
-@RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
-    private final JavaMailSender mailSender;
+    private final Optional<JavaMailSender> mailSender;
     private final SpringTemplateEngine templateEngine;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
+
+    @Autowired
+    public EmailServiceImpl(
+            Optional<JavaMailSender> mailSender,
+            SpringTemplateEngine templateEngine) {
+        this.mailSender = mailSender;
+        this.templateEngine = templateEngine;
+    }
 
     @Async
     @Override
@@ -96,7 +105,13 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private void sendEmail(String to, String subject, String htmlBody) throws EmailSendingException {
-        MimeMessage message = mailSender.createMimeMessage();
+        if (!mailSender.isPresent()) {
+            log.warn("JavaMailSender is not available. Email sending is disabled in test environment. Subject: {}",
+                    subject);
+            return;
+        }
+
+        MimeMessage message = mailSender.get().createMimeMessage();
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom(fromEmail);
@@ -105,7 +120,7 @@ public class EmailServiceImpl implements EmailService {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
-            mailSender.send(message);
+            mailSender.get().send(message);
             log.info("Email sent successfully to: {} with subject: {}", to, subject);
         } catch (AddressException e) {
             log.error("Failed to send email to '{}' due to invalid address. Subject: {}", to, subject, e);

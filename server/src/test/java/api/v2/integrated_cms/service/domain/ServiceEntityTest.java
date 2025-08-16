@@ -20,15 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ExtendWith(MockitoExtension.class)
 class ServiceEntityTest {
 
-        // Java 8 호환 문자열 반복 유틸리티
-        private String repeat(String str, int count) {
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < count; i++) {
-                        sb.append(str);
-                }
-                return sb.toString();
-        }
-
         @BeforeEach
         void tearDown() {
                 // 각 테스트 후 정리 작업은 없음 (단위 테스트)

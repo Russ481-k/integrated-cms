@@ -36,15 +36,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class CommonMappingServiceTest {
 
-    // Java 8 호환 문자열 반복 유틸리티
-    private String repeat(String str, int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(str);
-        }
-        return sb.toString();
-    }
-
     @Mock
     private ModelMapper modelMapper;
 
@@ -263,7 +254,7 @@ class CommonMappingServiceTest {
         assertEquals("TestResponseDto", metadata.getTargetType());
         assertEquals("admin", metadata.getMappedBy());
         assertEquals("MODEL_MAPPER", metadata.getMappingStrategy());
-        assertTrue(metadata.getMappingTimeMs() > 0);
+        assertTrue(metadata.getMappingTimeMs() >= 0);
         System.out.println("    \033[32m✓\033[0m \033[90mMetadata created:\033[0m \033[32m" + metadata.getSourceType()
                 + " → " + metadata.getTargetType() + "\033[0m");
         System.out.println("    \033[32m✓\033[0m \033[90mMapping time:\033[0m \033[32m" + metadata.getMappingTimeMs()

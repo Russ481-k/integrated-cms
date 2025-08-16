@@ -1,7 +1,5 @@
 package api.v2.common.config;
 
-import api.v2.common.config.ServiceContextHolder;
-import api.v2.common.config.DynamicServiceDataSourceManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 
@@ -47,7 +45,7 @@ public class EnhancedContextRoutingDataSource extends AbstractRoutingDataSource 
     @Override
     protected DataSource determineTargetDataSource() {
         String serviceId = (String) determineCurrentLookupKey();
-        
+
         if (dataSourceManager != null) {
             // 동적 데이터소스 관리자에서 데이터소스 조회 (없으면 환경변수에서 생성 시도)
             DataSource dataSource = dataSourceManager.getServiceDataSource(serviceId);

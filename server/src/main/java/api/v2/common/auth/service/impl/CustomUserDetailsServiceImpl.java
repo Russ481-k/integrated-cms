@@ -44,7 +44,7 @@ public class CustomUserDetailsServiceImpl implements CustomUserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> {
                     logger.warn("User not found with username: {}", username);
-                    return new UsernameNotFoundException("사용자를 찾을 수 없습니다. Username: " + username);
+                    return new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + username);
                 });
         logger.info("User object loaded from DB for username: {}. Gender directly from user.getGender(): {}", username,
                 user.getGender());

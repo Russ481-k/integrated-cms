@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 콘솔 출력 설정 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 테스트 전용 로그 레벨 설정 (불필요한 로그 최소화) -->
+
+    <!-- Spring Framework 로그 최소화 -->
+    <logger name="org.springframework" level="WARN" />
+    <logger name="org.springframework.web" level="ERROR" />
+    <logger name="org.springframework.security" level="ERROR" />
+    <logger name="org.springframework.test" level="ERROR" />
+    <logger name="org.springframework.boot" level="WARN" />
+
+    <!-- Hibernate 로그 최소화 -->
+    <logger name="org.hibernate" level="WARN" />
+    <logger name="org.hibernate.SQL" level="ERROR" />
+    <logger name="org.hibernate.type" level="ERROR" />
+    <logger name="org.hibernate.stat" level="ERROR" />
+
+    <!-- HikariCP 로그 최소화 -->
+    <logger name="com.zaxxer.hikari" level="WARN" />
+
+    <!-- Tomcat 로그 최소화 -->
+    <logger name="org.apache.tomcat" level="ERROR" />
+    <logger name="org.apache.catalina" level="ERROR" />
+
+    <!-- MariaDB 드라이버 로그 최소화 -->
+    <logger name="org.mariadb.jdbc" level="ERROR" />
+
+    <!-- 우리 애플리케이션 로그는 INFO 레벨로 유지 -->
+    <logger name="api.v2" level="INFO" />
+
+    <!-- 테스트 클래스는 DEBUG 레벨로 설정 (테스트 로그 출력을 위해) -->
+    <logger name="api.v2.test" level="DEBUG" />
+
+    <!-- 루트 로거 설정 -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+</configuration>

@@ -1,7 +1,6 @@
 package api.v2.common.auth.service.impl;
 
 import api.v2.common.auth.dto.*;
-import api.v2.common.auth.dto.TokenDto;
 import api.v2.common.auth.provider.JwtTokenProvider;
 import api.v2.common.auth.service.*;
 import api.v2.common.dto.ApiResponseSchema;
@@ -13,6 +12,7 @@ import api.v2.common.exception.*;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailException;
@@ -48,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender mailSender;
+    private final Optional<JavaMailSender> mailSender;
     private final UserRepository userRepository;
     private final TokenRefreshService tokenRefreshService;
     private final VerificationCodeService verificationCodeService;
@@ -61,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
             AuthenticationManager authenticationManager,
             JwtTokenProvider jwtTokenProvider,
             PasswordEncoder passwordEncoder,
-            JavaMailSender mailSender,
+            Optional<JavaMailSender> mailSender,
             UserRepository userRepository,
             TokenRefreshService tokenRefreshService,
             VerificationCodeService verificationCodeService,
@@ -179,13 +179,18 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void sendResetEmail(String email, String resetToken) {
-        MimeMessage message = mailSender.createMimeMessage();
+        if (!mailSender.isPresent()) {
+            log.warn("JavaMailSender is not available. Email sending is disabled in test environment.");
+            return;
+        }
+
+        MimeMessage message = mailSender.get().createMimeMessage();
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
             helper.setTo(email);
             helper.setSubject("비밀번호 재설정");
             helper.setText("비밀번호 재설정을 위해 다음 링크를 클릭하세요: " + resetToken);
-            mailSender.send(message);
+            mailSender.get().send(message);
         } catch (MessagingException e) {
             throw new IllegalArgumentException("이메일 전송에 실패했습니다.", e);
         }

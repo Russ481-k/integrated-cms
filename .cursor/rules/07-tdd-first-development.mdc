@@ -371,6 +371,7 @@ void API_응답_시간은_300ms_이내여야_한다() {
 #### 🚨 **중요: 도커 환경에서 테스트 실행 필수**
 
 **실제 프로젝트 환경:**
+
 - **컨테이너**: `unitedcms-integrated-backend-1` (백엔드)
 - **빌드 도구**: Maven (Maven wrapper 없이 직접 `mvn` 사용)
 - **성공 확인**: 모던 로깅 스타일로 테스트 결과 출력
@@ -473,6 +474,7 @@ docker logs -f unitedcms-integrated-backend-1
 #### 🎯 **실제 테스트 시나리오 및 예시**
 
 **성공적인 테스트 실행 예시:**
+
 ```bash
 # 서비스 엔티티 테스트 실행
 $ docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="ServiceEntityTest" -q
@@ -493,6 +495,7 @@ $ docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="ServiceEntityT
 ```
 
 **TDD 개발 사이클 예시:**
+
 ```bash
 # 1. 실패하는 테스트 작성 후 실행
 $ docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="ServiceRepositoryTest" -q
@@ -507,6 +510,7 @@ $ docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="api.v2.integra
 ```
 
 **패키지별 테스트 실행 가이드:**
+
 ```bash
 # 서비스 도메인 관련 모든 테스트
 docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="api.v2.integrated_cms.service.**.*Test" -q
@@ -514,7 +518,7 @@ docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="api.v2.integrate
 # Repository 계층 테스트만
 docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="*Repository*Test" -q
 
-# Controller 계층 테스트만  
+# Controller 계층 테스트만
 docker exec -it unitedcms-integrated-backend-1 mvn test -Dtest="*Controller*Test" -q
 
 # Service 계층 테스트만

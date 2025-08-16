@@ -2,51 +2,44 @@ package api.v2.integrated_cms.service.repository;
 
 import api.v2.integrated_cms.service.domain.ServiceEntity;
 import api.v2.integrated_cms.service.domain.ServiceStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.stream.Collectors;
 
 /**
- * ServiceRepository 순수 JPA 테스트
+ * ServiceRepository 실제 DB 연동 테스트
  * 
- * Spring 컨텍스트 로딩 문제를 피하기 위해 최소한의 설정으로 JPA Repository만 테스트합니다.
+ * 실제 integrated_cms 데이터베이스와 연결하여 테스트합니다.
  */
-@ExtendWith(SpringExtension.class)
-@DataJpaTest(showSql = false)
+@SpringBootTest
+@Transactional
+@TestPropertySource(properties = {
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration"
+})
+@Import({ ServiceRepositorySimpleTest.TestConfig.class, testutils.config.TestMailConfiguration.class })
 class ServiceRepositorySimpleTest {
-
-    @Autowired
-    private TestEntityManager entityManager;
 
     @Autowired
     private ServiceRepository serviceRepository;
 
-    // Java 8 호환 문자열 반복 유틸리티
-    private String repeat(String str, int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append(str);
-        }
-        return sb.toString();
-    }
-
     @BeforeEach
     void setUp() {
-        // 각 테스트 전 데이터 정리
-        serviceRepository.deleteAll();
-        entityManager.flush();
-        entityManager.clear();
+        // 각 테스트 전 테스트용 데이터만 정리 (트랜잭션 롤백으로 자동 정리됨)
+        // 실제 DB 데이터는 건드리지 않음
     }
 
     @Test
@@ -62,15 +55,13 @@ class ServiceRepositorySimpleTest {
                 .serviceName("테스트 서비스")
                 .status(ServiceStatus.ACTIVE)
                 .description("테스트용 서비스입니다")
-                .createdBy("test-admin")
+                .createdBy("admin-uuid-0000-0000-000000000004")
                 .createdIp("127.0.0.1")
                 .build();
 
         // When
         System.out.println("  \033[2m⚡ Action:\033[0m 서비스 저장 및 조회");
         ServiceEntity savedService = serviceRepository.save(service);
-        entityManager.flush();
-        entityManager.clear();
 
         Optional<ServiceEntity> foundService = serviceRepository.findById(savedService.getServiceId());
 
@@ -92,7 +83,6 @@ class ServiceRepositorySimpleTest {
         System.out.println("  \033[2m🔍 Setup:\033[0m 테스트용 서비스 엔티티 저장");
         ServiceEntity service = createTestService("douzone", "더존 비즈온", ServiceStatus.ACTIVE);
         serviceRepository.save(service);
-        entityManager.flush();
 
         // When
         System.out.println("  \033[2m⚡ Action:\033[0m 서비스 코드로 조회");
@@ -140,18 +130,25 @@ class ServiceRepositorySimpleTest {
         serviceRepository.save(activeService1);
         serviceRepository.save(activeService2);
         serviceRepository.save(inactiveService);
-        entityManager.flush();
 
         // When
         System.out.println("  \033[2m⚡ Action:\033[0m ACTIVE 상태 서비스 조회");
         List<ServiceEntity> activeServices = serviceRepository.findByStatus(ServiceStatus.ACTIVE);
 
         // Then
-        System.out.println("  \033[2m✨ Verify:\033[0m ACTIVE 서비스 2개 조회되는지 검증");
-        assertThat(activeServices).hasSize(2);
-        assertThat(activeServices).extracting(ServiceEntity::getServiceCode)
-                .containsExactlyInAnyOrder("douzone", "service1");
-        System.out.println("    \033[32m✓\033[0m \033[90mAssertion passed:\033[0m \033[32m2개\033[0m의 ACTIVE 서비스 조회됨\n");
+        System.out.println("  \033[2m✨ Verify:\033[0m 테스트 추가한 ACTIVE 서비스 포함 확인");
+        // 기존 DB 데이터 + 테스트 추가 데이터 = 최소 2개 이상이어야 함
+        assertThat(activeServices.size()).isGreaterThanOrEqualTo(2);
+
+        // 테스트에서 추가한 서비스 코드들이 포함되어 있는지 확인
+        List<String> serviceCodes = activeServices.stream()
+                .map(ServiceEntity::getServiceCode)
+                .collect(Collectors.toList());
+
+        assertThat(serviceCodes).contains("douzone", "service1");
+        System.out.println(
+                "    \033[32m✓\033[0m \033[90mAssertion passed:\033[0m 테스트 추가 서비스(\033[32mdouzone, service1\033[0m) 모두 조회됨 (총 \033[32m"
+                        + activeServices.size() + "개\033[0m)\n");
     }
 
     @Test
@@ -163,7 +160,6 @@ class ServiceRepositorySimpleTest {
         System.out.println("  \033[2m🔍 Setup:\033[0m 기존 서비스 저장");
         ServiceEntity existingService = createTestService("douzone", "더존 비즈온", ServiceStatus.ACTIVE);
         serviceRepository.save(existingService);
-        entityManager.flush();
 
         // When & Then
         System.out.println("  \033[2m⚡ Action:\033[0m 서비스 코드 존재 여부 확인");
@@ -193,7 +189,6 @@ class ServiceRepositorySimpleTest {
         serviceRepository.save(douzoneService);
         serviceRepository.save(bizwareService);
         serviceRepository.save(otherService);
-        entityManager.flush();
 
         // When
         System.out.println("  \033[2m⚡ Action:\033[0m '더존'으로 부분 검색");
@@ -217,8 +212,20 @@ class ServiceRepositorySimpleTest {
                 .serviceName(serviceName)
                 .status(status)
                 .description("테스트용 " + serviceName)
-                .createdBy("test-admin")
+                .createdBy("admin-uuid-0000-0000-000000000004")
                 .createdIp("127.0.0.1")
                 .build();
+    }
+
+    /**
+     * 테스트용 설정 - 필요한 Bean들만 제공
+     */
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        public ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
     }
 }
